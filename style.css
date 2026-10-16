@@ -1,0 +1,94 @@
+/* 主题伴侣 · 作者 mangosagocreamwithpomelo（Discord）· 设计与实现 Claude Opus 5.5（Anthropic） */
+
+/* 切换的一瞬间：颜色缓缓过渡，像开灯关灯（开启「减少动态效果」时不会加这个类） */
+html.dn-switching body,
+html.dn-switching body *,
+html.dn-switching body *::before,
+html.dn-switching body *::after {
+    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, outline-color 0.5s ease, fill 0.5s ease !important;
+}
+
+.daynight-settings .dn-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.daynight-settings .dn-label {
+    flex: 0 0 5em;
+}
+
+.daynight-settings .dn-row select,
+.daynight-settings .dn-row input[type='time'] {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+}
+
+.daynight-settings .dn-seg {
+    display: flex;
+    gap: 6px;
+}
+
+.daynight-settings .dn-seg .menu_button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 4px 14px;
+}
+
+.daynight-settings .dn-seg .menu_button.dn-on {
+    background-color: var(--SmartThemeUnderlineColor);
+    border-color: var(--SmartThemeUnderlineColor);
+    color: var(--SmartThemeChatTintColor);
+}
+
+.daynight-settings .dn-note {
+    display: block;
+    margin-top: 6px;
+    opacity: 0.8;
+}
+
+.daynight-settings .dn-unsupported {
+    display: none;
+    margin: 6px 0;
+}
+
+.daynight-settings.is-unsupported .dn-unsupported {
+    display: block;
+}
+
+.daynight-settings .dn-head {
+    margin: 12px 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+    font-weight: 600;
+}
+
+.daynight-settings .dn-head:first-child {
+    margin-top: 4px;
+}
+
+.daynight-settings .dn-theme {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+}
+
+.daynight-settings .dn-theme small {
+    flex: 1 1 auto;
+    opacity: 0.8;
+}
+
+.daynight-settings .dn-theme-act {
+    display: flex;
+    gap: 6px;
+}
+
+.daynight-settings .dn-theme-act .menu_button {
+    margin: 0;
+    padding: 3px 12px;
+}
