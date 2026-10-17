@@ -1,7 +1,504 @@
 [
     {
-        "name": "纸上访谈",
-        "file": "纸上访谈.json",
-        "version": "1.0.0"
+        "family": "银盐",
+        "version": "1.0.0",
+        "variantLabel": "调色",
+        "options": [
+            {
+                "type": "head",
+                "label": "外观"
+            },
+            {
+                "key": "mark",
+                "type": "select",
+                "label": "记号色",
+                "note": "开着的世界书条目、帧号、展签都用它。选琥珀后，夜版「底线文字」颜色选择器暂时不起作用",
+                "choices": [
+                    {
+                        "value": "red",
+                        "label": "红色油性笔"
+                    },
+                    {
+                        "value": "amber",
+                        "label": "安全灯琥珀",
+                        "css": "html:root:root { --yy-mark-day: #944E00; } html.dn-night:root:root { --SmartThemeUnderlineColor: #E59C4B !important; }"
+                    }
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--yy-charlist",
+                "label": "角色列表",
+                "default": "sheet",
+                "choices": [
+                    [
+                        "sheet",
+                        "印样页（底片条）"
+                    ],
+                    [
+                        "easel",
+                        "放大机压纸板"
+                    ],
+                    [
+                        "instant",
+                        "即显相纸"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--yy-body-font",
+                "label": "正文字体",
+                "default": "var(--yy-sans)",
+                "choices": [
+                    [
+                        "var(--yy-sans)",
+                        "黑体"
+                    ],
+                    [
+                        "var(--yy-serif)",
+                        "宋体"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--yy-em-style",
+                "label": "心理描写",
+                "default": "normal",
+                "choices": [
+                    [
+                        "normal",
+                        "衬线，不倾斜"
+                    ],
+                    [
+                        "italic",
+                        "衬线，倾斜"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--yy-print-filter",
+                "label": "夜里头像",
+                "default": "grayscale(1) contrast(1.05)",
+                "choices": [
+                    [
+                        "grayscale(1) contrast(1.05)",
+                        "黑白小样"
+                    ],
+                    [
+                        "none",
+                        "原色"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--yy-day-print-filter",
+                "label": "白天头像",
+                "default": "grayscale(0.85) contrast(1.02)",
+                "choices": [
+                    [
+                        "grayscale(0.85) contrast(1.02)",
+                        "褪色小样"
+                    ],
+                    [
+                        "none",
+                        "原色"
+                    ]
+                ]
+            },
+            {
+                "key": "date",
+                "type": "dateformat",
+                "label": "时间格式",
+                "default": "film"
+            },
+            {
+                "type": "head",
+                "label": "开关"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-light",
+                "label": "光",
+                "note": "夜里顶部一道雾和右上角安全灯；白天左上角进光"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-grain",
+                "label": "颗粒",
+                "on": "",
+                "off": "none"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-camera",
+                "label": "输入框取景框"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-edge",
+                "label": "边码",
+                "note": "每条消息下方的胶片片基文字"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-edge-holes",
+                "label": "边码下的 35mm 片孔",
+                "on": "var(--yy-holes-35)",
+                "off": "none",
+                "default": false
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-caption",
+                "label": "展签",
+                "note": "最新一条回复末尾「角色 · 第 N 帧」"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-wall-title",
+                "label": "展墙标题",
+                "note": "白天屏幕右边竖写角色名"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-mes-buttons-idle",
+                "label": "消息按钮一直显示",
+                "note": "关掉时鼠标移上去才出现（仅电脑）",
+                "default": false
+            },
+            {
+                "type": "head",
+                "label": "动态"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-develop",
+                "label": "显影",
+                "note": "新回复从显影液里慢慢浮出来"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-loupe",
+                "label": "放大镜",
+                "note": "鼠标停在聊天头像上放大"
+            },
+            {
+                "type": "head",
+                "label": "正文"
+            },
+            {
+                "type": "number",
+                "var": "--yy-measure",
+                "label": "一行最多几个字",
+                "default": 40,
+                "min": 20,
+                "max": 80,
+                "step": 1
+            },
+            {
+                "type": "number",
+                "var": "--st-mes-line-height",
+                "label": "行高",
+                "default": 1.95,
+                "min": 1.2,
+                "max": 2.6,
+                "step": 0.05
+            },
+            {
+                "type": "select",
+                "var": "--yy-read-weight",
+                "label": "夜版字重",
+                "default": "400",
+                "choices": [
+                    [
+                        "300",
+                        "细"
+                    ],
+                    [
+                        "400",
+                        "常规"
+                    ],
+                    [
+                        "500",
+                        "中"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--yy-day-read-weight",
+                "label": "昼版字重",
+                "default": "400",
+                "choices": [
+                    [
+                        "400",
+                        "常规"
+                    ],
+                    [
+                        "500",
+                        "中"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--yy-indent",
+                "label": "首行缩进",
+                "default": "0",
+                "choices": [
+                    [
+                        "0",
+                        "不缩进"
+                    ],
+                    [
+                        "2em",
+                        "两个字"
+                    ]
+                ]
+            },
+            {
+                "type": "head",
+                "label": "文字"
+            },
+            {
+                "type": "text",
+                "var": "--yy-placeholder",
+                "label": "输入框提示",
+                "default": "对好焦，写下这一帧……"
+            },
+            {
+                "type": "text",
+                "var": "--yy-wall-sub",
+                "label": "展墙小字",
+                "default": "银盐 · 个展"
+            },
+            {
+                "type": "text",
+                "var": "--yy-reasoning-label",
+                "label": "思维链前缀",
+                "default": "暗房笔记 · "
+            },
+            {
+                "type": "text",
+                "var": "--yy-pre-label",
+                "label": "代码块小标题",
+                "default": "暗房笔记"
+            },
+            {
+                "type": "text",
+                "var": "--yy-retouch-label",
+                "label": "编辑时的小标",
+                "default": "修版 · RETOUCH"
+            },
+            {
+                "type": "text",
+                "var": "--yy-empty-line",
+                "label": "欢迎页那行字",
+                "default": "显影盘还空着 · 选一个角色开始"
+            }
+        ],
+        "themes": [
+            {
+                "name": "银盐",
+                "file": "银盐.json",
+                "label": "硒调色（默认）"
+            },
+            {
+                "name": "银盐 · 无调色",
+                "file": "银盐 · 无调色.json",
+                "label": "无调色"
+            },
+            {
+                "name": "银盐 · 棕褐调色",
+                "file": "银盐 · 棕褐调色.json",
+                "label": "棕褐调色"
+            },
+            {
+                "name": "银盐 · 铂钯印相",
+                "file": "银盐 · 铂钯印相.json",
+                "label": "铂钯印相"
+            },
+            {
+                "name": "银盐 · 氰版蓝晒",
+                "file": "银盐 · 氰版蓝晒.json",
+                "label": "氰版蓝晒"
+            }
+        ]
+    },
+    {
+        "family": "纸上访谈",
+        "version": "1.0.1",
+        "variantLabel": "变体",
+        "options": [
+            {
+                "type": "head",
+                "label": "外观"
+            },
+            {
+                "type": "color",
+                "var": "--mz-day-accent",
+                "label": "昼版强调色",
+                "default": "#7A5C2C",
+                "note": "夜版的橙色在 UI 主题「底线文字」里改"
+            },
+            {
+                "type": "select",
+                "var": "--mz-user-font",
+                "label": "你的话",
+                "default": "var(--mz-sans)",
+                "choices": [
+                    [
+                        "var(--mz-sans)",
+                        "黑体"
+                    ],
+                    [
+                        "var(--mz-serif)",
+                        "宋体（和角色一样）"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-em-style",
+                "label": "旁白",
+                "default": "normal",
+                "choices": [
+                    [
+                        "normal",
+                        "不倾斜"
+                    ],
+                    [
+                        "italic",
+                        "倾斜"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-day-desk",
+                "label": "昼版两侧桌面",
+                "default": "12%",
+                "choices": [
+                    [
+                        "12%",
+                        "压暗"
+                    ],
+                    [
+                        "0%",
+                        "不压暗"
+                    ]
+                ]
+            },
+            {
+                "key": "date",
+                "type": "dateformat",
+                "label": "时间格式",
+                "default": "st"
+            },
+            {
+                "type": "toggle",
+                "var": "--mz-mes-buttons-idle",
+                "label": "消息按钮一直显示",
+                "note": "关掉时鼠标移上去才出现（仅电脑）",
+                "default": false
+            },
+            {
+                "type": "head",
+                "label": "正文"
+            },
+            {
+                "type": "number",
+                "var": "--mz-measure",
+                "label": "一行最多几个字",
+                "default": 40,
+                "min": 20,
+                "max": 80,
+                "step": 1
+            },
+            {
+                "type": "number",
+                "var": "--st-mes-line-height",
+                "label": "行高",
+                "default": 1.95,
+                "min": 1.2,
+                "max": 2.6,
+                "step": 0.05
+            },
+            {
+                "type": "select",
+                "var": "--mz-day-read-weight",
+                "label": "昼版字重",
+                "default": "500",
+                "choices": [
+                    [
+                        "400",
+                        "常规"
+                    ],
+                    [
+                        "500",
+                        "中"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-indent",
+                "label": "首行缩进",
+                "default": "0",
+                "choices": [
+                    [
+                        "0",
+                        "不缩进"
+                    ],
+                    [
+                        "2em",
+                        "两个字"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-initial-size",
+                "label": "首字抬升",
+                "default": "2",
+                "choices": [
+                    [
+                        "2",
+                        "两行高"
+                    ],
+                    [
+                        "0",
+                        "关闭"
+                    ]
+                ]
+            },
+            {
+                "type": "head",
+                "label": "文字"
+            },
+            {
+                "type": "text",
+                "var": "--mz-opening-label",
+                "label": "开篇小标题",
+                "default": "Opening"
+            },
+            {
+                "type": "text",
+                "var": "--mz-end-mark",
+                "label": "文末符",
+                "default": "■"
+            }
+        ],
+        "themes": [
+            {
+                "name": "纸上访谈",
+                "file": "纸上访谈.json",
+                "label": "纸上访谈"
+            }
+        ]
     }
 ]

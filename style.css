@@ -85,10 +85,96 @@ html.dn-switching body *::after {
 
 .daynight-settings .dn-theme-act {
     display: flex;
+    flex-shrink: 0;
     gap: 6px;
+    margin-left: auto;
 }
 
 .daynight-settings .dn-theme-act .menu_button {
+    white-space: nowrap;
     margin: 0;
     padding: 3px 12px;
+}
+
+.daynight-settings .dn-theme-name {
+    flex: 0 0 auto;
+}
+
+/* 主题设置 */
+.daynight-settings .dn-subhead {
+    margin: 10px 0 2px;
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    color: var(--SmartThemeEmColor);
+}
+
+.daynight-settings .dn-opt .dn-label {
+    flex: 0 0 8em;
+}
+
+.daynight-settings .dn-row input[type='text'],
+.daynight-settings .dn-row input[type='number'] {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+}
+
+.daynight-settings .dn-row input[type='color'] {
+    width: 3em;
+    height: 1.8em;
+    padding: 0;
+    border: 1px solid var(--SmartThemeBorderColor);
+    background: none;
+}
+
+.daynight-settings .dn-check {
+    flex-wrap: wrap;
+    cursor: pointer;
+}
+
+.daynight-settings .dn-check input[type='checkbox'] {
+    margin: 0;
+}
+
+.daynight-settings .dn-check small {
+    flex: 1 0 100%;
+    padding-left: 8.5em;
+    opacity: 0.8;
+}
+
+.daynight-settings > .inline-drawer .dn-check:has(> input:first-child) small {
+    padding-left: 1.8em;
+}
+
+.daynight-settings .dn-reset,
+.daynight-settings .dn-wide {
+    margin: 10px 0 4px;
+    width: fit-content;
+}
+
+.daynight-settings .dn-ext {
+    flex-wrap: wrap;
+}
+
+.daynight-settings .dn-ext small {
+    flex: 1 1 10em;
+    opacity: 0.8;
+}
+
+.dn-popup {
+    text-align: left;
+}
+
+.dn-popup h3 {
+    margin: 0 0 6px;
+}
+
+@media (max-width: 600px) {
+    .daynight-settings .dn-opt .dn-label {
+        flex-basis: 6em;
+    }
+
+    .daynight-settings .dn-check small {
+        padding-left: 0;
+    }
 }
