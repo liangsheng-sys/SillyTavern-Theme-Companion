@@ -15,7 +15,7 @@
 
 const KEY = 'daynight';
 const CACHE = 'daynight:last';
-const DEFAULTS = { mode: 'manual', manual: null, dayStart: '07:00', dayEnd: '19:00', paper: 'default', themes: {} };
+const DEFAULTS = { mode: 'system', manual: null, dayStart: '07:00', dayEnd: '19:00', paper: 'default', themes: {} };
 const root = document.documentElement;
 
 // 先套用上次的结果，避免加载时先闪一下夜版
@@ -250,8 +250,8 @@ const PANEL = `
             <div class="dn-row">
                 <span class="dn-label">切换方式</span>
                 <select id="dn_mode" class="text_pole">
-                    <option value="manual">手动</option>
                     <option value="system">跟随系统</option>
+                    <option value="manual">手动</option>
                     <option value="auto">按时间自动</option>
                 </select>
             </div>
