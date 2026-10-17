@@ -38,4 +38,5 @@
 - **加入新主题**：把主题 JSON 放进 `themes/`，再在 `themes/themes.json` 里登记 `{ "name", "file", "version" }`。版本号变大以后，用户就会收到更新提示。
 - **支持昼夜**：
   - 扩展只会在 `<html>` 上加 `dn-day` / `dn-night` 类和 `data-paper` 属性。主题写 `:root.dn-day { … }` 就能做出昼版。
+  - 切换时用浏览器的视图过渡（默认淡入淡出）。切换期间 `<html>` 上有 `data-dn-to="day"|"night"`，主题可以写 `:root[data-dn-to='day']::view-transition-new(root) { animation: … }` 自定动画。
   - 在主题里声明 `--dn-support: 1`，再声明 `--dn-papers: 'id:名称|…'`，扩展里就会出现纸张选项。

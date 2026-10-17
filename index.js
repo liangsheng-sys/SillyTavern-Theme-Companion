@@ -64,21 +64,30 @@ function themeVar(name) {
 
 function paint(day, paper, animate = true) {
     const changed = root.classList.contains('dn-day') !== day;
+    const swap = () => {
+        root.classList.toggle('dn-day', day);
+        root.classList.toggle('dn-night', !day);
+        if (paper && paper !== 'default') root.dataset.paper = paper;
+        else delete root.dataset.paper;
+        // 手机浏览器地址栏的颜色跟着变
+        requestAnimationFrame(() => {
+            const meta = document.querySelector('meta[name=theme-color]');
+            const tint = themeVar('--SmartThemeBlurTintColor');
+            if (meta && tint) meta.setAttribute('content', tint);
+        });
+    };
     if (animate && changed && !document.body?.classList.contains('reduced-motion')) {
         root.classList.add('dn-switching');
         clearTimeout(paint.timer);
         paint.timer = setTimeout(() => root.classList.remove('dn-switching'), 700);
-    }
-    root.classList.toggle('dn-day', day);
-    root.classList.toggle('dn-night', !day);
-    if (paper && paper !== 'default') root.dataset.paper = paper;
-    else delete root.dataset.paper;
-    // 手机浏览器地址栏的颜色跟着变
-    requestAnimationFrame(() => {
-        const meta = document.querySelector('meta[name=theme-color]');
-        const tint = themeVar('--SmartThemeBlurTintColor');
-        if (meta && tint) meta.setAttribute('content', tint);
-    });
+        // 用浏览器的视图过渡切换：默认是淡入淡出，主题可以用
+        // :root[data-dn-to='day'|'night']::view-transition-new(root) 自己定动画（如「银盐」的开关灯）
+        if (document.startViewTransition && document.visibilityState === 'visible') {
+            root.dataset.dnTo = day ? 'day' : 'night';
+            const vt = document.startViewTransition(swap);
+            vt.finished.finally(() => { if (root.dataset.dnTo === (day ? 'day' : 'night')) delete root.dataset.dnTo; });
+        } else swap();
+    } else swap();
 }
 
 function apply(animate = true) {
