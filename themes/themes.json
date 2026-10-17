@@ -1,6 +1,178 @@
 [
     {
-        "family": "银盐",
+        "family": "纸上访谈",
+        "version": "1.0.1",
+        "variantLabel": "变体",
+        "options": [
+            {
+                "type": "head",
+                "label": "外观"
+            },
+            {
+                "type": "color",
+                "var": "--mz-day-accent",
+                "label": "昼版强调色",
+                "default": "#7A5C2C",
+                "note": "夜版的橙色在 UI 主题「底线文字」里改"
+            },
+            {
+                "type": "select",
+                "var": "--mz-user-font",
+                "label": "你的话",
+                "default": "var(--mz-sans)",
+                "choices": [
+                    [
+                        "var(--mz-sans)",
+                        "黑体"
+                    ],
+                    [
+                        "var(--mz-serif)",
+                        "宋体（和角色一样）"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-em-style",
+                "label": "旁白",
+                "default": "normal",
+                "choices": [
+                    [
+                        "normal",
+                        "不倾斜"
+                    ],
+                    [
+                        "italic",
+                        "倾斜"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-day-desk",
+                "label": "昼版两侧桌面",
+                "default": "12%",
+                "choices": [
+                    [
+                        "12%",
+                        "压暗"
+                    ],
+                    [
+                        "0%",
+                        "不压暗"
+                    ]
+                ]
+            },
+            {
+                "key": "date",
+                "type": "dateformat",
+                "label": "时间格式",
+                "default": "st"
+            },
+            {
+                "type": "toggle",
+                "var": "--mz-mes-buttons-idle",
+                "label": "消息按钮一直显示",
+                "note": "关掉时鼠标移上去才出现（仅电脑）",
+                "default": false
+            },
+            {
+                "type": "head",
+                "label": "正文"
+            },
+            {
+                "type": "number",
+                "var": "--mz-measure",
+                "label": "一行最多几个字",
+                "default": 40,
+                "min": 20,
+                "max": 80,
+                "step": 1
+            },
+            {
+                "type": "number",
+                "var": "--st-mes-line-height",
+                "label": "行高",
+                "default": 1.95,
+                "min": 1.2,
+                "max": 2.6,
+                "step": 0.05
+            },
+            {
+                "type": "select",
+                "var": "--mz-day-read-weight",
+                "label": "昼版字重",
+                "default": "500",
+                "choices": [
+                    [
+                        "400",
+                        "常规"
+                    ],
+                    [
+                        "500",
+                        "中"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-indent",
+                "label": "首行缩进",
+                "default": "0",
+                "choices": [
+                    [
+                        "0",
+                        "不缩进"
+                    ],
+                    [
+                        "2em",
+                        "两个字"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--mz-initial-size",
+                "label": "首字抬升",
+                "default": "2",
+                "choices": [
+                    [
+                        "2",
+                        "两行高"
+                    ],
+                    [
+                        "0",
+                        "关闭"
+                    ]
+                ]
+            },
+            {
+                "type": "head",
+                "label": "文字"
+            },
+            {
+                "type": "text",
+                "var": "--mz-opening-label",
+                "label": "开篇小标题",
+                "default": "Opening"
+            },
+            {
+                "type": "text",
+                "var": "--mz-end-mark",
+                "label": "文末符",
+                "default": "■"
+            }
+        ],
+        "themes": [
+            {
+                "name": "纸上访谈",
+                "file": "纸上访谈.json",
+                "label": "纸上访谈"
+            }
+        ]
+    },
+    {
+        "family": "银盐显影",
         "version": "1.0.0",
         "variantLabel": "调色",
         "options": [
@@ -274,7 +446,7 @@
                 "type": "text",
                 "var": "--yy-wall-sub",
                 "label": "展墙小字",
-                "default": "银盐 · 个展"
+                "default": "银盐显影 · 个展"
             },
             {
                 "type": "text",
@@ -303,201 +475,29 @@
         ],
         "themes": [
             {
-                "name": "银盐",
-                "file": "银盐.json",
+                "name": "银盐显影",
+                "file": "银盐显影.json",
                 "label": "硒调色（默认）"
             },
             {
-                "name": "银盐 · 无调色",
-                "file": "银盐 · 无调色.json",
+                "name": "银盐显影 · 无调色",
+                "file": "银盐显影 · 无调色.json",
                 "label": "无调色"
             },
             {
-                "name": "银盐 · 棕褐调色",
-                "file": "银盐 · 棕褐调色.json",
+                "name": "银盐显影 · 棕褐调色",
+                "file": "银盐显影 · 棕褐调色.json",
                 "label": "棕褐调色"
             },
             {
-                "name": "银盐 · 铂钯印相",
-                "file": "银盐 · 铂钯印相.json",
+                "name": "银盐显影 · 铂钯印相",
+                "file": "银盐显影 · 铂钯印相.json",
                 "label": "铂钯印相"
             },
             {
-                "name": "银盐 · 氰版蓝晒",
-                "file": "银盐 · 氰版蓝晒.json",
+                "name": "银盐显影 · 氰版蓝晒",
+                "file": "银盐显影 · 氰版蓝晒.json",
                 "label": "氰版蓝晒"
-            }
-        ]
-    },
-    {
-        "family": "纸上访谈",
-        "version": "1.0.1",
-        "variantLabel": "变体",
-        "options": [
-            {
-                "type": "head",
-                "label": "外观"
-            },
-            {
-                "type": "color",
-                "var": "--mz-day-accent",
-                "label": "昼版强调色",
-                "default": "#7A5C2C",
-                "note": "夜版的橙色在 UI 主题「底线文字」里改"
-            },
-            {
-                "type": "select",
-                "var": "--mz-user-font",
-                "label": "你的话",
-                "default": "var(--mz-sans)",
-                "choices": [
-                    [
-                        "var(--mz-sans)",
-                        "黑体"
-                    ],
-                    [
-                        "var(--mz-serif)",
-                        "宋体（和角色一样）"
-                    ]
-                ]
-            },
-            {
-                "type": "select",
-                "var": "--mz-em-style",
-                "label": "旁白",
-                "default": "normal",
-                "choices": [
-                    [
-                        "normal",
-                        "不倾斜"
-                    ],
-                    [
-                        "italic",
-                        "倾斜"
-                    ]
-                ]
-            },
-            {
-                "type": "select",
-                "var": "--mz-day-desk",
-                "label": "昼版两侧桌面",
-                "default": "12%",
-                "choices": [
-                    [
-                        "12%",
-                        "压暗"
-                    ],
-                    [
-                        "0%",
-                        "不压暗"
-                    ]
-                ]
-            },
-            {
-                "key": "date",
-                "type": "dateformat",
-                "label": "时间格式",
-                "default": "st"
-            },
-            {
-                "type": "toggle",
-                "var": "--mz-mes-buttons-idle",
-                "label": "消息按钮一直显示",
-                "note": "关掉时鼠标移上去才出现（仅电脑）",
-                "default": false
-            },
-            {
-                "type": "head",
-                "label": "正文"
-            },
-            {
-                "type": "number",
-                "var": "--mz-measure",
-                "label": "一行最多几个字",
-                "default": 40,
-                "min": 20,
-                "max": 80,
-                "step": 1
-            },
-            {
-                "type": "number",
-                "var": "--st-mes-line-height",
-                "label": "行高",
-                "default": 1.95,
-                "min": 1.2,
-                "max": 2.6,
-                "step": 0.05
-            },
-            {
-                "type": "select",
-                "var": "--mz-day-read-weight",
-                "label": "昼版字重",
-                "default": "500",
-                "choices": [
-                    [
-                        "400",
-                        "常规"
-                    ],
-                    [
-                        "500",
-                        "中"
-                    ]
-                ]
-            },
-            {
-                "type": "select",
-                "var": "--mz-indent",
-                "label": "首行缩进",
-                "default": "0",
-                "choices": [
-                    [
-                        "0",
-                        "不缩进"
-                    ],
-                    [
-                        "2em",
-                        "两个字"
-                    ]
-                ]
-            },
-            {
-                "type": "select",
-                "var": "--mz-initial-size",
-                "label": "首字抬升",
-                "default": "2",
-                "choices": [
-                    [
-                        "2",
-                        "两行高"
-                    ],
-                    [
-                        "0",
-                        "关闭"
-                    ]
-                ]
-            },
-            {
-                "type": "head",
-                "label": "文字"
-            },
-            {
-                "type": "text",
-                "var": "--mz-opening-label",
-                "label": "开篇小标题",
-                "default": "Opening"
-            },
-            {
-                "type": "text",
-                "var": "--mz-end-mark",
-                "label": "文末符",
-                "default": "■"
-            }
-        ],
-        "themes": [
-            {
-                "name": "纸上访谈",
-                "file": "纸上访谈.json",
-                "label": "纸上访谈"
             }
         ]
     }

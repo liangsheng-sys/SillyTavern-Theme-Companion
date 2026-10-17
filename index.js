@@ -3,7 +3,7 @@
  * 作者：mangosagocreamwithpomelo（Discord）
  * 设计与实现：Claude Opus 5.5（Anthropic）
  *
- * 1. 附带的主题：themes/ 里的主题按「系列」登记在 themes.json（一个系列 = 主题本体 + 几个变体，如银盐的五种调色）。
+ * 1. 附带的主题：themes/ 里的主题按「系列」登记在 themes.json（一个系列 = 主题本体 + 几个变体，如银盐显影的五种调色）。
  *    - 还没装过的：首次加载时直接存进酒馆（不弹窗），刷新后出现在主题列表
  *    - 装过旧版的：默认只提醒，不覆盖；打开「自动更新主题」才会覆盖
  * 2. 主题设置：每个系列在 themes.json 里声明自己的选项（换色、开关、文字……），
@@ -105,7 +105,7 @@ function paint(day, paper, animate = true) {
         clearTimeout(paint.timer);
         paint.timer = setTimeout(() => root.classList.remove('dn-switching'), 700);
         // 用浏览器的视图过渡切换：默认是淡入淡出，主题可以用
-        // :root[data-dn-to='day'|'night']::view-transition-new(root) 自己定动画（如「银盐」的开关灯）
+        // :root[data-dn-to='day'|'night']::view-transition-new(root) 自己定动画（如「银盐显影」的开关灯）
         if (document.startViewTransition && document.visibilityState === 'visible') {
             root.dataset.dnTo = day ? 'day' : 'night';
             const vt = document.startViewTransition(swap);
@@ -697,7 +697,7 @@ const PANEL = `
             <div id="dn_options"></div>
 
             <div class="dn-head">昼夜开关</div>
-            <div class="dn-unsupported">当前主题不支持昼夜切换。换成「纸上访谈」「银盐」等支持的主题后，这里的设置才会生效。</div>
+            <div class="dn-unsupported">当前主题不支持昼夜切换。换成「纸上访谈」「银盐显影」等支持的主题后，这里的设置才会生效。</div>
             <div class="dn-row">
                 <span class="dn-label">切换方式</span>
                 <select id="dn_mode" class="text_pole">
