@@ -173,12 +173,43 @@
     },
     {
         "family": "银盐显影",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "variantLabel": "调色",
         "options": [
             {
                 "type": "head",
                 "label": "外观"
+            },
+            {
+                "key": "tone",
+                "type": "select",
+                "label": "调色",
+                "choices": [
+                    {
+                        "value": "main",
+                        "label": "硒调色（默认）"
+                    },
+                    {
+                        "value": "无调色",
+                        "label": "无调色",
+                        "css": "html:root:root {\n    --yy-tone: '无调色';\n    --yy-z0: #0A0907;\n    --yy-z1: #1C1B19;\n    --yy-z2: #302F2C;\n    --yy-z3: #464542;\n    --yy-z4: #5D5B58;\n    --yy-z5: #747370;\n    --yy-z6: #8D8B88;\n    --yy-z7: #A6A5A1;\n    --yy-z8: #C0BFBB;\n    --yy-z9: #DBD9D6;\n    --yy-z10: #F7F5F1;\n}\nhtml.dn-night:root:root { --SmartThemeBodyColor: rgba(192, 191, 187, 1) !important; --SmartThemeEmColor: rgba(141, 139, 136, 1) !important; --SmartThemeQuoteColor: rgba(219, 217, 214, 1) !important; --SmartThemeBlurTintColor: rgba(28, 27, 25, 1) !important; --SmartThemeChatTintColor: rgba(28, 27, 25, 1) !important; --SmartThemeBorderColor: rgba(70, 69, 66, 1) !important; --SmartThemeShadowColor: rgba(10, 9, 7, 0.6) !important; }"
+                    },
+                    {
+                        "value": "棕褐调色",
+                        "label": "棕褐调色",
+                        "css": "html:root:root {\n    --yy-tone: '棕褐调色';\n    --yy-z0: #0E0A07;\n    --yy-z1: #241B14;\n    --yy-z2: #3C2E22;\n    --yy-z3: #554232;\n    --yy-z4: #6D5845;\n    --yy-z5: #866F5B;\n    --yy-z6: #9E8773;\n    --yy-z7: #B6A08E;\n    --yy-z8: #CDBBAC;\n    --yy-z9: #E2D6CD;\n    --yy-z10: #F9F2ED;\n}\nhtml.dn-night:root:root { --SmartThemeBodyColor: rgba(205, 187, 172, 1) !important; --SmartThemeEmColor: rgba(158, 135, 115, 1) !important; --SmartThemeQuoteColor: rgba(226, 214, 205, 1) !important; --SmartThemeBlurTintColor: rgba(36, 27, 20, 1) !important; --SmartThemeChatTintColor: rgba(36, 27, 20, 1) !important; --SmartThemeBorderColor: rgba(85, 66, 50, 1) !important; --SmartThemeShadowColor: rgba(14, 10, 7, 0.6) !important; }"
+                    },
+                    {
+                        "value": "铂钯印相",
+                        "label": "铂钯印相",
+                        "css": "html:root:root {\n    --yy-tone: '铂钯印相';\n    --yy-z0: #1A1815;\n    --yy-z1: #2E2923;\n    --yy-z2: #433B32;\n    --yy-z3: #594F42;\n    --yy-z4: #6F6355;\n    --yy-z5: #867969;\n    --yy-z6: #9C8F80;\n    --yy-z7: #B2A698;\n    --yy-z8: #C8BEB2;\n    --yy-z9: #DDD6CF;\n    --yy-z10: #F3EFEB;\n}\nhtml.dn-night:root:root { --SmartThemeBodyColor: rgba(200, 190, 178, 1) !important; --SmartThemeEmColor: rgba(156, 143, 128, 1) !important; --SmartThemeQuoteColor: rgba(221, 214, 207, 1) !important; --SmartThemeBlurTintColor: rgba(46, 41, 35, 1) !important; --SmartThemeChatTintColor: rgba(46, 41, 35, 1) !important; --SmartThemeBorderColor: rgba(89, 79, 66, 1) !important; --SmartThemeShadowColor: rgba(26, 24, 21, 0.6) !important; }"
+                    },
+                    {
+                        "value": "氰版蓝晒",
+                        "label": "氰版蓝晒",
+                        "css": "html:root:root {\n    --yy-tone: '氰版蓝晒';\n    --yy-z0: #070C11;\n    --yy-z1: #131E2A;\n    --yy-z2: #203346;\n    --yy-z3: #2F4862;\n    --yy-z4: #425F7D;\n    --yy-z5: #587797;\n    --yy-z6: #708FAF;\n    --yy-z7: #8CA8C6;\n    --yy-z8: #AAC1D9;\n    --yy-z9: #CCDAEA;\n    --yy-z10: #ECF4FD;\n}\nhtml.dn-night:root:root { --SmartThemeBodyColor: rgba(170, 193, 217, 1) !important; --SmartThemeEmColor: rgba(112, 143, 175, 1) !important; --SmartThemeQuoteColor: rgba(204, 218, 234, 1) !important; --SmartThemeBlurTintColor: rgba(19, 30, 42, 1) !important; --SmartThemeChatTintColor: rgba(19, 30, 42, 1) !important; --SmartThemeBorderColor: rgba(47, 72, 98, 1) !important; --SmartThemeShadowColor: rgba(7, 12, 17, 0.6) !important; }"
+                    }
+                ]
             },
             {
                 "key": "mark",
@@ -478,26 +509,36 @@
                 "name": "银盐显影",
                 "file": "银盐显影.json",
                 "label": "硒调色（默认）"
-            },
+            }
+        ],
+        "retired": [
             {
                 "name": "银盐显影 · 无调色",
-                "file": "银盐显影 · 无调色.json",
-                "label": "无调色"
+                "option": {
+                    "key": "tone",
+                    "value": "无调色"
+                }
             },
             {
                 "name": "银盐显影 · 棕褐调色",
-                "file": "银盐显影 · 棕褐调色.json",
-                "label": "棕褐调色"
+                "option": {
+                    "key": "tone",
+                    "value": "棕褐调色"
+                }
             },
             {
                 "name": "银盐显影 · 铂钯印相",
-                "file": "银盐显影 · 铂钯印相.json",
-                "label": "铂钯印相"
+                "option": {
+                    "key": "tone",
+                    "value": "铂钯印相"
+                }
             },
             {
                 "name": "银盐显影 · 氰版蓝晒",
-                "file": "银盐显影 · 氰版蓝晒.json",
-                "label": "氰版蓝晒"
+                "option": {
+                    "key": "tone",
+                    "value": "氰版蓝晒"
+                }
             }
         ]
     }

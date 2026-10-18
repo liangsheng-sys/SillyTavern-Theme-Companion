@@ -3,7 +3,7 @@
  * 作者：mangosagocreamwithpomelo（Discord）
  * 设计与实现：Claude Opus 5.5（Anthropic）
  *
- * 1. 附带的主题：themes/ 里的主题按「系列」登记在 themes.json（一个系列 = 主题本体 + 几个变体，如银盐显影的五种调色）。
+ * 1. 附带的主题：themes/ 里的主题按「系列」登记在 themes.json（一个系列 = 主题本体 + 可选的几个变体）；变体也可以做成「主题设置」里的一个选项（如银盐显影的五种调色），只装一套。
  *    - 还没装过的：首次加载时直接存进酒馆（不弹窗），刷新后出现在主题列表
  *    - 装过旧版的：默认只提醒，不覆盖；打开「自动更新主题」才会覆盖
  * 2. 主题设置：每个系列在 themes.json 里声明自己的选项（换色、开关、文字……），
@@ -283,14 +283,43 @@ async function checkThemes() {
             toastr.info(`在「扩展 → 主题伴侣」里可以一键更新到 ${fam.version}`, `「${fam.family}」有新版本`, { timeOut: 10000 });
         }
     }
+    const merged = await retireThemes();
     save();
     const uniq = a => [...new Set(a)].map(x => `「${x}」`).join('');
+    if (merged.length && !added.length && !updated.length) {
+        refreshToast(`${uniq(merged)}的几种${families.find(f => f.family === merged[0])?.variantLabel ?? '变体'}已合并成一套，在「主题设置」里切换`);
+    }
     if (added.length || updated.length) {
         refreshToast([added.length && `已安装${uniq(added)}`, updated.length && `已更新${uniq(updated)}`].filter(Boolean).join('，'));
     }
     syncThemes();
     renderAllOptions();
     applyOptions();
+}
+
+// 变体改成选项以后（themes.json 里的 retired）：以前由本扩展装上的那几份删掉；
+// 正在用其中一份的，换回本体并把选项设成对应的值。用户自己导入的（版本记成 manual）不动
+async function retireThemes() {
+    const s = settings();
+    const have = installedNames();
+    const merged = [];
+    for (const fam of families) {
+        for (const { name, option } of fam.retired || []) {
+            if (!have.has(name) || !isVersion(s.themes[name])) continue;
+            if (currentTheme() === name) {
+                if (option) famOpts(fam)[option.key] = option.value;
+                useTheme(fam.themes[0].name);
+            }
+            try {
+                const r = await fetch('/api/themes/delete', { method: 'POST', headers: ctx().getRequestHeaders(), body: JSON.stringify({ name }) });
+                if (!r.ok) continue;
+            } catch { continue; }
+            delete s.themes[name];
+            $('#themes option').filter((_, o) => o.value === name).remove();
+            merged.push(fam.family);
+        }
+    }
+    return merged;
 }
 
 function syncThemes() {
