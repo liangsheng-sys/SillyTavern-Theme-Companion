@@ -330,6 +330,18 @@
             },
             {
                 "type": "toggle",
+                "var": "--yy-objects",
+                "label": "物件",
+                "note": "夜里回复挂在晾片绳上，白天用长尾夹夹在墙上，你的话是贴胶带的便签；关掉后字直接写在墙上"
+            },
+            {
+                "type": "toggle",
+                "var": "--yy-filmstrip",
+                "label": "底片条顶栏",
+                "note": "关掉后是普通顶栏，下方一道红笔短线"
+            },
+            {
+                "type": "toggle",
                 "var": "--yy-grain",
                 "label": "颗粒",
                 "on": "",
