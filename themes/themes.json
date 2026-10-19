@@ -555,7 +555,7 @@
         ]
     },
     {
-        "family": "导视",
+        "family": "粗野指北",
         "version": "1.0.0",
         "variantLabel": "变体",
         "options": [
@@ -927,9 +927,15 @@
         ],
         "themes": [
             {
+                "name": "粗野指北",
+                "file": "粗野指北.json",
+                "label": "粗野指北"
+            }
+        ],
+        "retired": [
+            {
                 "name": "导视",
-                "file": "导视.json",
-                "label": "导视"
+                "formerFamily": "导视"
             }
         ]
     }

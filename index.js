@@ -283,13 +283,13 @@ async function checkThemes() {
             toastr.info(`在「扩展 → 主题伴侣」里可以一键更新到 ${fam.version}`, `「${fam.family}」有新版本`, { timeOut: 10000 });
         }
     }
-    const merged = await retireThemes();
+    const { merged, renamed } = await retireThemes();
     save();
     const uniq = a => [...new Set(a)].map(x => `「${x}」`).join('');
-    if (merged.length && !added.length && !updated.length) {
+    if (renamed.length) refreshToast(renamed.join('，'));
+    else if (merged.length && !added.length && !updated.length) {
         refreshToast(`${uniq(merged)}的几种${families.find(f => f.family === merged[0])?.variantLabel ?? '变体'}已合并成一套，在「主题设置」里切换`);
-    }
-    if (added.length || updated.length) {
+    } else if (added.length || updated.length) {
         refreshToast([added.length && `已安装${uniq(added)}`, updated.length && `已更新${uniq(updated)}`].filter(Boolean).join('，'));
     }
     syncThemes();
@@ -299,12 +299,14 @@ async function checkThemes() {
 
 // 变体改成选项以后（themes.json 里的 retired）：以前由本扩展装上的那几份删掉；
 // 正在用其中一份的，换回本体并把选项设成对应的值。用户自己导入的（版本记成 manual）不动
+// 主题改名（retired 里带 formerFamily）：同样删掉旧名字那份，主题设置搬到新名字下
 async function retireThemes() {
     const s = settings();
     const have = installedNames();
-    const merged = [];
+    const merged = [], renamed = [];
     for (const fam of families) {
-        for (const { name, option } of fam.retired || []) {
+        for (const { name, option, formerFamily } of fam.retired || []) {
+            if (formerFamily && s.opts?.[formerFamily] && !s.opts[fam.family]) s.opts[fam.family] = s.opts[formerFamily];
             if (!have.has(name) || !isVersion(s.themes[name])) continue;
             if (currentTheme() === name) {
                 if (option) famOpts(fam)[option.key] = option.value;
@@ -316,10 +318,11 @@ async function retireThemes() {
             } catch { continue; }
             delete s.themes[name];
             $('#themes option').filter((_, o) => o.value === name).remove();
-            merged.push(fam.family);
+            if (formerFamily) renamed.push(`「${formerFamily}」改名为「${fam.family}」`);
+            else merged.push(fam.family);
         }
     }
-    return merged;
+    return { merged, renamed };
 }
 
 function syncThemes() {
