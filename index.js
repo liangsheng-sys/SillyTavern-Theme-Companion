@@ -369,6 +369,7 @@ async function updateAll() {
 // 主题设置：系列在 themes.json 里声明 options，这里画界面、把选择写成 CSS
 //   { type: 'head', label }                         小标题
 //   { type: 'select', var, label, default, choices: [[值, 名称]…] }   choices 也可以是 { value, label, css }
+//     choice 的 css 里写 {EXT} 会换成扩展地址，如 url("{EXT}assets/daoshi/hammer.jpg")
 //     加 onBackgroundPick: 值 —— 用户在酒馆背景面板里挑图时自动切到这个值
 //   { type: 'toggle', var, label, default: true, on: '1', off: '0' }
 //   { type: 'text', var, label, default }           写成 CSS 字符串
@@ -402,7 +403,8 @@ function optionCss(fam) {
         const v = saved[k];
         if (o.type === 'select') {
             const c = choicesOf(o).find(c => c.value === v);
-            if (c?.css) extra.push(c.css);
+            // {EXT} = 扩展自己的地址（以 / 结尾），选项里可以引用扩展附带的图片
+            if (c?.css) extra.push(c.css.replaceAll('{EXT}', HERE.href));
             else if (c && o.var && v !== optionValue(o, {})) decl.push(`${o.var}: ${v};`);
         } else if (o.type === 'toggle') {
             if (!o.var || v === (o.default ?? true)) continue;

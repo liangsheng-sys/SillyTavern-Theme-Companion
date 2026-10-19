@@ -556,7 +556,7 @@
     },
     {
         "family": "导视",
-        "version": "0.2.1",
+        "version": "0.2.2",
         "variantLabel": "变体",
         "options": [
             {
@@ -584,18 +584,39 @@
             {
                 "key": "concrete",
                 "type": "select",
-                "label": "混凝土",
+                "label": "墙面",
                 "choices": [
                     {
                         "value": "hammer",
-                        "label": "锤凿面"
+                        "label": "锤凿面（画的）"
                     },
                     {
                         "value": "fine",
-                        "label": "细砂面（更安静）",
+                        "label": "细砂面（画的，更安静）",
                         "css": "html:root:root { --ds-concrete: var(--ds-concrete-fine); --ds-concrete-size: 300px; }"
+                    },
+                    {
+                        "value": "photo-hammer",
+                        "label": "照片 · 粗骨料特写",
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.62); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/hammer.jpg\") center / cover; }"
+                    },
+                    {
+                        "value": "photo-warm",
+                        "label": "照片 · 暖灰锤凿墙",
+                        "css": "html:root:root { --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/warm.jpg\") center / cover; }"
+                    },
+                    {
+                        "value": "photo-pebble",
+                        "label": "照片 · 灰色细卵石",
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.45); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/pebble.jpg\") center / cover; }"
+                    },
+                    {
+                        "value": "photo-bright",
+                        "label": "照片 · 日照骨料",
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.72); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/bright.jpg\") center / cover; }"
                     }
-                ]
+                ],
+                "note": "「照片」几种是巴比肯实拍的混凝土纹理"
             },
             {
                 "type": "select",
