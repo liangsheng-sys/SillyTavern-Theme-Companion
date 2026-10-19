@@ -556,7 +556,7 @@
     },
     {
         "family": "导视",
-        "version": "0.2.2",
+        "version": "0.2.4",
         "variantLabel": "变体",
         "options": [
             {
@@ -598,25 +598,25 @@
                     {
                         "value": "photo-hammer",
                         "label": "照片 · 粗骨料特写",
-                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.62); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/hammer.jpg\") center / cover; }"
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.62); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/hammer.jpg\") 0 0 / 700px repeat; }"
                     },
                     {
                         "value": "photo-warm",
                         "label": "照片 · 暖灰锤凿墙",
-                        "css": "html:root:root { --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/warm.jpg\") center / cover; }"
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.55); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/warm.jpg\") 0 0 / 480px repeat; }"
                     },
                     {
                         "value": "photo-pebble",
                         "label": "照片 · 灰色细卵石",
-                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.45); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/pebble.jpg\") center / cover; }"
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.45); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/pebble.jpg\") 0 0 / 520px repeat; }"
                     },
                     {
                         "value": "photo-bright",
                         "label": "照片 · 日照骨料",
-                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.72); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/bright.jpg\") center / cover; }"
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.72); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/bright.jpg\") 0 0 / 420px repeat; }"
                     }
                 ],
-                "note": "「照片」几种是巴比肯实拍的混凝土纹理"
+                "note": "「照片」几种是巴比肯实拍的混凝土，做成了无缝贴图"
             },
             {
                 "type": "select",
@@ -702,23 +702,34 @@
                 ]
             },
             {
-                "key": "boards",
+                "key": "wiboard",
                 "type": "select",
-                "label": "条目板",
+                "label": "世界书条目板",
                 "choices": [
                     {
-                        "value": "mixed",
-                        "label": "世界书橙板、预设黑板"
-                    },
-                    {
                         "value": "orange",
-                        "label": "都用橙板",
-                        "css": "html:root:root { --ds-pm-bg: var(--ds-orange); --ds-pm-fg: var(--ds-ink); --ds-pm-num: var(--ds-ink); --ds-pm-off: var(--ds-ink); --ds-pm-line: var(--ds-ink); --ds-pm-dim: var(--ds-ink); }"
+                        "label": "橙板"
                     },
                     {
                         "value": "black",
-                        "label": "都用黑板",
+                        "label": "黑板",
                         "css": "html:root:root { --ds-wi-bg: var(--ds-ink); --ds-wi-fg: var(--ds-text); --ds-wi-num: var(--ds-orange); --ds-wi-hi: #fff; }"
+                    }
+                ]
+            },
+            {
+                "key": "pmboard",
+                "type": "select",
+                "label": "预设条目板",
+                "choices": [
+                    {
+                        "value": "black",
+                        "label": "黑板"
+                    },
+                    {
+                        "value": "orange",
+                        "label": "橙板",
+                        "css": "html:root:root { --ds-pm-bg: var(--ds-orange); --ds-pm-fg: var(--ds-ink); --ds-pm-num: var(--ds-ink); --ds-pm-off: var(--ds-ink); --ds-pm-line: var(--ds-ink); --ds-pm-dim: var(--ds-ink); }"
                     }
                 ]
             },
