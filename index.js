@@ -369,6 +369,7 @@ async function updateAll() {
 // 主题设置：系列在 themes.json 里声明 options，这里画界面、把选择写成 CSS
 //   { type: 'head', label }                         小标题
 //   { type: 'select', var, label, default, choices: [[值, 名称]…] }   choices 也可以是 { value, label, css }
+//     加 onBackgroundPick: 值 —— 用户在酒馆背景面板里挑图时自动切到这个值
 //   { type: 'toggle', var, label, default: true, on: '1', off: '0' }
 //   { type: 'text', var, label, default }           写成 CSS 字符串
 //   { type: 'number', var, label, default, min, max, step, unit }
@@ -445,6 +446,19 @@ function setOption(fam, o, v) {
     else saved[optKey(o)] = v;
     save();
     applyOptions();
+}
+
+// 在酒馆「背景」面板里挑了图：带 onBackgroundPick 的选项自动切过去（如导视的混凝土墙 → 酒馆背景图）
+function followBackgroundPick() {
+    const fam = currentFamily();
+    if (!fam) return;
+    for (const o of fam.options || []) {
+        if (o.onBackgroundPick === undefined) continue;
+        if (optionValue(o, famOpts(fam)) === o.onBackgroundPick) continue;
+        setOption(fam, o, o.onBackgroundPick);
+        renderAllOptions();
+        toastr.info(`已把「${o.label}」切换为背景图。想换回来，在主题设置里改。`, '主题伴侣');
+    }
 }
 
 // ---------- 时间格式 ----------
@@ -858,6 +872,13 @@ jQuery(() => {
     if (eventTypes?.SETTINGS_UPDATED) eventSource.on(eventTypes.SETTINGS_UPDATED, syncUi);
     if (eventTypes?.CHAT_CHANGED) eventSource.on(eventTypes.CHAT_CHANGED, () => setTimeout(formatDates, 0));
     $(document).on('change', '#themes', () => setTimeout(() => { syncUi(); syncThemes(); renderAllOptions(); applyOptions(); }, 300));
+    // 用原生监听：酒馆初始化背景面板时会 $(document).off('click', '.bg_example')，jQuery 的委托会被一起清掉
+    document.addEventListener('click', e => {
+        if (!e.target.closest?.('.bg_example')) return;
+        if (e.target.closest('.jg-button, .mobile-only-menu-toggle, .bg_example_cross, .bg_example_lock, .bg_example_unlock, .bg_example_edit, .bg_example_copy')) return;
+        followBackgroundPick();
+    });
+    if (eventTypes?.FORCE_SET_BACKGROUND) eventSource.on(eventTypes.FORCE_SET_BACKGROUND, followBackgroundPick);
     // 等酒馆把主题列表填好再检查附带的主题（APP_READY 已经发生过的话会立刻触发）
     eventSource.on(eventTypes.APP_READY, () => {
         checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e));

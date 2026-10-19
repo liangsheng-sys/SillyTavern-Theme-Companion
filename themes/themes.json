@@ -556,7 +556,7 @@
     },
     {
         "family": "导视",
-        "version": "0.2.0",
+        "version": "0.2.1",
         "variantLabel": "变体",
         "options": [
             {
@@ -568,7 +568,7 @@
                 "var": "--ds-bg",
                 "label": "背景",
                 "default": "concrete",
-                "note": "选「酒馆背景图」后，到顶栏「背景」面板里挑图",
+                "note": "在顶栏「背景」面板里点一张图，会自动切到「酒馆背景图」",
                 "choices": [
                     [
                         "concrete",
@@ -578,7 +578,8 @@
                         "image",
                         "酒馆背景图"
                     ]
-                ]
+                ],
+                "onBackgroundPick": "image"
             },
             {
                 "key": "concrete",
