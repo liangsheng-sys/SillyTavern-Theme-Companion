@@ -1,7 +1,7 @@
 [
     {
         "family": "纸上访谈",
-        "version": "1.0.2",
+        "version": "1.0.3",
         "variantLabel": "变体",
         "options": [
             {
@@ -173,7 +173,7 @@
     },
     {
         "family": "银盐显影",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "variantLabel": "调色",
         "options": [
             {
@@ -556,7 +556,7 @@
     },
     {
         "family": "粗野指北",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "variantLabel": "变体",
         "options": [
             {
