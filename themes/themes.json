@@ -553,5 +553,244 @@
                 }
             }
         ]
+    },
+    {
+        "family": "导视",
+        "version": "0.2.0",
+        "variantLabel": "变体",
+        "options": [
+            {
+                "type": "head",
+                "label": "墙和聊天栏"
+            },
+            {
+                "type": "select",
+                "var": "--ds-bg",
+                "label": "背景",
+                "default": "concrete",
+                "note": "选「酒馆背景图」后，到顶栏「背景」面板里挑图",
+                "choices": [
+                    [
+                        "concrete",
+                        "混凝土墙"
+                    ],
+                    [
+                        "image",
+                        "酒馆背景图"
+                    ]
+                ]
+            },
+            {
+                "key": "concrete",
+                "type": "select",
+                "label": "混凝土",
+                "choices": [
+                    {
+                        "value": "hammer",
+                        "label": "锤凿面"
+                    },
+                    {
+                        "value": "fine",
+                        "label": "细砂面（更安静）",
+                        "css": "html:root:root { --ds-concrete: var(--ds-concrete-fine); --ds-concrete-size: 300px; }"
+                    }
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--ds-chat",
+                "label": "聊天栏",
+                "default": "column",
+                "choices": [
+                    [
+                        "column",
+                        "炭黑指示柱"
+                    ],
+                    [
+                        "plates",
+                        "一条一块牌，中间露墙"
+                    ]
+                ]
+            },
+            {
+                "type": "head",
+                "label": "楼层号"
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-floor",
+                "label": "墙上的巨型楼层号",
+                "note": "手机上墙太窄，本来就不显示"
+            },
+            {
+                "type": "select",
+                "var": "--ds-floor-fit",
+                "label": "消息比号码矮时",
+                "default": "crop",
+                "choices": [
+                    [
+                        "crop",
+                        "裁切（露上半截）"
+                    ],
+                    [
+                        "stretch",
+                        "撑高消息"
+                    ],
+                    [
+                        "scale",
+                        "号码跟着消息缩放"
+                    ]
+                ]
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-floor-stick",
+                "label": "长消息滚动时号码停在顶上",
+                "note": "「跟着消息缩放」时不起作用"
+            },
+            {
+                "type": "number",
+                "var": "--ds-floor-size",
+                "label": "号码字号",
+                "default": 112,
+                "min": 60,
+                "max": 160,
+                "step": 4,
+                "unit": "px"
+            },
+            {
+                "type": "head",
+                "label": "面板"
+            },
+            {
+                "type": "select",
+                "var": "--ds-topbar",
+                "label": "顶栏",
+                "default": "tiles",
+                "note": "灯带只在电脑上，手机自动用图标砖",
+                "choices": [
+                    [
+                        "tiles",
+                        "象形图标砖"
+                    ],
+                    [
+                        "band",
+                        "橙色灯带写字"
+                    ]
+                ]
+            },
+            {
+                "key": "boards",
+                "type": "select",
+                "label": "条目板",
+                "choices": [
+                    {
+                        "value": "mixed",
+                        "label": "世界书橙板、预设黑板"
+                    },
+                    {
+                        "value": "orange",
+                        "label": "都用橙板",
+                        "css": "html:root:root { --ds-pm-bg: var(--ds-orange); --ds-pm-fg: var(--ds-ink); --ds-pm-num: var(--ds-ink); --ds-pm-off: var(--ds-ink); --ds-pm-line: var(--ds-ink); --ds-pm-dim: var(--ds-ink); }"
+                    },
+                    {
+                        "value": "black",
+                        "label": "都用黑板",
+                        "css": "html:root:root { --ds-wi-bg: var(--ds-ink); --ds-wi-fg: var(--ds-text); --ds-wi-num: var(--ds-orange); --ds-wi-hi: #fff; }"
+                    }
+                ]
+            },
+            {
+                "key": "glass",
+                "type": "select",
+                "label": "抽屉玻璃",
+                "choices": [
+                    {
+                        "value": "frost",
+                        "label": "磨砂"
+                    },
+                    {
+                        "value": "clear",
+                        "label": "透明",
+                        "css": "html:root:root { --ds-glass-blur: 0px; --ds-glass-tint: 60%; }"
+                    }
+                ]
+            },
+            {
+                "type": "head",
+                "label": "物件"
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-ceiling",
+                "label": "天花灯格",
+                "on": "block",
+                "off": "none",
+                "note": "屏幕顶上一排 waffle slab 混凝土灯格"
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-brick",
+                "label": "砖地",
+                "on": "18px",
+                "off": "0px",
+                "note": "电脑上屏幕最底下一条大厅的砖地"
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-arch",
+                "label": "拱窗头像",
+                "note": "关掉是方形"
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-ring",
+                "label": "生成中的环形灯",
+                "on": "104px",
+                "off": "0px"
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-mes-buttons-idle",
+                "label": "消息按钮一直显示",
+                "default": false,
+                "note": "关掉时鼠标移上去才出现（仅电脑）"
+            },
+            {
+                "type": "head",
+                "label": "文字"
+            },
+            {
+                "type": "text",
+                "var": "--ds-placeholder",
+                "label": "输入框提示",
+                "default": "跟着橙色走……"
+            },
+            {
+                "type": "text",
+                "var": "--ds-send-label",
+                "label": "发送键上的字",
+                "default": "发送"
+            },
+            {
+                "type": "text",
+                "var": "--ds-welcome-small",
+                "label": "欢迎墙小字",
+                "default": "欢迎回来 · welcome to the"
+            },
+            {
+                "type": "text",
+                "var": "--ds-welcome-big",
+                "label": "欢迎墙大字",
+                "default": "tavern"
+            }
+        ],
+        "themes": [
+            {
+                "name": "导视",
+                "file": "导视.json",
+                "label": "导视"
+            }
+        ]
     }
 ]
