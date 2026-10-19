@@ -556,7 +556,7 @@
     },
     {
         "family": "导视",
-        "version": "0.2.4",
+        "version": "1.0.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -611,12 +611,32 @@
                         "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.45); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/pebble.jpg\") 0 0 / 520px repeat; }"
                     },
                     {
-                        "value": "photo-bright",
+                        "value": "photo-vents",
                         "label": "照片 · 日照骨料",
-                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.72); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/bright.jpg\") 0 0 / 420px repeat; }"
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.72); --ds-day-photo-lift: #1C1B19; --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/vents.jpg\") 0 0 / 400px repeat; }"
+                    },
+                    {
+                        "value": "photo-phone",
+                        "label": "照片 · 暖灰粗骨料",
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.5); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/phone.jpg\") 0 0 / 760px repeat; }"
+                    },
+                    {
+                        "value": "photo-hammer-big",
+                        "label": "照片 · 粗骨料特写（放大）",
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.62); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/hammer-big.jpg\") center / cover no-repeat; }"
+                    },
+                    {
+                        "value": "photo-warm-big",
+                        "label": "照片 · 暖灰锤凿墙（放大）",
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.55); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/warm-big.jpg\") center / cover no-repeat; }"
+                    },
+                    {
+                        "value": "photo-phone-big",
+                        "label": "照片 · 暖灰粗骨料（放大）",
+                        "css": "html:root:root { --ds-photo-dim: rgba(22, 21, 20, 0.5); --ds-wall-bg: linear-gradient(var(--ds-photo-dim), var(--ds-photo-dim)), var(--ds-wall) url(\"{EXT}assets/daoshi/phone-big.jpg\") center / cover no-repeat; }"
                     }
                 ],
-                "note": "「照片」几种是巴比肯实拍的混凝土，做成了无缝贴图"
+                "note": "「照片」是巴比肯实拍的混凝土：不带括号的是原尺寸无缝贴图，「放大」是一整张铺满。照片作者：George Rex（CC BY-SA 2.0）、Sandiooses（CC BY-SA 3.0）、failing_angel、Simon Aughton、King....（均为 CC BY-NC-SA 2.0），详见扩展里的 assets/daoshi/CREDITS.md"
             },
             {
                 "type": "select",
@@ -631,6 +651,40 @@
                     [
                         "plates",
                         "一条一块牌，中间露墙"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--ds-prose",
+                "label": "正文排版",
+                "default": "plain",
+                "note": "索引牌：照电梯厅的楼层目录，每段一行挂在细线下，左边编号，有人说话的那段号码是橙色",
+                "choices": [
+                    [
+                        "plain",
+                        "普通段落"
+                    ],
+                    [
+                        "board",
+                        "楼层索引牌"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--ds-type",
+                "label": "正文字",
+                "default": "plain",
+                "note": "指示牌字：照巴比肯指示牌的字，细体、行距紧、段与段空开，对白加粗",
+                "choices": [
+                    [
+                        "plain",
+                        "常规"
+                    ],
+                    [
+                        "sign",
+                        "指示牌字"
                     ]
                 ]
             },
@@ -750,6 +804,35 @@
                 ]
             },
             {
+                "type": "toggle",
+                "var": "--ds-door-handle",
+                "label": "玻璃门把手",
+                "default": false,
+                "note": "两侧面板（预设 / 角色）靠里那条边装一根不锈钢长把手，会占掉一点宽度"
+            },
+            {
+                "key": "scrollbar",
+                "type": "select",
+                "label": "滚动条",
+                "note": "只在电脑上，手机上照旧隐藏",
+                "choices": [
+                    {
+                        "value": "rail",
+                        "label": "银色扶手（墙上一道细槽）"
+                    },
+                    {
+                        "value": "handle",
+                        "label": "迷你门把手",
+                        "css": "html:root:root { --ds-sb-size: 14px; --ds-sb-radius: 5px; --ds-sb-track: none; --ds-sb-track-h: none; --ds-sb-thumb: var(--ds-sb-handle); --ds-sb-thumb-h: var(--ds-sb-handle-h); --ds-sb-ff: #8f877c; }"
+                    },
+                    {
+                        "value": "plain",
+                        "label": "素色细条",
+                        "css": "html:root:root { --ds-sb-size: 10px; --ds-sb-radius: 5px; --ds-sb-track: none; --ds-sb-track-h: none; --ds-sb-thumb: color-mix(in srgb, var(--ds-text) 38%, transparent); --ds-sb-thumb-h: color-mix(in srgb, var(--ds-text) 38%, transparent); --ds-sb-ff: color-mix(in srgb, var(--ds-text) 38%, transparent); }"
+                    }
+                ]
+            },
+            {
                 "type": "head",
                 "label": "物件"
             },
@@ -790,6 +873,12 @@
                 "note": "关掉时鼠标移上去才出现（仅电脑）"
             },
             {
+                "type": "toggle",
+                "var": "--ds-splash",
+                "label": "启动页灯箱",
+                "note": "酒馆刚打开时显示放大的欢迎墙和电梯楼层灯；关掉是酒馆原样的转圈"
+            },
+            {
                 "type": "head",
                 "label": "文字"
             },
@@ -807,6 +896,12 @@
             },
             {
                 "type": "text",
+                "var": "--ds-stop-label",
+                "label": "停止键上的字",
+                "default": "停止"
+            },
+            {
+                "type": "text",
                 "var": "--ds-welcome-small",
                 "label": "欢迎墙小字",
                 "default": "欢迎回来 · welcome to the"
@@ -816,6 +911,18 @@
                 "var": "--ds-welcome-big",
                 "label": "欢迎墙大字",
                 "default": "tavern"
+            },
+            {
+                "type": "text",
+                "var": "--ds-ghost-label",
+                "label": "隐藏消息的小牌",
+                "default": "已隐藏 · 不发给 AI"
+            },
+            {
+                "type": "text",
+                "var": "--ds-splash-label",
+                "label": "启动页楼层灯上的字",
+                "default": "正在上楼 · going up"
             }
         ],
         "themes": [
