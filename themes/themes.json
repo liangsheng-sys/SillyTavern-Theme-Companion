@@ -990,7 +990,7 @@
                 "type": "select",
                 "var": "--kt-season",
                 "label": "季节",
-                "note": "飞石上的落叶、花瓣或雪，苔色也跟着变",
+                "note": "飞石上的苔、落叶、花瓣或雪，苔色也跟着变",
                 "default": "tsuyu",
                 "choices": [
                     [
@@ -1012,6 +1012,10 @@
                     [
                         "sakura",
                         "樱"
+                    ],
+                    [
+                        "none",
+                        "不点缀"
                     ]
                 ]
             },
@@ -1051,7 +1055,7 @@
                 "type": "select",
                 "var": "--kt-name",
                 "label": "角色名",
-                "default": "tag",
+                "default": "plank",
                 "choices": [
                     [
                         "tag",
@@ -1114,7 +1118,7 @@
                 "type": "select",
                 "var": "--kt-splash",
                 "label": "启动页",
-                "default": "sutra",
+                "default": "permit",
                 "choices": [
                     [
                         "sutra",
@@ -1126,7 +1130,7 @@
                     ],
                     [
                         "permit",
-                        "参拜证盖印"
+                        "参拝证盖印"
                     ],
                     [
                         "none",
@@ -1143,13 +1147,13 @@
             {
                 "type": "text",
                 "var": "--kt-permit-name",
-                "label": "参拜证上的名字",
+                "label": "参拝证上的名字",
                 "default": "客"
             },
             {
                 "type": "text",
                 "var": "--kt-permit-place",
-                "label": "参拜证上的地点",
+                "label": "参拝证上的地点",
                 "default": "汀苔寺 · 北苑"
             },
             {
