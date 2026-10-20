@@ -988,6 +988,35 @@
             },
             {
                 "type": "select",
+                "var": "--kt-season",
+                "label": "季节",
+                "note": "飞石上的落叶、花瓣或雪，苔色也跟着变",
+                "default": "tsuyu",
+                "choices": [
+                    [
+                        "tsuyu",
+                        "梅雨"
+                    ],
+                    [
+                        "momiji",
+                        "红叶"
+                    ],
+                    [
+                        "koyo",
+                        "黄叶"
+                    ],
+                    [
+                        "yuki",
+                        "雪"
+                    ],
+                    [
+                        "sakura",
+                        "樱"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
                 "var": "--kt-shade",
                 "label": "障子上的树影",
                 "note": "只在白天的和室里有",
