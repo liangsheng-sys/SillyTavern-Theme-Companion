@@ -1,7 +1,7 @@
 [
     {
         "family": "纸上访谈",
-        "version": "1.0.3",
+        "version": "1.0.4",
         "variantLabel": "变体",
         "options": [
             {
@@ -46,6 +46,40 @@
                         "倾斜"
                     ]
                 ]
+            },
+            {
+                "key": "quote",
+                "type": "select",
+                "label": "对白颜色",
+                "note": "引号里的话。「自选」用下面两个颜色",
+                "choices": [
+                    {
+                        "value": "bright",
+                        "label": "比正文亮一级"
+                    },
+                    {
+                        "value": "accent",
+                        "label": "强调色（夜橙 / 昼古金）",
+                        "css": "html:root:root { --mz-q: var(--mz-accent); }"
+                    },
+                    {
+                        "value": "custom",
+                        "label": "自选",
+                        "css": "html:root:root { --mz-q: var(--mz-q-night); } html.dn-day:root:root { --mz-q: var(--mz-q-day); }"
+                    }
+                ]
+            },
+            {
+                "type": "color",
+                "var": "--mz-q-night",
+                "label": "自选对白色 · 夜",
+                "default": "#E87046"
+            },
+            {
+                "type": "color",
+                "var": "--mz-q-day",
+                "label": "自选对白色 · 昼",
+                "default": "#7A5C2C"
             },
             {
                 "type": "select",
@@ -173,7 +207,7 @@
     },
     {
         "family": "银盐显影",
-        "version": "1.1.1",
+        "version": "1.1.2",
         "variantLabel": "调色",
         "options": [
             {
@@ -279,6 +313,40 @@
                         "衬线，倾斜"
                     ]
                 ]
+            },
+            {
+                "key": "quote",
+                "type": "select",
+                "label": "对白颜色",
+                "note": "引号里的话。「自选」用下面两个颜色",
+                "choices": [
+                    {
+                        "value": "bright",
+                        "label": "比正文亮一级"
+                    },
+                    {
+                        "value": "accent",
+                        "label": "记号色（红笔 / 琥珀）",
+                        "css": "html:root:root { --yy-q: var(--yy-mark); }"
+                    },
+                    {
+                        "value": "custom",
+                        "label": "自选",
+                        "css": "html:root:root { --yy-q: var(--yy-q-night); } html.dn-day:root:root { --yy-q: var(--yy-q-day); }"
+                    }
+                ]
+            },
+            {
+                "type": "color",
+                "var": "--yy-q-night",
+                "label": "自选对白色 · 夜",
+                "default": "#E6705F"
+            },
+            {
+                "type": "color",
+                "var": "--yy-q-day",
+                "label": "自选对白色 · 昼",
+                "default": "#B33830"
             },
             {
                 "type": "select",
