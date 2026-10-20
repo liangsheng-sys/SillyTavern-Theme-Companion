@@ -943,7 +943,226 @@
         "family": "苔庭",
         "version": "0.1.0",
         "variantLabel": "变体",
-        "options": [],
+        "options": [
+            {
+                "type": "head",
+                "label": "屋子"
+            },
+            {
+                "type": "select",
+                "var": "--kt-room",
+                "label": "屋子",
+                "default": "washitsu",
+                "choices": [
+                    [
+                        "washitsu",
+                        "和室（障子、榻榻米）"
+                    ],
+                    [
+                        "tanpoku",
+                        "潭北亭（土墙、丸窓）"
+                    ]
+                ]
+            },
+            {
+                "key": "woodtone",
+                "type": "select",
+                "label": "木色",
+                "note": "只改白天；夜里的木色在可改区 --kt-night-wood",
+                "choices": [
+                    {
+                        "value": "shiraki",
+                        "label": "白木（默认）"
+                    },
+                    {
+                        "value": "susu",
+                        "label": "煤竹",
+                        "css": "html:not(.dn-night):root:root { --kt-wood: #5A3B26; --kt-wood-d: #3E281A; --kt-wall: #C9A66C; --kt-ceil: #7A5A3E; }"
+                    },
+                    {
+                        "value": "bengara",
+                        "label": "弁柄",
+                        "css": "html:not(.dn-night):root:root { --kt-wood: #8A3F26; --kt-wood-d: #62291A; --kt-wall: #D9B07A; --kt-ceil: #9C5A3C; }"
+                    }
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--kt-shade",
+                "label": "障子上的树影",
+                "note": "只在白天的和室里有",
+                "default": "bamboo",
+                "choices": [
+                    [
+                        "bamboo",
+                        "竹影"
+                    ],
+                    [
+                        "maple",
+                        "枫影"
+                    ],
+                    [
+                        "none",
+                        "不要"
+                    ]
+                ]
+            },
+            {
+                "type": "toggle",
+                "var": "--kt-wind",
+                "label": "树影随风晃",
+                "on": "on",
+                "off": "off"
+            },
+            {
+                "type": "head",
+                "label": "消息"
+            },
+            {
+                "type": "select",
+                "var": "--kt-name",
+                "label": "角色名",
+                "default": "tag",
+                "choices": [
+                    [
+                        "tag",
+                        "竖排框签"
+                    ],
+                    [
+                        "plank",
+                        "原木签条 + 小印"
+                    ],
+                    [
+                        "plain",
+                        "横排"
+                    ]
+                ]
+            },
+            {
+                "type": "text",
+                "var": "--kt-seal",
+                "label": "签条上的印",
+                "default": "苔"
+            },
+            {
+                "type": "select",
+                "var": "--kt-between",
+                "label": "消息之间",
+                "default": "stones",
+                "choices": [
+                    [
+                        "stones",
+                        "飞石"
+                    ],
+                    [
+                        "rake",
+                        "耙纹"
+                    ],
+                    [
+                        "none",
+                        "什么都不放"
+                    ]
+                ]
+            },
+            {
+                "type": "text",
+                "var": "--kt-here",
+                "label": "最新一条的小牌",
+                "default": "現在地"
+            },
+            {
+                "type": "toggle",
+                "var": "--kt-mes-buttons-idle",
+                "label": "消息按钮一直显示",
+                "note": "关掉时鼠标移上去才出现（仅电脑）",
+                "default": false
+            },
+            {
+                "type": "head",
+                "label": "启动页"
+            },
+            {
+                "type": "select",
+                "var": "--kt-splash",
+                "label": "启动页",
+                "default": "sutra",
+                "choices": [
+                    [
+                        "sutra",
+                        "抄经"
+                    ],
+                    [
+                        "marumado",
+                        "丸窓渐亮"
+                    ],
+                    [
+                        "permit",
+                        "参拜证盖印"
+                    ],
+                    [
+                        "none",
+                        "酒馆原来的"
+                    ]
+                ]
+            },
+            {
+                "type": "text",
+                "var": "--kt-splash-caption",
+                "label": "启动页底下的小字",
+                "default": "苔庭"
+            },
+            {
+                "type": "text",
+                "var": "--kt-permit-name",
+                "label": "参拜证上的名字",
+                "default": "客"
+            },
+            {
+                "type": "text",
+                "var": "--kt-permit-place",
+                "label": "参拜证上的地点",
+                "default": "汀苔寺 · 北苑"
+            },
+            {
+                "type": "text",
+                "var": "--kt-gaku",
+                "label": "潭北亭的扁额",
+                "default": "潭北亭"
+            },
+            {
+                "type": "head",
+                "label": "正文"
+            },
+            {
+                "type": "number",
+                "var": "--kt-measure",
+                "label": "一行最多几个字",
+                "default": 36,
+                "min": 20,
+                "max": 80,
+                "step": 1
+            },
+            {
+                "type": "number",
+                "var": "--st-mes-line-height",
+                "label": "行高",
+                "default": 1.9,
+                "min": 1.2,
+                "max": 2.6,
+                "step": 0.05
+            },
+            {
+                "type": "number",
+                "var": "--kt-column-alpha",
+                "label": "正文底纸不透明度",
+                "note": "越小越能看到背后的借景",
+                "default": 93,
+                "min": 50,
+                "max": 100,
+                "step": 1,
+                "unit": "%"
+            }
+        ],
         "themes": [
             {
                 "name": "苔庭",
@@ -951,6 +1170,10 @@
                 "label": "苔庭"
             }
         ],
+        "today": {
+            "var": "--kt-permit-date",
+            "format": "reiwa"
+        },
         "draft": true,
         "sound": {
             "file": "assets/koke/shishiodoshi.wav",

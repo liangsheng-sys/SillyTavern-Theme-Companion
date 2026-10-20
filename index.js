@@ -400,6 +400,20 @@ function optionValue(o, saved) {
     return o.default;
 }
 
+// 今天的日期。reiwa：令和八年 十月二十日（汉字数字）；其它：2026年10月20日
+const KANJI = '〇一二三四五六七八九';
+function kanjiNum(n) {
+    if (n < 10) return KANJI[n];
+    const t = Math.floor(n / 10), o = n % 10;
+    return (t > 1 ? KANJI[t] : '') + '十' + (o ? KANJI[o] : '');
+}
+
+function todayText(format) {
+    const d = new Date();
+    if (format === 'reiwa') return `令和${kanjiNum(d.getFullYear() - 2018)}年 ${kanjiNum(d.getMonth() + 1)}月${kanjiNum(d.getDate())}日`;
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
 function optionCss(fam) {
     const saved = famOpts(fam);
     const decl = [], extra = [];
@@ -425,6 +439,8 @@ function optionCss(fam) {
             if (/^#[0-9a-f]{3,8}$/i.test(v)) decl.push(`${o.var}: ${v};`);
         }
     }
+    // today：把今天的日期写进主题指定的变量
+    if (fam.today?.var) decl.push(`${fam.today.var}: ${cssString(todayText(fam.today.format))};`);
     // html:root:root 比主题可改区的 html:root 多一级，手机端的 @media 里也压得住
     return (decl.length ? `html:root:root {\n    ${decl.join('\n    ')}\n}\n` : '') + extra.join('\n');
 }
