@@ -556,7 +556,7 @@
     },
     {
         "family": "粗野指北",
-        "version": "1.0.3",
+        "version": "1.0.4",
         "variantLabel": "变体",
         "options": [
             {
@@ -687,6 +687,38 @@
                         "指示牌字"
                     ]
                 ]
+            },
+            {
+                "type": "head",
+                "label": "手机版面"
+            },
+            {
+                "type": "toggle",
+                "var": "--ds-m-wall",
+                "label": "聊天栏两边露出墙缝",
+                "on": "12px",
+                "off": "0px",
+                "note": "关掉后聊天栏铺满屏幕宽度；头像和正文的位置不变"
+            },
+            {
+                "type": "number",
+                "var": "--ds-m-avatar-left",
+                "label": "头像离屏幕左边",
+                "default": 22,
+                "min": 4,
+                "max": 48,
+                "step": 2,
+                "unit": "px"
+            },
+            {
+                "type": "number",
+                "var": "--ds-m-text-right",
+                "label": "正文离屏幕右边",
+                "default": 22,
+                "min": 4,
+                "max": 48,
+                "step": 2,
+                "unit": "px"
             },
             {
                 "type": "head",
