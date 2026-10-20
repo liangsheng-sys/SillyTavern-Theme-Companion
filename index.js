@@ -14,6 +14,7 @@
  *    - 昼版纸张：选项由主题在 CSS 变量 --dn-papers 里提供
  *    - 魔杖菜单里有「切换昼 / 夜」「主题设置」；斜杠命令 /daynight day|night|auto|system|toggle
  * 4. 扩展自己的更新：面板里显示版本、检查更新、一键更新，可以打开自动更新（默认关）。
+ * 5. 声音：系列可以带一段「回复写完」的音效（如苔庭的惊鹿），默认开；可调音量、换成自己电脑上的文件（存在浏览器里）。
  */
 
 const KEY = 'daynight';
@@ -263,6 +264,7 @@ async function checkThemes() {
     const have = installedNames();
     const added = [], updated = [];
     for (const fam of families) {
+        if (fam.draft) continue;   // 施工中的系列不自动装
         let staleHere = false;
         for (const t of fam.themes) {
             const rec = s.themes[t.name];
@@ -331,6 +333,7 @@ function syncThemes() {
     box.innerHTML = '';
     let staleCount = 0;
     for (const fam of families) {
+        if (fam.draft) continue;   // 施工中的不列出来
         const st = familyState(fam);
         if (st.stale.length) staleCount++;
         const row = document.createElement('div');
@@ -359,7 +362,7 @@ function syncThemes() {
 }
 
 async function updateAll() {
-    const list = families.filter(f => familyState(f).stale.length);
+    const list = families.filter(f => !f.draft && familyState(f).stale.length);
     const { callGenericPopup, POPUP_TYPE } = ctx();
     const msg = `更新 ${list.map(f => `「${f.family}」`).join('')}？<br><small>会覆盖你在「UI 主题」里对这些主题做过的修改。</small>`;
     if (!await callGenericPopup(msg, POPUP_TYPE.CONFIRM)) return;
@@ -520,6 +523,133 @@ function watchDates() {
     }).observe(chat, { childList: true, subtree: true, characterData: true });
 }
 
+// ================================================================
+// 声音：回复写完（酒馆的 GENERATION_ENDED，停止生成也算）时播一下
+// 选项存在 opts[系列] 的 _sound（开关）、_volume（0–100）；自己的文件存在 IndexedDB
+// ================================================================
+const SOUND_DB = 'companion-sounds';
+let soundUrls = {};   // 系列名 → 自己文件的 blob URL
+
+function soundDb() {
+    return new Promise((ok, fail) => {
+        const r = indexedDB.open(SOUND_DB, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('files');
+        r.onsuccess = () => ok(r.result);
+        r.onerror = () => fail(r.error);
+    });
+}
+
+async function soundFile(fam, blob) {   // blob 省略 = 读；null = 删
+    const db = await soundDb();
+    return new Promise((ok, fail) => {
+        const tx = db.transaction('files', blob === undefined ? 'readonly' : 'readwrite');
+        const st = tx.objectStore('files');
+        const r = blob === undefined ? st.get(fam.family) : blob === null ? st.delete(fam.family) : st.put(blob, fam.family);
+        r.onsuccess = () => ok(r.result);
+        r.onerror = () => fail(r.error);
+    });
+}
+
+async function customSoundUrl(fam) {
+    if (fam.family in soundUrls) return soundUrls[fam.family];
+    let url = null;
+    try {
+        const blob = await soundFile(fam);
+        if (blob) url = URL.createObjectURL(blob);
+    } catch { /* 无痕模式等用不了 IndexedDB */ }
+    return (soundUrls[fam.family] = url);
+}
+
+function soundOn(fam) {
+    return famOpts(fam)._sound ?? fam.sound.default ?? true;
+}
+
+function soundVolume(fam) {
+    return famOpts(fam)._volume ?? fam.sound.volume ?? 70;
+}
+
+async function playSound(fam = currentFamily(), force = false) {
+    if (!fam?.sound || (!force && !soundOn(fam))) return;
+    const src = await customSoundUrl(fam) || new URL(fam.sound.file, HERE).href;
+    const a = new Audio(src);
+    a.volume = Math.max(0, Math.min(1, soundVolume(fam) / 100));
+    a.play().catch(() => { /* 浏览器要求先和页面交互过才能出声 */ });
+}
+
+function renderSound(box, fam) {
+    const snd = fam.sound;
+    const h = document.createElement('div');
+    h.className = 'dn-subhead';
+    h.textContent = '声音';
+    box.append(h);
+
+    const on = field(`写完时出声（${snd.label}）`, snd.note);
+    on.classList.add('dn-check');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = soundOn(fam);
+    cb.onchange = () => { famOpts(fam)._sound = cb.checked; save(); };
+    on.append(cb);
+    box.append(on);
+
+    const vol = field('音量');
+    const range = document.createElement('input');
+    range.type = 'range';
+    Object.assign(range, { min: 0, max: 100, step: 5, value: soundVolume(fam) });
+    range.onchange = () => { famOpts(fam)._volume = Number(range.value); save(); playSound(fam, true); };
+    vol.append(range);
+    box.append(vol);
+
+    const row = document.createElement('div');
+    row.className = 'dn-row dn-sound';
+    const test = document.createElement('div');
+    test.className = 'menu_button';
+    test.textContent = '试听';
+    test.onclick = () => playSound(fam, true);
+    const pick = document.createElement('div');
+    pick.className = 'menu_button';
+    pick.textContent = '换成自己的音效…';
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.hidden = true;
+    const state = document.createElement('small');
+    const reset = document.createElement('div');
+    reset.className = 'menu_button';
+    reset.textContent = '用回默认';
+    const show = async () => {
+        const mine = !!await customSoundUrl(fam);
+        state.textContent = mine ? '正在用你自己的文件' : `默认：${snd.credit}`;
+        reset.style.display = mine ? '' : 'none';
+    };
+    pick.onclick = () => input.click();
+    input.onchange = async () => {
+        const f = input.files?.[0];
+        if (!f) return;
+        if (f.size > 5 * 1024 * 1024) { toastr.warning('文件太大了，挑一个 5MB 以内的短音效。'); return; }
+        try {
+            await soundFile(fam, f);
+            if (soundUrls[fam.family]) URL.revokeObjectURL(soundUrls[fam.family]);
+            delete soundUrls[fam.family];
+            await show();
+            playSound(fam, true);
+        } catch {
+            toastr.error('这个浏览器存不了文件（可能是无痕模式）。');
+        }
+    };
+    reset.onclick = async () => {
+        try { await soundFile(fam, null); } catch { /* 忽略 */ }
+        if (soundUrls[fam.family]) URL.revokeObjectURL(soundUrls[fam.family]);
+        soundUrls[fam.family] = null;
+        await show();
+    };
+    row.append(test, pick, reset, input);
+    box.append(row);
+    state.className = 'dn-note';
+    box.append(state);
+    show();
+}
+
 // ---------- 设置界面 ----------
 function field(label, note) {
     const row = document.createElement('label');
@@ -614,6 +744,8 @@ function renderOptions(box) {
         box.append(row);
     }
 
+    if (fam.sound) renderSound(box, fam);
+
     const reset = document.createElement('div');
     reset.className = 'menu_button dn-reset';
     reset.textContent = '恢复这套主题的默认设置';
@@ -622,6 +754,7 @@ function renderOptions(box) {
         if (!await callGenericPopup(`把「${fam.family}」的主题设置全部恢复默认？`, POPUP_TYPE.CONFIRM)) return;
         settings().opts[fam.family] = {};
         save();
+        if (fam.sound) { try { await soundFile(fam, null); } catch { /* 忽略 */ } soundUrls[fam.family] = null; }
         applyOptions();
         renderAllOptions();
         if (box.id !== 'dn_options') renderOptions(box);
@@ -876,6 +1009,7 @@ jQuery(() => {
     const { eventSource, eventTypes } = ctx();
     if (eventTypes?.SETTINGS_UPDATED) eventSource.on(eventTypes.SETTINGS_UPDATED, syncUi);
     if (eventTypes?.CHAT_CHANGED) eventSource.on(eventTypes.CHAT_CHANGED, () => setTimeout(formatDates, 0));
+    if (eventTypes?.GENERATION_ENDED) eventSource.on(eventTypes.GENERATION_ENDED, () => playSound());
     $(document).on('change', '#themes', () => setTimeout(() => { syncUi(); syncThemes(); renderAllOptions(); applyOptions(); }, 300));
     // 用原生监听：酒馆初始化背景面板时会 $(document).off('click', '.bg_example')，jQuery 的委托会被一起清掉
     document.addEventListener('click', e => {

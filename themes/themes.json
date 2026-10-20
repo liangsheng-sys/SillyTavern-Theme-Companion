@@ -938,5 +938,26 @@
                 "formerFamily": "导视"
             }
         ]
+    },
+    {
+        "family": "苔庭",
+        "version": "0.1.0",
+        "variantLabel": "变体",
+        "options": [],
+        "themes": [
+            {
+                "name": "苔庭",
+                "file": "苔庭.json",
+                "label": "苔庭"
+            }
+        ],
+        "draft": true,
+        "sound": {
+            "file": "assets/koke/shishiodoshi.wav",
+            "label": "惊鹿",
+            "note": "回复写完时，惊鹿倒水、敲石的声音",
+            "credit": "「deerchaser.mp3」by morgantj · freesound.org/people/morgantj/sounds/58569 · CC BY 4.0（剪辑）",
+            "volume": 70
+        }
     }
 ]

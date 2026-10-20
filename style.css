@@ -178,3 +178,21 @@ html.dn-switching body *::after {
         padding-left: 0;
     }
 }
+
+/* 声音：试听 / 换文件 / 用回默认 */
+.daynight-settings .dn-sound,
+.dn-sound {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.dn-opt input[type='range'] {
+    flex: 1;
+    min-width: 120px;
+}
+
+.dn-sound .menu_button {
+    width: auto;
+    white-space: nowrap;
+}
