@@ -1157,9 +1157,25 @@
                 "default": "汀苔寺 · 北苑"
             },
             {
+                "type": "select",
+                "var": "--kt-gaku-mode",
+                "label": "潭北亭的扁额",
+                "default": "chat",
+                "choices": [
+                    [
+                        "chat",
+                        "写当前聊天的名字"
+                    ],
+                    [
+                        "text",
+                        "写下面这几个字"
+                    ]
+                ]
+            },
+            {
                 "type": "text",
                 "var": "--kt-gaku",
-                "label": "潭北亭的扁额",
+                "label": "扁额上的字",
                 "default": "潭北亭"
             },
             {
@@ -1224,6 +1240,7 @@
             "var": "--kt-permit-date",
             "format": "reiwa"
         },
+        "chatName": "--kt-chat-name",
         "draft": true,
         "sound": {
             "file": "assets/koke/shishiodoshi.wav",

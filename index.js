@@ -419,6 +419,15 @@ function todayText(format) {
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
+function chatName() {
+    try {
+        const c = ctx();
+        if (c.groupId) return c.groups?.find(g => String(g.id) === String(c.groupId))?.name || '';
+        if (c.characterId !== undefined && c.characterId !== null) return c.characters?.[c.characterId]?.name || '';
+    } catch { /* 忽略 */ }
+    return '';
+}
+
 function optionCss(fam) {
     const saved = famOpts(fam);
     const decl = [], extra = [];
@@ -446,6 +455,11 @@ function optionCss(fam) {
     }
     // today：把今天的日期写进主题指定的变量
     if (fam.today?.var) decl.push(`${fam.today.var}: ${cssString(todayText(fam.today.format))};`);
+    // chatName：把当前聊天的名字（角色名 / 群聊名）写进主题指定的变量（如苔庭潭北亭的扁额）
+    if (fam.chatName) {
+        const name = chatName();
+        if (name) decl.push(`${fam.chatName}: ${cssString(name)};`);
+    }
     // html:root:root 比主题可改区的 html:root 多一级，手机端的 @media 里也压得住
     return (decl.length ? `html:root:root {\n    ${decl.join('\n    ')}\n}\n` : '') + extra.join('\n');
 }
@@ -1037,7 +1051,10 @@ jQuery(() => {
     // 换主题时刷新面板（新主题可能不支持昼夜、选项不同）
     const { eventSource, eventTypes } = ctx();
     if (eventTypes?.SETTINGS_UPDATED) eventSource.on(eventTypes.SETTINGS_UPDATED, syncUi);
-    if (eventTypes?.CHAT_CHANGED) eventSource.on(eventTypes.CHAT_CHANGED, () => setTimeout(formatDates, 0));
+    if (eventTypes?.CHAT_CHANGED) eventSource.on(eventTypes.CHAT_CHANGED, () => setTimeout(() => {
+        formatDates();
+        if (currentFamily()?.chatName) applyOptions();
+    }, 0));
     if (eventTypes?.GENERATION_ENDED) eventSource.on(eventTypes.GENERATION_ENDED, () => playSound());
     $(document).on('change', '#themes', () => setTimeout(() => { syncUi(); syncThemes(); renderAllOptions(); applyOptions(); }, 300));
     // 用原生监听：酒馆初始化背景面板时会 $(document).off('click', '.bg_example')，jQuery 的委托会被一起清掉
