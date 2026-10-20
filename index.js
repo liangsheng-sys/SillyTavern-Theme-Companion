@@ -428,6 +428,31 @@ function chatName() {
     return '';
 }
 
+// 聊天专属背景（#bg_custom）优先，其次是全局背景（#bg1）
+function bgImage() {
+    for (const id of ['bg_custom', 'bg1']) {
+        const el = document.getElementById(id);
+        const img = el && getComputedStyle(el).backgroundImage;
+        if (img && img !== 'none' && img.startsWith('url(')) return img;
+    }
+    return '';
+}
+
+// 背景图换了就重写一次（酒馆是改 #bg1 / #bg_custom 的行内样式）
+let bgWatch = null;
+function watchBackground() {
+    if (bgWatch) return;
+    let t = 0;
+    bgWatch = new MutationObserver(() => {
+        clearTimeout(t);
+        t = setTimeout(() => { if (currentFamily()?.bgVar) applyOptions(); }, 200);
+    });
+    for (const id of ['bg_custom', 'bg1']) {
+        const el = document.getElementById(id);
+        if (el) bgWatch.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+    }
+}
+
 function optionCss(fam) {
     const saved = famOpts(fam);
     const decl = [], extra = [];
@@ -459,6 +484,11 @@ function optionCss(fam) {
     if (fam.chatName) {
         const name = chatName();
         if (name) decl.push(`${fam.chatName}: ${cssString(name)};`);
+    }
+    // bgVar：把当前的聊天背景图写进主题指定的变量（如苔庭启动页丸窓里的景）
+    if (fam.bgVar) {
+        const img = bgImage();
+        if (img) decl.push(`${fam.bgVar}: ${img};`);
     }
     // html:root:root 比主题可改区的 html:root 多一级，手机端的 @media 里也压得住
     return (decl.length ? `html:root:root {\n    ${decl.join('\n    ')}\n}\n` : '') + extra.join('\n');
@@ -1066,6 +1096,8 @@ jQuery(() => {
     if (eventTypes?.FORCE_SET_BACKGROUND) eventSource.on(eventTypes.FORCE_SET_BACKGROUND, followBackgroundPick);
     // 等酒馆把主题列表填好再检查附带的主题（APP_READY 已经发生过的话会立刻触发）
     eventSource.on(eventTypes.APP_READY, () => {
+        watchBackground();
+        if (currentFamily()?.bgVar) applyOptions();
         checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e));
         dailyExtCheck();
     });

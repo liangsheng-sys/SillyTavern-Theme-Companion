@@ -1241,6 +1241,7 @@
             "format": "reiwa"
         },
         "chatName": "--kt-chat-name",
+        "bgVar": "--kt-bg",
         "draft": true,
         "sound": {
             "file": "assets/koke/shishiodoshi.wav",
