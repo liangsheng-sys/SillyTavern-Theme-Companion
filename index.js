@@ -25,6 +25,7 @@ const DEFAULTS = {
     opts: {},                // 系列名 → { 选项 → 值 }
     autoUpdateThemes: false,
     autoUpdateExt: false,
+    tryDrafts: false,        // 试用施工中的主题（默认不装、不列出）
 };
 const root = document.documentElement;
 
@@ -258,13 +259,16 @@ function useTheme(name) {
 }
 
 // 加载时：没装过的直接装；装过旧版的按「自动更新主题」决定覆盖还是只提醒
+// 施工中的系列：只有勾了「试用施工中的主题」才装、才列出来
+const hidden = (fam) => fam.draft && !settings().tryDrafts;
+
 async function checkThemes() {
     await loadBundled();
     const s = settings();
     const have = installedNames();
     const added = [], updated = [];
     for (const fam of families) {
-        if (fam.draft) continue;   // 施工中的系列不自动装
+        if (hidden(fam)) continue;   // 施工中的系列不自动装
         let staleHere = false;
         for (const t of fam.themes) {
             const rec = s.themes[t.name];
@@ -333,7 +337,7 @@ function syncThemes() {
     box.innerHTML = '';
     let staleCount = 0;
     for (const fam of families) {
-        if (fam.draft) continue;   // 施工中的不列出来
+        if (hidden(fam)) continue;   // 施工中的不列出来
         const st = familyState(fam);
         if (st.stale.length) staleCount++;
         const row = document.createElement('div');
@@ -359,10 +363,11 @@ function syncThemes() {
     }
     if (!families.length) box.textContent = '（没有找到附带的主题）';
     $('#dn_update_all').toggle(staleCount > 1);
+    $('#dn_drafts_row').toggle(families.some(f => f.draft));
 }
 
 async function updateAll() {
-    const list = families.filter(f => !f.draft && familyState(f).stale.length);
+    const list = families.filter(f => !hidden(f) && familyState(f).stale.length);
     const { callGenericPopup, POPUP_TYPE } = ctx();
     const msg = `更新 ${list.map(f => `「${f.family}」`).join('')}？<br><small>会覆盖你在「UI 主题」里对这些主题做过的修改。</small>`;
     if (!await callGenericPopup(msg, POPUP_TYPE.CONFIRM)) return;
@@ -867,6 +872,7 @@ function syncExt() {
     $('#dn_ext_update').toggle(ext.state === 'behind');
     $('#dn_ext_auto').prop('checked', settings().autoUpdateExt);
     $('#dn_theme_auto').prop('checked', settings().autoUpdateThemes);
+    $('#dn_drafts').prop('checked', settings().tryDrafts);
 }
 
 // 每天最多自动检查一次（要连 GitHub，慢）
@@ -926,6 +932,7 @@ const PANEL = `
             <div id="dn_themes"></div>
             <div id="dn_update_all" class="menu_button dn-wide">全部更新</div>
             <label class="dn-row dn-check"><input id="dn_theme_auto" type="checkbox"><span>自动更新主题</span><small>会覆盖你在「UI 主题」里对这些主题做的修改；关掉时只提醒</small></label>
+            <label id="dn_drafts_row" class="dn-row dn-check"><input id="dn_drafts" type="checkbox"><span>试用施工中的主题</span><small>还没正式发布的主题，可能随时大改</small></label>
 
             <div class="dn-head">扩展</div>
             <div class="dn-row dn-ext">
@@ -988,6 +995,12 @@ function mountUi() {
     $('#dn_end').on('change', function () { settings().dayEnd = this.value; save(); apply(); });
     $('#dn_paper').on('change', function () { settings().paper = this.value; save(); apply(false); });
     $('#dn_theme_auto').on('change', function () { settings().autoUpdateThemes = this.checked; save(); });
+    $('#dn_drafts').on('change', async function () {
+        settings().tryDrafts = this.checked;
+        save();
+        if (this.checked) await checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e));
+        syncThemes();
+    });
     $('#dn_ext_auto').on('change', function () { settings().autoUpdateExt = this.checked; save(); if (this.checked) checkExt(true); });
     $('#dn_ext_check').on('click', () => checkExt(true));
     $('#dn_ext_update').on('click', () => updateExt());

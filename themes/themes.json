@@ -1163,6 +1163,23 @@
                 "label": "正文"
             },
             {
+                "type": "select",
+                "var": "--kt-punct",
+                "label": "正文标点",
+                "default": "noto",
+                "choices": [
+                    {
+                        "value": "noto",
+                        "label": "思源宋体（靠左下）"
+                    },
+                    {
+                        "value": "genryu",
+                        "label": "源流明體（居中）",
+                        "css": "html:root:root { --kt-body: 'GenRyuMin2 TC P', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif; }"
+                    }
+                ]
+            },
+            {
                 "type": "number",
                 "var": "--kt-measure",
                 "label": "一行最多几个字",
