@@ -15,6 +15,7 @@
  *    - 魔杖菜单里有「切换昼 / 夜」「主题设置」；斜杠命令 /daynight day|night|auto|system|toggle
  * 4. 扩展自己的更新：面板里显示版本、检查更新、一键更新，可以打开自动更新（默认关）。
  * 5. 声音：系列可以带一段「回复写完」的音效（如苔庭的惊鹿），默认开；可调音量、换成自己电脑上的文件（存在浏览器里）。
+ * 6. 主题脚本：系列可以带一小段自己的脚本（themes.json 里的 module，如 WPS文档 的可拖标尺），用这套主题时才载入。
  */
 
 const KEY = 'daynight';
@@ -511,6 +512,34 @@ function applyOptions() {
     setOptionCss(css);
     remember({ css });
     formatDates();
+    syncModule(fam);
+}
+
+// 系列自带的脚本（themes.json 里的 module，如 WPS 的可拖标尺）：用这套主题时载入，换走时清理
+let moduleOn = null;   // { family, cleanup }
+async function syncModule(fam) {
+    const want = fam?.module ? fam.family : null;
+    if (moduleOn?.family === want) return;
+    if (moduleOn) {
+        const { cleanup } = moduleOn;
+        moduleOn = null;
+        try { cleanup?.(); } catch (e) { console.warn('[主题伴侣] 主题脚本清理失败', e); }
+    }
+    if (!want) return;
+    const slot = moduleOn = { family: want, cleanup: null };
+    try {
+        const mod = await import(new URL(`${fam.module}?v=${encodeURIComponent(fam.version || '')}`, HERE).href);
+        if (moduleOn !== slot) return;   // 载入期间又换了主题
+        const opt = key => (fam.options || []).find(o => optKey(o) === key);
+        slot.cleanup = mod.default({
+            // 读一个选项（没存过就是默认值）
+            get: key => { const o = opt(key); return o ? optionValue(o, famOpts(fam)) : undefined; },
+            // 存一个选项并套用（undefined = 恢复默认）
+            set: (key, v) => { const o = opt(key); if (!o) return; setOption(fam, o, v); renderAllOptions(); },
+        }) || null;
+    } catch (e) {
+        console.warn('[主题伴侣] 主题脚本载入失败', e);
+    }
 }
 
 function setOption(fam, o, v) {

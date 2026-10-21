@@ -1038,5 +1038,58 @@
                 "formerFamily": "导视"
             }
         ]
+    },
+    {
+        "family": "WPS文档",
+        "version": "0.1.0",
+        "variantLabel": "变体",
+        "options": [
+            {
+                "type": "head",
+                "label": "页面（也可以直接在标尺上拖，双击滑块恢复默认）"
+            },
+            {
+                "key": "ml",
+                "var": "--wps-page-ml",
+                "type": "number",
+                "unit": "cm",
+                "label": "左页边距（厘米）",
+                "default": 3.18,
+                "min": 0,
+                "max": 15,
+                "step": 0.01
+            },
+            {
+                "key": "mr",
+                "var": "--wps-page-mr",
+                "type": "number",
+                "unit": "cm",
+                "label": "右页边距（厘米）",
+                "default": 3.18,
+                "min": 0,
+                "max": 15,
+                "step": 0.01
+            },
+            {
+                "key": "indent",
+                "var": "--wps-indent",
+                "type": "number",
+                "unit": "em",
+                "label": "首行缩进（字）",
+                "default": 2,
+                "min": 0,
+                "max": 20,
+                "step": 0.5
+            }
+        ],
+        "themes": [
+            {
+                "name": "WPS文档",
+                "file": "WPS文档.json",
+                "label": "WPS文档"
+            }
+        ],
+        "draft": true,
+        "module": "modules/wps-ruler.js"
     }
 ]
