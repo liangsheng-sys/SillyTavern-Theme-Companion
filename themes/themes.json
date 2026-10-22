@@ -1041,7 +1041,7 @@
     },
     {
         "family": "WPS文档",
-        "version": "0.1.2",
+        "version": "1.0.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -1272,7 +1272,6 @@
                 "label": "WPS文档"
             }
         ],
-        "draft": true,
         "module": "modules/wps.js"
     }
 ]

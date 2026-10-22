@@ -27,6 +27,8 @@
 |---|---|
 | 纸上访谈<br>The Interview, on Paper | 当代杂志的访谈页版式，昼夜两版。夜版是石墨底配一抹橙，昼版是米白纸、实墨配古金，五种纸可以换 |
 | 银盐显影<br>Silver Gelatin | 黑白摄影暗房。夜里是暗房，白天是展厅；五种调色（硒、无调色、棕褐、铂钯、氰版蓝晒，在「主题设置」里切换，只装一套），角色列表是印样页 |
+| 粗野指北<br>Concrete Arrow | 混凝土建筑里的指示系统（灵感来自伦敦巴比肯艺术中心），昼夜两版。聊天栏是炭黑指示柱，消息序号是墙上的楼层号，世界书和预设是楼层索引牌 |
+| WPS文档 | 上班摸鱼用：酒馆看起来就是一份在写的 WPS 文档（电脑和手机）。装了本扩展，标尺能拖（页边距、首行缩进），功能区的字体、字号、行距能直接改 |
 
 不装扩展也能用：直接在「UI 主题」里导入 `themes/` 下的 JSON 文件就行（主题设置和昼夜开关就没有了，主题跟随系统深浅色）。
 
@@ -58,6 +60,7 @@
 ## 给主题作者
 - **加入新主题**：在本仓库的源码里写 `theme.base.json` 的 `version`、`bundle` 和 `companion`（选项声明），构建时会把主题和变体写进 `themes/`，并在 `themes/themes.json` 里登记成一个「系列」。版本号变大以后，用户就会收到更新提示。
 - **主题设置的选项**：`companion.options` 里每项是 `{ type, var, label, default, note }`，type 有 `head`（小标题）、`select`（`choices: [[值, 名称]]`，或 `{ value, label, css }` 带一段 CSS）、`toggle`（`on`/`off` 的值，默认 1/0）、`text`（写成 CSS 字符串）、`number`（`min`/`max`/`step`/`unit`）、`color`、`dateformat`。用户改过的值写成 `html:root:root { --变量: 值 }`。
+- **主题脚本**：`companion.module: { src, asset }` 会被复制到扩展的 `modules/`。用户用这套主题时扩展 `import` 它并调用默认导出 `fn({ get, set, option })`（读 / 存选项、拿选项声明），返回的函数在换走主题时调用，用来清理。WPS文档的可拖标尺就是这样做的。
 - **支持昼夜**：
   - 扩展只会在 `<html>` 上加 `dn-day` / `dn-night` 类和 `data-paper` 属性。主题写 `:root.dn-day { … }` 就能做出昼版。
   - 切换时用浏览器的视图过渡（默认淡入淡出）。切换期间 `<html>` 上有 `data-dn-to="day"|"night"`，主题可以写 `:root[data-dn-to='day']::view-transition-new(root) { animation: … }` 自定动画。
