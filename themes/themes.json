@@ -1,7 +1,7 @@
 [
     {
         "family": "纸上访谈",
-        "version": "1.0.5",
+        "version": "1.0.6",
         "variantLabel": "变体",
         "options": [
             {
@@ -154,6 +154,16 @@
                 "step": 0.05
             },
             {
+                "type": "number",
+                "var": "--mz-tracking",
+                "label": "字间距",
+                "note": "字与字之间空出几分之一个字：0 = 紧挨着，0.1 = 空十分之一个字",
+                "default": 0.02,
+                "min": 0,
+                "max": 0.3,
+                "step": 0.01
+            },
+            {
                 "type": "select",
                 "var": "--mz-day-read-weight",
                 "label": "昼版字重",
@@ -228,7 +238,7 @@
     },
     {
         "family": "银盐显影",
-        "version": "1.1.3",
+        "version": "1.1.4",
         "variantLabel": "调色",
         "options": [
             {
@@ -645,7 +655,7 @@
     },
     {
         "family": "粗野指北",
-        "version": "1.0.6",
+        "version": "1.0.7",
         "variantLabel": "变体",
         "options": [
             {
@@ -1062,7 +1072,7 @@
     },
     {
         "family": "WPS文档",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "variantLabel": "变体",
         "options": [
             {
