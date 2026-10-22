@@ -1,7 +1,7 @@
 [
     {
         "family": "纸上访谈",
-        "version": "1.0.4",
+        "version": "1.0.5",
         "variantLabel": "变体",
         "options": [
             {
@@ -17,6 +17,27 @@
             },
             {
                 "type": "select",
+                "var": "--mz-char-font",
+                "label": "角色的话",
+                "note": "楷体用的是电脑自带的，手机上多半没有，会显示成宋体",
+                "default": "var(--mz-serif)",
+                "choices": [
+                    [
+                        "var(--mz-serif)",
+                        "宋体"
+                    ],
+                    [
+                        "var(--mz-sans)",
+                        "黑体"
+                    ],
+                    [
+                        "var(--mz-kai)",
+                        "楷体"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
                 "var": "--mz-user-font",
                 "label": "你的话",
                 "default": "var(--mz-sans)",
@@ -27,7 +48,7 @@
                     ],
                     [
                         "var(--mz-serif)",
-                        "宋体（和角色一样）"
+                        "宋体"
                     ]
                 ]
             },
