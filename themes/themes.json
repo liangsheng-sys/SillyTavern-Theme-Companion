@@ -1041,9 +1041,165 @@
     },
     {
         "family": "WPS文档",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "variantLabel": "变体",
         "options": [
+            {
+                "type": "head",
+                "label": "文档"
+            },
+            {
+                "key": "docname",
+                "var": "--wps-docname",
+                "type": "text",
+                "label": "文件名（标题栏标签上）",
+                "default": "第三季度工作总结.docx"
+            },
+            {
+                "key": "title",
+                "var": "--wps-title",
+                "type": "text",
+                "label": "第一页的大标题",
+                "default": "2026年第三季度工作总结"
+            },
+            {
+                "type": "head",
+                "label": "正文"
+            },
+            {
+                "key": "font",
+                "var": "--wps-body-font",
+                "type": "select",
+                "label": "字体",
+                "choices": [
+                    [
+                        "SimSun, '宋体', 'Songti SC', 'Noto Serif SC', serif",
+                        "宋体"
+                    ],
+                    [
+                        "FangSong, '仿宋', STFangsong, 'Noto Serif SC', serif",
+                        "仿宋"
+                    ],
+                    [
+                        "KaiTi, '楷体', STKaiti, 'Kaiti SC', serif",
+                        "楷体"
+                    ],
+                    [
+                        "'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', sans-serif",
+                        "微软雅黑"
+                    ]
+                ]
+            },
+            {
+                "key": "size",
+                "var": "--wps-body-size",
+                "type": "select",
+                "label": "字号",
+                "default": "14px",
+                "choices": [
+                    [
+                        "12px",
+                        "小五"
+                    ],
+                    [
+                        "14px",
+                        "五号"
+                    ],
+                    [
+                        "16px",
+                        "小四"
+                    ],
+                    [
+                        "18.67px",
+                        "四号"
+                    ]
+                ]
+            },
+            {
+                "key": "line",
+                "var": "--wps-line",
+                "type": "select",
+                "label": "行距",
+                "default": "1.5",
+                "choices": [
+                    [
+                        "1.3",
+                        "单倍"
+                    ],
+                    [
+                        "1.5",
+                        "1.5 倍（默认）"
+                    ],
+                    [
+                        "1.8",
+                        "1.8 倍"
+                    ],
+                    [
+                        "2.2",
+                        "2 倍"
+                    ]
+                ]
+            },
+            {
+                "type": "head",
+                "label": "引号里的话（对白）"
+            },
+            {
+                "key": "qItalic",
+                "var": "--wps-q-style",
+                "type": "toggle",
+                "label": "倾斜",
+                "default": false,
+                "on": "italic",
+                "off": "normal"
+            },
+            {
+                "key": "qColor",
+                "var": "--wps-q-color",
+                "type": "color",
+                "label": "颜色",
+                "default": "#000000"
+            },
+            {
+                "type": "head",
+                "label": "心理话（*星号*之间）"
+            },
+            {
+                "key": "emFont",
+                "var": "--wps-em-font",
+                "type": "select",
+                "label": "字体",
+                "choices": [
+                    [
+                        "KaiTi, '楷体', STKaiti, 'Kaiti SC', serif",
+                        "楷体（默认）"
+                    ],
+                    [
+                        "FangSong, '仿宋', STFangsong, 'Noto Serif SC', serif",
+                        "仿宋"
+                    ],
+                    [
+                        "inherit",
+                        "和正文一样"
+                    ]
+                ]
+            },
+            {
+                "key": "emItalic",
+                "var": "--wps-em-style",
+                "type": "toggle",
+                "label": "倾斜",
+                "default": false,
+                "on": "italic",
+                "off": "normal"
+            },
+            {
+                "key": "emColor",
+                "var": "--wps-em-color",
+                "type": "color",
+                "label": "颜色",
+                "default": "#000000"
+            },
             {
                 "type": "head",
                 "label": "页面（也可以直接在标尺上拖，双击滑块恢复默认）"
