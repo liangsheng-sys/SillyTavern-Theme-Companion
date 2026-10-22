@@ -169,13 +169,17 @@ async function saveTheme(t) {
     }
 }
 
-// 读酒馆里已存的主题内容（接口顺带返回整份设置，比较重，只在遇到用户自己导入的主题时读一次）
+// 读酒馆里已存的主题（接口顺带返回整份设置，比较重，一次加载最多读一次）
 let savedThemes;
+function serverThemes() {
+    savedThemes ||= fetch('/api/settings/get', { method: 'POST', headers: ctx().getRequestHeaders(), body: '{}' })
+        .then(r => r.json()).then(d => d.themes || []);
+    return savedThemes;
+}
+
 async function sameAsBundled(t) {
     try {
-        savedThemes ||= fetch('/api/settings/get', { method: 'POST', headers: ctx().getRequestHeaders(), body: '{}' })
-            .then(r => r.json()).then(d => d.themes || []);
-        const mine = (await savedThemes).find(x => x.name === t.name);
+        const mine = (await serverThemes()).find(x => x.name === t.name);
         const ours = JSON.parse(await themeText(t));
         return !!mine && mine.custom_css === ours.custom_css;
     } catch {
@@ -183,12 +187,21 @@ async function sameAsBundled(t) {
     }
 }
 
+// TauriTavern 在「用户设置」抽屉关着时会把里面的 DOM（含 #themes）整块摘下来，这时改用后台的主题列表
+let serverNames = null;   // 后台的主题名（只在 #themes 不在页面上时用）
+async function loadServerNames() {
+    if (document.getElementById('themes')) return;
+    try { serverNames = new Set((await serverThemes()).map(x => x.name)); } catch { serverNames = null; }
+}
+
 function installedNames() {
-    return new Set([...document.querySelectorAll('#themes option')].map(o => o.value));
+    const sel = document.getElementById('themes');
+    if (sel || !serverNames) return new Set([...(sel?.options || [])].map(o => o.value));
+    return new Set(serverNames);
 }
 
 function currentTheme() {
-    return $('#themes').val();
+    return ctx().powerUserSettings?.theme ?? $('#themes').val();
 }
 
 function currentFamily() {
@@ -255,8 +268,30 @@ async function updateFamily(fam, ask = true) {
     syncThemes();
 }
 
-function useTheme(name) {
-    $('#themes').val(name).trigger('change');
+async function useTheme(name) {
+    if (document.getElementById('themes')) {
+        $('#themes').val(name).trigger('change');
+        return;
+    }
+    // #themes 被 TauriTavern 摘下来了：用它自己的换主题函数
+    try {
+        const pu = await import(new URL('../../../power-user.js', HERE).href);
+        pu.applyGlobalTheme(name);
+        setTimeout(onThemeChange, 300);
+    } catch (e) {
+        console.warn('[主题伴侣] 换主题失败', e);
+        toastr.info(`请在「用户设置 → UI 主题」里选「${name}」`, '主题伴侣');
+    }
+}
+
+// 换了主题：刷新面板、主题设置。TauriTavern 的「按聊天/角色绑定主题」换主题时不触发 #themes 的 change，所以也按名字比对
+let lastTheme;
+function onThemeChange() {
+    lastTheme = currentTheme();
+    syncUi(); syncThemes(); renderAllOptions(); applyOptions();
+}
+function checkThemeChange() {
+    if (currentTheme() !== lastTheme) onThemeChange();
 }
 
 // 加载时：没装过的直接装；装过旧版的按「自动更新主题」决定覆盖还是只提醒
@@ -265,6 +300,7 @@ const hidden = (fam) => fam.draft && !settings().tryDrafts;
 
 async function checkThemes() {
     await loadBundled();
+    await loadServerNames();
     const s = settings();
     const have = installedNames();
     const added = [], updated = [];
@@ -325,6 +361,7 @@ async function retireThemes() {
             } catch { continue; }
             delete s.themes[name];
             $('#themes option').filter((_, o) => o.value === name).remove();
+            serverNames?.delete(name);
             if (formerFamily) renamed.push(`「${formerFamily}」改名为「${fam.family}」`);
             else merged.push(fam.family);
         }
@@ -1111,13 +1148,19 @@ jQuery(() => {
     loadExtInfo();
     // 换主题时刷新面板（新主题可能不支持昼夜、选项不同）
     const { eventSource, eventTypes } = ctx();
-    if (eventTypes?.SETTINGS_UPDATED) eventSource.on(eventTypes.SETTINGS_UPDATED, syncUi);
+    if (eventTypes?.SETTINGS_UPDATED) eventSource.on(eventTypes.SETTINGS_UPDATED, () => { syncUi(); checkThemeChange(); });
     if (eventTypes?.CHAT_CHANGED) eventSource.on(eventTypes.CHAT_CHANGED, () => setTimeout(() => {
+        checkThemeChange();
         formatDates();
         if (currentFamily()?.chatName) applyOptions();
     }, 0));
     if (eventTypes?.GENERATION_ENDED) eventSource.on(eventTypes.GENERATION_ENDED, () => playSound());
-    $(document).on('change', '#themes', () => setTimeout(() => { syncUi(); syncThemes(); renderAllOptions(); applyOptions(); }, 300));
+    $(document).on('change', '#themes', () => setTimeout(onThemeChange, 300));
+    // TauriTavern 在扩展抽屉关着时会把本面板摘下来，期间的刷新都落空了：抽屉打开时重画一遍
+    const extBlock = document.getElementById('rm_extensions_block');
+    if (extBlock) new MutationObserver(() => {
+        if (extBlock.classList.contains('openDrawer')) setTimeout(() => { syncUi(); syncThemes(); renderAllOptions(); }, 0);
+    }).observe(extBlock, { attributes: true, attributeFilter: ['class'] });
     // 用原生监听：酒馆初始化背景面板时会 $(document).off('click', '.bg_example')，jQuery 的委托会被一起清掉
     document.addEventListener('click', e => {
         if (!e.target.closest?.('.bg_example')) return;
@@ -1128,6 +1171,7 @@ jQuery(() => {
     // 等酒馆把主题列表填好再检查附带的主题（APP_READY 已经发生过的话会立刻触发）
     eventSource.on(eventTypes.APP_READY, () => {
         watchBackground();
+        lastTheme = currentTheme();
         if (currentFamily()?.bgVar) applyOptions();
         checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e));
         dailyExtCheck();
