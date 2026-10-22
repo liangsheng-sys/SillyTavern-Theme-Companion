@@ -534,6 +534,8 @@ async function syncModule(fam) {
         slot.cleanup = mod.default({
             // 读一个选项（没存过就是默认值）
             get: key => { const o = opt(key); return o ? optionValue(o, famOpts(fam)) : undefined; },
+            // 选项本身（标签、可选值……），主题脚本可以照着做自己的下拉列表
+            option: key => opt(key),
             // 存一个选项并套用（undefined = 恢复默认）
             set: (key, v) => { const o = opt(key); if (!o) return; setOption(fam, o, v); renderAllOptions(); },
         }) || null;

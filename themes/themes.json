@@ -1041,7 +1041,7 @@
     },
     {
         "family": "WPS文档",
-        "version": "0.1.1",
+        "version": "0.1.2",
         "variantLabel": "变体",
         "options": [
             {
@@ -1068,51 +1068,78 @@
             },
             {
                 "key": "font",
-                "var": "--wps-body-font",
                 "type": "select",
                 "label": "字体",
+                "default": "song",
                 "choices": [
-                    [
-                        "SimSun, '宋体', 'Songti SC', 'Noto Serif SC', serif",
-                        "宋体"
-                    ],
-                    [
-                        "FangSong, '仿宋', STFangsong, 'Noto Serif SC', serif",
-                        "仿宋"
-                    ],
-                    [
-                        "KaiTi, '楷体', STKaiti, 'Kaiti SC', serif",
-                        "楷体"
-                    ],
-                    [
-                        "'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', sans-serif",
-                        "微软雅黑"
-                    ]
+                    {
+                        "value": "song",
+                        "label": "宋体",
+                        "font": "SimSun, '宋体', 'Songti SC', 'Noto Serif SC', serif",
+                        "css": "html:root:root { --wps-body-font: SimSun, '宋体', 'Songti SC', 'Noto Serif SC', serif; --wps-font-name: '宋体 (正文)'; }"
+                    },
+                    {
+                        "value": "fang",
+                        "label": "仿宋",
+                        "font": "FangSong, '仿宋', STFangsong, 'Noto Serif SC', serif",
+                        "css": "html:root:root { --wps-body-font: FangSong, '仿宋', STFangsong, 'Noto Serif SC', serif; --wps-font-name: '仿宋'; }"
+                    },
+                    {
+                        "value": "kai",
+                        "label": "楷体",
+                        "font": "KaiTi, '楷体', STKaiti, 'Kaiti SC', serif",
+                        "css": "html:root:root { --wps-body-font: KaiTi, '楷体', STKaiti, 'Kaiti SC', serif; --wps-font-name: '楷体'; }"
+                    },
+                    {
+                        "value": "hei",
+                        "label": "黑体",
+                        "font": "SimHei, '黑体', 'Heiti SC', 'Noto Sans SC', sans-serif",
+                        "css": "html:root:root { --wps-body-font: SimHei, '黑体', 'Heiti SC', 'Noto Sans SC', sans-serif; --wps-font-name: '黑体'; }"
+                    },
+                    {
+                        "value": "yahei",
+                        "label": "微软雅黑",
+                        "font": "'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', sans-serif",
+                        "css": "html:root:root { --wps-body-font: 'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', sans-serif; --wps-font-name: '微软雅黑'; }"
+                    }
                 ]
             },
             {
                 "key": "size",
-                "var": "--wps-body-size",
                 "type": "select",
                 "label": "字号",
                 "default": "14px",
                 "choices": [
-                    [
-                        "12px",
-                        "小五"
-                    ],
-                    [
-                        "14px",
-                        "五号"
-                    ],
-                    [
-                        "16px",
-                        "小四"
-                    ],
-                    [
-                        "18.67px",
-                        "四号"
-                    ]
+                    {
+                        "value": "12px",
+                        "label": "小五",
+                        "css": "html:root:root { --wps-body-size: 12px; --wps-size-name: '小五'; }"
+                    },
+                    {
+                        "value": "14px",
+                        "label": "五号",
+                        "css": "html:root:root { --wps-body-size: 14px; --wps-size-name: '五号'; }"
+                    },
+                    {
+                        "value": "16px",
+                        "label": "小四",
+                        "css": "html:root:root { --wps-body-size: 16px; --wps-size-name: '小四'; }"
+                    },
+                    {
+                        "value": "18.67px",
+                        "label": "四号",
+                        "css": "html:root:root { --wps-body-size: 18.67px; --wps-size-name: '四号'; }"
+                    },
+                    {
+                        "value": "20px",
+                        "label": "小三",
+                        "css": "html:root:root { --wps-body-size: 20px; --wps-size-name: '小三'; }"
+                    },
+                    {
+                        "value": "21.33px",
+                        "label": "三号",
+                        "css": "html:root:root { --wps-body-size: 21.33px; --wps-size-name: '三号'; }"
+                    }
                 ]
             },
             {
@@ -1246,6 +1273,6 @@
             }
         ],
         "draft": true,
-        "module": "modules/wps-ruler.js"
+        "module": "modules/wps.js"
     }
 ]
