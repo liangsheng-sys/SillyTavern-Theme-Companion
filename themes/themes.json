@@ -1304,5 +1304,20 @@
             }
         ],
         "module": "modules/wps.js"
+    },
+    {
+        "family": "XP Messenger",
+        "version": "0.1.0",
+        "variantLabel": "变体",
+        "options": [],
+        "themes": [
+            {
+                "name": "XP Messenger",
+                "file": "XP Messenger.json",
+                "label": "XP Messenger"
+            }
+        ],
+        "draft": true,
+        "module": "modules/xp.js"
     }
 ]
