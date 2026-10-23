@@ -141,6 +141,7 @@ function minesweeper() {
             if (!wasOpen) { d.hidden = false; m.classList.add('on'); }
         }));
         win.addEventListener('click', (e) => {
+            if (!win) return;   // 点 × 关掉窗口后，这次点击还会冒泡到这里
             const it = e.target.closest('.xp-mine-item');
             if (it) {
                 const act = it.dataset.act;

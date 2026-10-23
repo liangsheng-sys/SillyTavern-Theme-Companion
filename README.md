@@ -29,6 +29,7 @@
 | 银盐显影<br>Silver Gelatin | 黑白摄影暗房。夜里是暗房，白天是展厅；五种调色（硒、无调色、棕褐、铂钯、氰版蓝晒，在「主题设置」里切换，只装一套），角色列表是印样页 |
 | 粗野指北<br>Concrete Arrow | 混凝土建筑里的指示系统（灵感来自伦敦巴比肯艺术中心），昼夜两版。聊天栏是炭黑指示柱，消息序号是墙上的楼层号，世界书和预设是楼层索引牌 |
 | WPS文档 | 上班摸鱼用：酒馆看起来就是一份在写的 WPS 文档（电脑和手机）。装了本扩展，标尺能拖（页边距、首行缩进），功能区的字体、字号、行距能直接改 |
+| XP Messenger | 酒馆变成一台 Windows XP：桌面图标、开始菜单、任务栏就是酒馆的各个面板，聊天是 Windows Messenger 的对话窗口（电脑和手机）。蓝色 / 橄榄绿 / 银色三套配色在「主题设置」里切换；装了本扩展还有托盘时钟和一个扫雷 |
 
 不装扩展也能用：直接在「UI 主题」里导入 `themes/` 下的 JSON 文件就行（主题设置和昼夜开关就没有了，主题跟随系统深浅色）。
 
@@ -65,3 +66,6 @@
   - 扩展只会在 `<html>` 上加 `dn-day` / `dn-night` 类和 `data-paper` 属性。主题写 `:root.dn-day { … }` 就能做出昼版。
   - 切换时用浏览器的视图过渡（默认淡入淡出）。切换期间 `<html>` 上有 `data-dn-to="day"|"night"`，主题可以写 `:root[data-dn-to='day']::view-transition-new(root) { animation: … }` 自定动画。
   - 在主题里声明 `--dn-support: 1`，再声明 `--dn-papers: 'id:名称|…'`，扩展里就会出现纸张选项。
+
+## 第三方素材
+- **XP Messenger** 的窗口按钮、滚动条、下拉框、复选框图形来自 [XP.css](https://github.com/botoxparty/XP.css)（MIT，Copyright 2020 Adam Hammad, Jordan Scales），许可全文见 `licenses/XP.css-LICENSE`；橄榄绿 / 银色配色参考了 [classic-stylesheets](https://github.com/nielssp/classic-stylesheets)（MIT）；扫雷的玩法参考了 [Minesweeper-XP](https://github.com/AkshayKalose/Minesweeper-XP)，画是重画的。桌面图标、壁纸也都是照样子重新画的，不含微软的原图。XP Messenger 是同人性质的仿制外观，和微软没有任何关系。
