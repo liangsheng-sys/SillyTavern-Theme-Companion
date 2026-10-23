@@ -1307,7 +1307,7 @@
     },
     {
         "family": "XP Messenger",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "variantLabel": "配色",
         "options": [
             {
@@ -1336,6 +1336,23 @@
                 ]
             },
             {
+                "type": "select",
+                "key": "wall",
+                "label": "桌面壁纸",
+                "default": "xp",
+                "choices": [
+                    {
+                        "value": "xp",
+                        "label": "XP 默认（蓝天草地）"
+                    },
+                    {
+                        "value": "st",
+                        "label": "酒馆背景（在「更改对话背景」里换）",
+                        "css": "html:root:root { --xp-wall: var(--xp-st-bg, var(--xp-art-wallpaper)); }"
+                    }
+                ]
+            },
+            {
                 "type": "toggle",
                 "key": "latinSong",
                 "var": "--xp-latin",
@@ -1344,6 +1361,66 @@
                 "on": "SimSun",
                 "off": "",
                 "note": "中文版 XP 原本连英文都是宋体（细、带衬线）；关着时英文用 Tahoma 一类的字"
+            },
+            {
+                "type": "head",
+                "label": "引号里的话（对白）"
+            },
+            {
+                "key": "qItalic",
+                "var": "--xp-q-style",
+                "type": "toggle",
+                "label": "倾斜",
+                "default": false,
+                "on": "italic",
+                "off": "normal"
+            },
+            {
+                "key": "qColor",
+                "var": "--xp-q-color",
+                "type": "color",
+                "label": "颜色",
+                "default": "#000000"
+            },
+            {
+                "type": "head",
+                "label": "心理话（*星号*之间）"
+            },
+            {
+                "key": "emFont",
+                "var": "--xp-em-font",
+                "type": "select",
+                "label": "字体",
+                "choices": [
+                    [
+                        "KaiTi, '楷体', 'KaiTi_GB2312', STKaiti, serif",
+                        "楷体（默认）"
+                    ],
+                    [
+                        "FangSong, '仿宋', STFangsong, 'Noto Serif SC', serif",
+                        "仿宋"
+                    ],
+                    [
+                        "inherit",
+                        "和正文一样"
+                    ]
+                ]
+            },
+            {
+                "key": "emItalic",
+                "var": "--xp-em-style",
+                "type": "toggle",
+                "label": "倾斜",
+                "default": false,
+                "on": "italic",
+                "off": "normal"
+            },
+            {
+                "key": "emColor",
+                "var": "--xp-em-color",
+                "type": "color",
+                "label": "颜色",
+                "default": "#000000"
             }
         ],
         "themes": [
@@ -1353,6 +1430,7 @@
                 "label": "蓝色（默认）"
             }
         ],
+        "bgVar": "--xp-st-bg",
         "module": "modules/xp.js",
         "retired": [
             {

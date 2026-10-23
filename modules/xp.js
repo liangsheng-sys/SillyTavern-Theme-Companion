@@ -155,20 +155,33 @@ function minesweeper() {
         win.addEventListener('keydown', (e) => { if (e.key === 'F2') { e.preventDefault(); newGame(); } });
         win.tabIndex = -1;
 
-        // 拖标题栏挪窗口（电脑）
+        // 拖标题栏挪窗口（电脑）。拖的时候只改 transform（不重排整页，主题的 :has() 很多，改 left/top 会卡），每帧最多一次；松手再写回 left/top
         const title = $('.xp-mine-title');
         title.addEventListener('pointerdown', (e) => {
             if (e.target.closest('button') || matchMedia('(max-width: 1000px)').matches) return;
             const r = win.getBoundingClientRect();
-            const dx = e.clientX - r.left, dy = e.clientY - r.top;
+            const sx = e.clientX, sy = e.clientY;
+            let x = r.left, y = r.top, frame = 0;
             title.setPointerCapture(e.pointerId);
+            win.classList.add('dragging');
             const move = (ev) => {
-                win.style.left = Math.max(0, Math.min(innerWidth - 60, ev.clientX - dx)) + 'px';
-                win.style.top = Math.max(0, Math.min(innerHeight - 40, ev.clientY - dy)) + 'px';
+                x = Math.max(0, Math.min(innerWidth - 60, r.left + ev.clientX - sx));
+                y = Math.max(0, Math.min(innerHeight - 40, r.top + ev.clientY - sy));
+                frame ||= requestAnimationFrame(() => { frame = 0; win.style.transform = `translate(${x - r.left}px, ${y - r.top}px)`; });
             };
-            const up = () => { title.removeEventListener('pointermove', move); title.removeEventListener('pointerup', up); };
+            const up = () => {
+                cancelAnimationFrame(frame);
+                title.removeEventListener('pointermove', move);
+                title.removeEventListener('pointerup', up);
+                title.removeEventListener('pointercancel', up);
+                win.classList.remove('dragging');
+                win.style.transform = '';
+                win.style.left = x + 'px';
+                win.style.top = y + 'px';
+            };
             title.addEventListener('pointermove', move);
             title.addEventListener('pointerup', up);
+            title.addEventListener('pointercancel', up);
         });
 
         // 格子：左键翻开、右键插旗、长按插旗、按住时笑脸变「哦」
