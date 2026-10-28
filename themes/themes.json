@@ -1072,7 +1072,7 @@
     },
     {
         "family": "WPS文档",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -1092,6 +1092,47 @@
                 "type": "text",
                 "label": "第一页的大标题",
                 "default": "2026年第三季度工作总结"
+            },
+            {
+                "type": "head",
+                "label": "深色模式、护眼（深色 / 浅色用上面的「昼 / 夜」切换：昼 = 浅色，夜 = 深色）"
+            },
+            {
+                "key": "darkPaper",
+                "type": "select",
+                "label": "深色模式下的纸（电脑）",
+                "note": "WPS 电脑版的深色模式只有界面变黑，纸还是白的",
+                "default": "invert",
+                "choices": [
+                    {
+                        "value": "invert",
+                        "label": "黑纸浅字（护眼，默认）",
+                        "css": ""
+                    },
+                    {
+                        "value": "original",
+                        "label": "白纸黑字（和真 WPS 一样）",
+                        "css": "@media screen and (min-width: 1001px) { html:root:root.dn-night { --wps-d-paper: #FFFFFF; --wps-d-ink: #000000; --wps-d-edge: #C2C2C2; --wps-d-mark: #B5B5B5; --wps-d-link: #0000FF; } }"
+                    }
+                ]
+            },
+            {
+                "key": "eye",
+                "type": "select",
+                "label": "护眼模式（视图 → 护眼模式）",
+                "default": "off",
+                "choices": [
+                    {
+                        "value": "off",
+                        "label": "关",
+                        "css": ""
+                    },
+                    {
+                        "value": "on",
+                        "label": "开：豆沙绿的纸",
+                        "css": "html:root:root:root:root { --wps-paper: #CFE8CC; --wps-desk: #D2E7D5; --wps-page-edge: #B4CCB1; --wps-mark: #8FA88C; } html:root:root:root:root.dn-night { --wps-ink: #000000; --wps-link: #0000FF; --wps-ruler-guide: #000000; }"
+                    }
+                ]
             },
             {
                 "type": "head",
@@ -1216,6 +1257,7 @@
                 "var": "--wps-q-color",
                 "type": "color",
                 "label": "颜色",
+                "note": "改过的颜色深色模式下也照用；没改过的话，深色模式下自动和纸上的字一样",
                 "default": "#000000"
             },
             {
@@ -1256,6 +1298,7 @@
                 "var": "--wps-em-color",
                 "type": "color",
                 "label": "颜色",
+                "note": "改过的颜色深色模式下也照用；没改过的话，深色模式下自动和纸上的字一样",
                 "default": "#000000"
             },
             {

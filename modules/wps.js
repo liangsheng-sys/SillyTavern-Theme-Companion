@@ -9,10 +9,16 @@
  * 2. 功能区（#wps_ribbon）
  *    字体框、字号框点开是下拉列表；A+ A- 一档一档改字号；行距按钮点开选行距
  *    选的都是主题设置里的同一个选项，两边同步
+ * 3. 手机工具面板顶上那排选项卡（#wps_mtabs）
+ *    点「开始 插入 查看 审阅 画笔」换到对应的面板，点右边的 ✕ 收起（✕ 只在装了扩展时画出来：<html> 上有 wps-js）
  */
 export default function wps(api) {
-    const off = [ruler(api), ribbon(api)];
-    return () => off.forEach(f => f?.());
+    const off = [ruler(api), ribbon(api), mobileTabs()];
+    document.documentElement.classList.add('wps-js');
+    return () => {
+        off.forEach(f => f?.());
+        document.documentElement.classList.remove('wps-js');
+    };
 }
 
 const CM = 96 / 2.54;       // 1 厘米 = 37.8 CSS 像素
@@ -198,4 +204,46 @@ function ribbon({ get, set, option }) {
         document.removeEventListener('pointerdown', outside, true);
         document.removeEventListener('keydown', esc);
     };
+}
+
+// 选项卡 → 面板（和 base.css 里每个面板亮哪一格对应）
+const MTABS = [
+    ['开始', 'ai-config-button'],
+    ['插入', 'backgrounds-button'],
+    ['查看', 'user-settings-button'],
+    ['审阅', 'sys-settings-button'],
+    ['画笔', 'extensions-settings-button'],
+];
+
+function mobileTabs() {
+    const holder = document.getElementById('top-settings-holder');
+    if (!holder) return null;
+    const bar = document.createElement('div');
+    bar.id = 'wps_mtabs';
+    // 酒馆的面板按钮绑的是 .drawer-toggle 的 click：点另一个会先收起开着的那个
+    const toggle = id => document.querySelector(`#${id} > .drawer-toggle`)?.click();
+    MTABS.forEach(([name, id], i) => {
+        const tab = document.createElement('i');
+        tab.className = 'wm-tab';
+        tab.style.setProperty('--i', i);
+        tab.title = name;
+        tab.addEventListener('click', () => {
+            if (!document.querySelector(`#${id} .drawer-content.openDrawer`)) toggle(id);
+        });
+        bar.append(tab);
+    });
+    const x = document.createElement('i');
+    x.className = 'wm-close';
+    x.title = '收起';
+    x.addEventListener('click', () => {
+        const id = document.querySelector('#top-settings-holder .drawer-content.openDrawer')?.closest('.drawer')?.id;
+        if (id) toggle(id);
+    });
+    bar.append(x);
+    // 酒馆在 <html> 上听 mousedown / touchstart：点在面板外面就把面板收起。这一排不算「外面」
+    const keep = e => e.stopPropagation();
+    bar.addEventListener('mousedown', keep);
+    bar.addEventListener('touchstart', keep, { passive: true });
+    holder.append(bar);
+    return () => bar.remove();
 }
