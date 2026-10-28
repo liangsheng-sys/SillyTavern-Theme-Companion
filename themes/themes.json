@@ -1072,7 +1072,7 @@
     },
     {
         "family": "WPS文档",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "variantLabel": "变体",
         "options": [
             {
@@ -1129,8 +1129,8 @@
                     },
                     {
                         "value": "on",
-                        "label": "开：豆沙绿的纸",
-                        "css": "html:root:root:root:root { --wps-paper: #CFE8CC; --wps-desk: #D2E7D5; --wps-page-edge: #B4CCB1; --wps-mark: #8FA88C; } html:root:root:root:root.dn-night { --wps-ink: #000000; --wps-link: #0000FF; --wps-ruler-guide: #000000; }"
+                        "label": "开（电脑是豆沙绿，手机是米黄，和 WPS 一样）",
+                        "css": "html:root:root:root:root { --wps-paper: #CFE8CC; --wps-desk: #D2E7D5; --wps-page-edge: #B4CCB1; --wps-mark: #8FA88C; } html:root:root:root:root.dn-night { --wps-ink: #000000; --wps-link: #0000FF; --wps-ruler-guide: #000000; } @media screen and (max-width: 1000px) { html:root:root:root:root { --wps-paper: #FFFDE6; --wps-m-bar: #FFFDE6; --wps-m-grey: #F2F0D9; --wps-surface: #FFFDE6; --wps-field: #FFFDE6; } html:root:root:root:root.dn-night { --wps-paper: #424125; --wps-m-bar: #3F3E22; --wps-m-grey: #302F13; --wps-surface: #3F3E22; --wps-field: #4A4930; --wps-ink: var(--wps-d-ink); --wps-link: var(--wps-d-link); } }"
                     }
                 ]
             },
