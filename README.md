@@ -61,7 +61,7 @@
 ## 给主题作者
 - **加入新主题**：在本仓库的源码里写 `theme.base.json` 的 `version`、`bundle` 和 `companion`（选项声明），构建时会把主题和变体写进 `themes/`，并在 `themes/themes.json` 里登记成一个「系列」。版本号变大以后，用户就会收到更新提示。
 - **主题设置的选项**：`companion.options` 里每项是 `{ type, var, label, default, note }`，type 有 `head`（小标题）、`select`（`choices: [[值, 名称]]`，或 `{ value, label, css }` 带一段 CSS）、`toggle`（`on`/`off` 的值，默认 1/0）、`text`（写成 CSS 字符串）、`number`（`min`/`max`/`step`/`unit`）、`color`、`dateformat`。用户改过的值写成 `html:root:root { --变量: 值 }`。
-- **主题脚本**：`companion.module: { src, asset }` 会被复制到扩展的 `modules/`。用户用这套主题时扩展 `import` 它并调用默认导出 `fn({ get, set, option })`（读 / 存选项、拿选项声明），返回的函数在换走主题时调用，用来清理。WPS文档的可拖标尺就是这样做的。
+- **主题脚本**：`companion.module: { src, asset }` 会被复制到扩展的 `modules/`。用户用这套主题时扩展 `import` 它并调用默认导出 `fn({ get, set, option, dayNight })`（读 / 存选项、拿选项声明、切昼夜），返回的函数在换走主题时调用，用来清理。WPS文档的可拖标尺就是这样做的。
 - **支持昼夜**：
   - 扩展只会在 `<html>` 上加 `dn-day` / `dn-night` 类和 `data-paper` 属性。主题写 `:root.dn-day { … }` 就能做出昼版。
   - 切换时用浏览器的视图过渡（默认淡入淡出）。切换期间 `<html>` 上有 `data-dn-to="day"|"night"`，主题可以写 `:root[data-dn-to='day']::view-transition-new(root) { animation: … }` 自定动画。

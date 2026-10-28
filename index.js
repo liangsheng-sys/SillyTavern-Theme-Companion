@@ -575,6 +575,8 @@ async function syncModule(fam) {
             option: key => opt(key),
             // 存一个选项并套用（undefined = 恢复默认）
             set: (key, v) => { const o = opt(key); if (!o) return; setOption(fam, o, v); renderAllOptions(); },
+            // 切昼夜：'day' / 'night' / 'toggle'（和 /daynight 一样，切了就是手动模式）
+            dayNight: cmd => setMode(cmd || 'toggle'),
         }) || null;
     } catch (e) {
         console.warn('[主题伴侣] 主题脚本载入失败', e);

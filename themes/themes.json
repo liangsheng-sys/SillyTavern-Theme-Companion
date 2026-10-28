@@ -1072,7 +1072,7 @@
     },
     {
         "family": "WPS文档",
-        "version": "1.1.1",
+        "version": "1.2.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -1119,7 +1119,7 @@
             {
                 "key": "eye",
                 "type": "select",
-                "label": "护眼模式（视图 → 护眼模式）",
+                "label": "护眼模式（电脑也可以点状态栏右下角的眼睛，手机在「查看」面板里）",
                 "default": "off",
                 "choices": [
                     {
@@ -1130,7 +1130,7 @@
                     {
                         "value": "on",
                         "label": "开（电脑是豆沙绿，手机是米黄，和 WPS 一样）",
-                        "css": "html:root:root:root:root { --wps-paper: #CFE8CC; --wps-desk: #D2E7D5; --wps-page-edge: #B4CCB1; --wps-mark: #8FA88C; } html:root:root:root:root.dn-night { --wps-ink: #000000; --wps-link: #0000FF; --wps-ruler-guide: #000000; } @media screen and (max-width: 1000px) { html:root:root:root:root { --wps-paper: #FFFDE6; --wps-m-bar: #FFFDE6; --wps-m-grey: #F2F0D9; --wps-surface: #FFFDE6; --wps-field: #FFFDE6; } html:root:root:root:root.dn-night { --wps-paper: #424125; --wps-m-bar: #3F3E22; --wps-m-grey: #302F13; --wps-surface: #3F3E22; --wps-field: #4A4930; --wps-ink: var(--wps-d-ink); --wps-link: var(--wps-d-link); } }"
+                        "css": "html:root:root:root:root { --wps-paper: #CFE8CC; --wps-desk: #D2E7D5; --wps-page-edge: #B4CCB1; --wps-mark: #8FA88C; --wps-eye-on: var(--wps-press); --wps-eye-btn: color-mix(in srgb, var(--wps-blue) 14%, var(--wps-surface)); --wps-eye-edge: color-mix(in srgb, var(--wps-blue) 60%, var(--wps-surface)); } html:root:root:root:root.dn-night { --wps-ink: #000000; --wps-link: #0000FF; --wps-ruler-guide: #000000; } @media screen and (max-width: 1000px) { html:root:root:root:root { --wps-paper: #FFFDE6; --wps-m-bar: #FFFDE6; --wps-m-grey: #F2F0D9; --wps-surface: #FFFDE6; --wps-field: #FFFDE6; } html:root:root:root:root.dn-night { --wps-paper: #424125; --wps-m-bar: #3F3E22; --wps-m-grey: #302F13; --wps-surface: #3F3E22; --wps-field: #4A4930; --wps-ink: var(--wps-d-ink); --wps-link: var(--wps-d-link); } }"
                     }
                 ]
             },

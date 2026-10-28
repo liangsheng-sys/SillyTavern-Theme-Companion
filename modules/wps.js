@@ -11,9 +11,13 @@
  *    选的都是主题设置里的同一个选项，两边同步
  * 3. 手机工具面板顶上那排选项卡（#wps_mtabs）
  *    点「开始 插入 查看 审阅 画笔」换到对应的面板，点右边的 ✕ 收起（✕ 只在装了扩展时画出来：<html> 上有 wps-js）
+ * 4. 护眼、夜间（#wps_eye、#wps_mview）
+ *    电脑：状态栏右下角那只眼睛 = 护眼模式开关（和 WPS 一样）
+ *    手机：「查看」面板最上面「夜间模式」「护眼模式」两个按钮；夜间模式就是主题伴侣的昼夜开关
+ *    按下去的样子由 CSS 管（夜间看 html.dn-night，护眼看主题设置写的 --wps-eye-*），这里只管点
  */
 export default function wps(api) {
-    const off = [ruler(api), ribbon(api), mobileTabs()];
+    const off = [ruler(api), ribbon(api), mobileTabs(), eyeAndNight(api)];
     document.documentElement.classList.add('wps-js');
     return () => {
         off.forEach(f => f?.());
@@ -246,4 +250,29 @@ function mobileTabs() {
     bar.addEventListener('touchstart', keep, { passive: true });
     holder.append(bar);
     return () => bar.remove();
+}
+
+function eyeAndNight({ get, set, dayNight }) {
+    const eye = () => set('eye', get('eye') === 'on' ? 'off' : 'on');
+
+    const pc = document.createElement('i');
+    pc.id = 'wps_eye';
+    pc.title = '护眼模式';
+    pc.addEventListener('click', eye);
+    document.body.append(pc);
+
+    const box = document.createElement('div');
+    box.id = 'wps_mview';
+    const btn = (cls, label, fn) => {
+        const b = document.createElement('div');
+        b.className = cls;
+        b.textContent = label;
+        b.addEventListener('click', fn);
+        box.append(b);
+    };
+    if (dayNight) btn('wv-night', '夜间模式', () => dayNight('toggle'));
+    btn('wv-eye', '护眼模式', eye);
+    document.getElementById('user-settings-block')?.prepend(box);
+
+    return () => { pc.remove(); box.remove(); };
 }
