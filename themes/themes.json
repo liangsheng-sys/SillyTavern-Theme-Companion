@@ -1491,5 +1491,20 @@
                 }
             }
         ]
+    },
+    {
+        "family": "正在播放",
+        "version": "0.1.0",
+        "variantLabel": "变体",
+        "options": [],
+        "themes": [
+            {
+                "name": "正在播放",
+                "file": "正在播放.json",
+                "label": "正在播放"
+            }
+        ],
+        "draft": true,
+        "module": "modules/nowplaying.js"
     }
 ]
