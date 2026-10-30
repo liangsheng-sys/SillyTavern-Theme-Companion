@@ -48,25 +48,35 @@ function words(s) {
 
 // ---------- 一个聊天文件 → 按年分好的小结 ----------
 // owner：单聊是角色头像文件名（这段聊天里所有消息都算这位的）；群聊是 null，角色的话算开口的那位
+// 导入的聊天（别的软件转过来、或者整段粘贴后补的）常常几百条共用一个时间：
+// 这种时间不可信，条数和字数照算，但不记进哪一天、几点、第一句
+const SAME_TIME = 20;
 function summarize(msgs, owner) {
     const years = {};
+    const seen = {};
+    for (const m of msgs) if (m && m.send_date != null) seen[m.send_date] = (seen[m.send_date] || 0) + 1;
     for (const m of msgs) {
         if (!m || typeof m !== 'object' || typeof m.mes !== 'string' || !('is_user' in m)) continue;
         const t = parseTime(m.send_date);
         if (!t) continue;
         const d = new Date(t);
-        const Y = years[d.getFullYear()] ??= { u: 0, a: 0, uw: 0, hours: Array(24).fill(0), days: {}, uwDays: {}, who: {}, first: 0, min: t, max: t, swipe: null };
+        const Y = years[d.getFullYear()] ??= { u: 0, a: 0, uw: 0, hours: Array(24).fill(0), days: {}, uwDays: {}, who: {}, first: 0, min: 0, max: 0, swipe: null, undated: 0 };
+        const dated = seen[m.send_date] < SAME_TIME;
         const doy = dayOfYear(d);
-        Y.days[doy] = (Y.days[doy] || 0) + 1;
-        if (t < Y.min) Y.min = t;
-        if (t > Y.max) Y.max = t;
+        if (dated) {
+            Y.days[doy] = (Y.days[doy] || 0) + 1;
+            if (!Y.min || t < Y.min) Y.min = t;
+            if (t > Y.max) Y.max = t;
+        } else Y.undated++;
         if (m.is_user) {
             const w = words(m.mes);
             Y.u++;
             Y.uw += w;
-            Y.uwDays[doy] = (Y.uwDays[doy] || 0) + w;
-            Y.hours[d.getHours()]++;
-            if (!Y.first || t < Y.first) Y.first = t;
+            if (dated) {
+                Y.uwDays[doy] = (Y.uwDays[doy] || 0) + w;
+                Y.hours[d.getHours()]++;
+                if (!Y.first || t < Y.first) Y.first = t;
+            }
             if (owner) Y.who[owner] = (Y.who[owner] || 0) + 1;
         } else {
             Y.a++;
@@ -109,6 +119,8 @@ const dbPut = (db, k, v) => new Promise(resolve => {
 
 // ---------- 读全部聊天 ----------
 // onProgress(读完几个, 一共几个)；signal 用来取消
+// 统计的算法改了就加一，旧缓存自动作废
+const CACHE_V = 2;
 async function collect(year, { onProgress, signal }) {
     const c = SillyTavern.getContext();
     const headers = c.getRequestHeaders();
@@ -117,27 +129,38 @@ async function collect(year, { onProgress, signal }) {
     const user = c.getCurrentUserHandle?.() || 'default';
     const db = await openDb();
 
-    // 先列出所有聊天文件，今年没碰过的不读
+    // 先列出所有聊天文件，今年没碰过的不读。
+    // 角色卡上带着聊天文件夹的大小和最后修改时间：没聊过、或者今年之前就没再动过的角色，连列都不用列
+    const t0 = performance.now();
     const jobs = [];
+    const chars = c.characters.filter(ch => !(ch.chat_size === 0 || (ch.date_last_chat > 0 && ch.date_last_chat < yearStart)));
     let listed = 0;
-    for (const ch of c.characters) {
-        if (signal.aborted) throw new DOMException('取消', 'AbortError');
-        const list = await post('/api/characters/chats', { avatar_url: ch.avatar }).catch(e => { if (e.name === 'AbortError') throw e; return null; });
-        onProgress(0, 0, ++listed, c.characters.length);
-        if (!Array.isArray(list)) continue;
+    const listQueue = chars.slice();
+    async function lister() {
+        while (listQueue.length) {
+            if (signal.aborted) throw new DOMException('取消', 'AbortError');
+            const ch = listQueue.shift();
+            const list = await post('/api/characters/chats', { avatar_url: ch.avatar }).catch(e => { if (e.name === 'AbortError') throw e; return null; });
+            onProgress(0, 0, ++listed, chars.length);
+            if (Array.isArray(list)) addFiles(ch, list);
+        }
+    }
+    const addFiles = (ch, list) => {
         for (const f of list) {
             const last = parseTime(f.last_mes);
             if (last && last < yearStart) continue;
             const id = String(f.file_name).replace(/\.jsonl$/, '');
             jobs.push({
                 key: `${user}|c|${ch.avatar}|${id}`,
-                sig: `${f.file_size}|${f.chat_items}|${f.last_mes}`,
+                sig: `${CACHE_V}|${f.file_size}|${f.chat_items}|${f.last_mes}`,
                 owner: ch.avatar,
                 chat: id,
                 load: () => post('/api/chats/get', { ch_name: ch.name, file_name: id, avatar_url: ch.avatar }),
             });
         }
-    }
+    };
+    await Promise.all(Array.from({ length: 6 }, lister));
+    const tList = performance.now();
     // 群聊没有「最后一条」的信息，每次都读（一般不多）
     for (const g of c.groups || []) {
         for (const id of g.chats || []) {
@@ -145,10 +168,9 @@ async function collect(year, { onProgress, signal }) {
         }
     }
 
-    // 四个一起读
+    // 六个一起读
     const out = [];
     let done = 0, fetched = 0;
-    const t0 = performance.now();
     const queue = jobs.slice();
     async function worker() {
         while (queue.length) {
@@ -167,8 +189,9 @@ async function collect(year, { onProgress, signal }) {
             onProgress(++done, jobs.length);
         }
     }
-    await Promise.all([worker(), worker(), worker(), worker()]);
-    return { chats: out, timing: { files: jobs.length, fetched, ms: Math.round(performance.now() - t0) } };
+    await Promise.all(Array.from({ length: 6 }, worker));
+    const now = performance.now();
+    return { chats: out, timing: { chars: c.characters.length, listedChars: chars.length, files: jobs.length, fetched, listMs: Math.round(tList - t0), readMs: Math.round(now - tList), ms: Math.round(now - t0) } };
 }
 
 // ---------- 一年的总账 ----------
@@ -183,13 +206,14 @@ function tally(year, chats) {
     const hours = Array(24).fill(0);
     const who = {};
     const ownerDays = {};
-    let u = 0, a = 0, uw = 0, first = null, longest = null, swipe = null;
+    let u = 0, a = 0, uw = 0, first = null, longest = null, swipe = null, undated = 0;
     for (const x of chats) {
         const Y = x.years[year];
         if (!Y) continue;
         u += Y.u;
         a += Y.a;
         uw += Y.uw;
+        undated += Y.undated || 0;
         for (const [d, v] of Object.entries(Y.days)) days[d] += v;
         for (const [d, v] of Object.entries(Y.uwDays)) uwDays[d] += v;
         Y.hours.forEach((v, i) => { hours[i] += v; });
@@ -201,10 +225,17 @@ function tally(year, chats) {
         }
         if (Y.first && (!first || Y.first < first.t)) first = { t: Y.first, owner: x.owner, group: x.group };
         const len = Y.u + Y.a;
-        if (!longest || len > longest.n) longest = { n: len, min: Y.min, max: Y.max, owner: x.owner, group: x.group, chat: x.chat, days: Y.days };
+        if (Y.min && (!longest || len > longest.n)) longest = { n: len, min: Y.min, max: Y.max, owner: x.owner, group: x.group, chat: x.chat, days: Y.days };
         if (Y.swipe && (!swipe || Y.swipe.n > swipe.n)) swipe = Y.swipe;
     }
     const peak = arr => arr.reduce((best, v, i) => (v > arr[best] ? i : best), 0);
+    // 那一天字数最多的那场聊天
+    const wd = peak(uwDays);
+    let wordyBy = null;
+    for (const x of chats) {
+        const v = x.years[year]?.uwDays?.[wd] || 0;
+        if (v && (!wordyBy || v > wordyBy.n)) wordyBy = { n: v, owner: x.owner, group: x.group };
+    }
     const top = Object.entries(who)
         .map(([avatar, count]) => ({ avatar, count, name: c.characters.find(ch => ch.avatar === avatar)?.name }))
         .filter(x => x.name)
@@ -214,8 +245,8 @@ function tally(year, chats) {
         total: u + a, u, a, uw,
         active: days.filter(Boolean).length,
         busiest: { doy: peak(days), n: days[peak(days)] },
-        wordiest: { doy: peak(uwDays), n: uwDays[peak(uwDays)] },
-        top, first, longest, swipe, ownerDays,
+        wordiest: { doy: wd, n: uwDays[wd], by: wordyBy && whoIs(wordyBy.owner, wordyBy.group)?.name },
+        top, first, longest, swipe, ownerDays, undated,
     };
 }
 
@@ -314,7 +345,7 @@ function cards(s, h) {
             <div class="npw-num"><span data-count="${w.unit ? '' : s.uw}">${w.num}</span><small>${w.unit}字</small></div>
             <p class="npw-lead">${wordsLike(s.uw)}。</p>
             <p class="npw-sub">只算你自己发的消息，角色写的不算。</p>`,
-        wave: { data: s.uwDays, line: s.wordiest.doy, note: `写得最多的一天 · ${md(dateOf(s.year, s.wordiest.doy))} · ${fmt(s.wordiest.n)} 字` },
+        wave: { data: s.uwDays, line: s.wordiest.doy, note: `写得最多的一天 · ${md(dateOf(s.year, s.wordiest.doy))} · ${fmt(s.wordiest.n)} 字${s.wordiest.by ? `<br>大多在和${esc(s.wordiest.by)}聊` : ''}` },
         share: () => ({ kicker: '我亲手写下的字', big: w.num, unit: `${w.unit}字`, lines: [`${wordsLike(s.uw)}。`], wave: list.find(x => x.id === 'words').wave }),
     });
 
@@ -509,9 +540,12 @@ function cards(s, h) {
                 <div><small>时段人格</small><b class="npw-sm">${shName}</b></div>
             </div>
             ${top.length ? `<div class="npw-k">年度角色</div><ol class="npw-mini">${top.slice(0, 3).map((x, i) => `<li>${h.cover(x.avatar)}<span><b>${i + 1}</b> ${esc(x.name)}</span></li>`).join('')}</ol>` : ''}
-            <button class="npw-btn npw-save-end" type="button">存成图片</button>`,
+            <div class="npw-btns"><button class="npw-btn npw-save-end" type="button">存这一张</button><button class="npw-btn npw-save-all" type="button">全部拼成长图</button></div>`,
         wave: { data: s.days },
-        mount(card, ui) { card.querySelector('.npw-save-end').addEventListener('click', e => { e.stopPropagation(); ui.save(); }); },
+        mount(card, ui) {
+            card.querySelector('.npw-save-end').addEventListener('click', e => { e.stopPropagation(); ui.save(); });
+            card.querySelector('.npw-save-all').addEventListener('click', e => { e.stopPropagation(); ui.saveAll(e.currentTarget); });
+        },
         share: () => ({
             kicker: `我的 ${s.year} 酒馆`,
             grid: [['来了', fmt(s.active), '天'], ['消息', s.total < 1e5 ? fmt(s.total) : big(s.total).num, s.total < 1e5 ? '条' : '万条'], ['写下', w.num, `${w.unit}字`], ['时段人格', shName, '']],
@@ -802,7 +836,13 @@ async function renderShare(spec, year, art) {
     const foot = H - P + 14;
     if (spec.wave) {
         const top = foot - 80 - 520;
-        if (spec.wave.note) say(spec.wave.note, 38, 700, P, top - 24);
+        if (spec.wave.note) {
+            // 卡片上的说明是 HTML，画布上要纯文字；太长就往上折行
+            const t = document.createElement('textarea');
+            setFont(38, 700);
+            const ls = spec.wave.note.split(/<br\s*\/?>/).flatMap(part => { t.innerHTML = part.replace(/<[^>]*>/g, ''); return wrapText(t.value, W - 2 * P); });
+            ls.forEach((l, i) => say(l, 38, 700, P, top - 24 - (ls.length - 1 - i) * 52));
+        }
         g.save();
         g.translate(P, top);
         paintWave(g, W - 2 * P, 520, spec.wave, year, 1, ink, font, 30);
@@ -817,6 +857,57 @@ async function renderShare(spec, year, art) {
     g.textBaseline = 'alphabetic';
     say(`正在播放 · 酒馆年报 ${year}`, 32, 700, P, foot, sub);
     return cv;
+}
+
+// 所有能存图的卡拼成一张长图：每张缩到 540×960，两列，卡之间留缝
+async function renderAll(specs, year, art) {
+    const CW = 540, CH = 960, GAP = 24, PAD = 48, COLS = 2;
+    const rows = Math.ceil(specs.length / COLS);
+    const cv = document.createElement('canvas');
+    cv.width = PAD * 2 + CW * COLS + GAP * (COLS - 1);
+    cv.height = PAD * 2 + CH * rows + GAP * (rows - 1);
+    const g = cv.getContext('2d');
+    const probe = document.createElement('div');
+    probe.style.display = 'none';
+    (document.getElementById('np_wrap') || document.body).append(probe);
+    const resolve = v => { probe.style.color = ''; probe.style.color = v; return getComputedStyle(probe).color; };
+    g.fillStyle = resolve('var(--np-base)');
+    g.fillRect(0, 0, cv.width, cv.height);
+    const at = i => [PAD + (i % COLS) * (CW + GAP), PAD + Math.floor(i / COLS) * (CH + GAP)];
+    for (let i = 0; i < specs.length; i++) {
+        const one = await renderShare(specs[i], year, art);
+        const [x, y] = at(i);
+        g.save();
+        g.beginPath();
+        g.roundRect(x, y, CW, CH, 20);
+        g.clip();
+        g.drawImage(one, x, y, CW, CH);
+        g.restore();
+    }
+    if (specs.length % COLS) {
+        const [x, y] = at(specs.length);
+        g.fillStyle = resolve('var(--np-sub)');
+        g.font = `700 30px ${getComputedStyle(probe).fontFamily}`;
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(`正在播放 · 酒馆年报 ${year}`, x + CW / 2, y + CH / 2);
+    }
+    probe.remove();
+    return cv;
+}
+
+function download(cv, name, type = 'image/png') {
+    return new Promise((res, rej) => cv.toBlob(blob => {
+        if (!blob) return rej(new Error('图片太大，浏览器画不出来'));
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        res();
+    }, type, .92));
 }
 
 // ---------- 界面 ----------
@@ -866,9 +957,11 @@ export function open(helpers = {}) {
     card.querySelector('.npw-cancel').addEventListener('click', () => close());
     const prog = card.querySelector('.npw-prog i');
     const count = card.querySelector('.npw-count');
+    const tStart = performance.now();
+    const secs = () => { const s = Math.round((performance.now() - tStart) / 1000); return s < 60 ? `${s} 秒` : `${Math.floor(s / 60)} 分 ${s % 60} 秒`; };
     const onProgress = (done, total, listed, chars) => {
-        if (listed != null) { count.textContent = `列聊天文件 ${listed} / ${chars} 位角色`; prog.style.width = `${(listed / chars) * 15}%`; return; }
-        count.textContent = `读了 ${done} / ${total} 个聊天`;
+        if (listed != null) { count.textContent = `列聊天文件 ${listed} / ${chars} 位角色 · ${secs()}`; prog.style.width = `${(listed / chars) * 15}%`; return; }
+        count.textContent = `读了 ${done} / ${total} 个聊天 · ${secs()}`;
         prog.style.width = `${15 + (done / Math.max(1, total)) * 85}%`;
     };
 
@@ -912,15 +1005,7 @@ export function open(helpers = {}) {
         if (!spec || saveBtn.disabled) return;
         saveBtn.disabled = true;
         try {
-            const cv = await renderShare({ tone: it.tone, ...spec }, year, helpers.art);
-            const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `酒馆年报-${year}-${it.id}.png`;
-            document.body.append(a);
-            a.click();
-            a.remove();
-            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            await download(await renderShare({ tone: it.tone, ...spec }, year, helpers.art), `酒馆年报-${year}-${it.id}.png`);
             toastr?.success?.('已存成图片');
         } catch (e) {
             console.error('[正在播放] 存图失败', e);
@@ -930,8 +1015,27 @@ export function open(helpers = {}) {
         }
     }
     saveBtn.addEventListener('click', save);
-    // 卡片里的交互用：refresh 重画某张卡（还停在那张时）；save 存当前这张
-    const ui = { refresh: id => { if (list[at]?.id === id) show(at); }, save };
+    // 拼成一张长图（JPG：十来张卡拼起来 PNG 太大）
+    let stitching = false;
+    async function saveAll(btn) {
+        if (stitching) return;
+        stitching = true;
+        const label = btn?.textContent;
+        if (btn) btn.textContent = '正在拼…';
+        try {
+            const specs = list.map(it => { const sp = it.share?.(); return sp && { tone: it.tone, ...sp }; }).filter(Boolean);
+            await download(await renderAll(specs, year, helpers.art), `酒馆年报-${year}-全部.jpg`, 'image/jpeg');
+            toastr?.success?.(`已把 ${specs.length} 张拼成一张长图`);
+        } catch (e) {
+            console.error('[正在播放] 拼图失败', e);
+            toastr?.error?.(`拼图失败：${e?.message || e}`);
+        } finally {
+            stitching = false;
+            if (btn) btn.textContent = label;
+        }
+    }
+    // 卡片里的交互用：refresh 重画某张卡（还停在那张时）；save 存当前这张；saveAll 全部拼成长图
+    const ui = { refresh: id => { if (list[at]?.id === id) show(at); }, save, saveAll };
 
     const go = d => { if (list.length) show(at + d); };
     wrap.querySelector('.npw-prev').addEventListener('click', () => go(-1));
@@ -968,6 +1072,7 @@ export function open(helpers = {}) {
             // 调试用：npWrapped.share('top') 拿到某张卡的存图（data URL）
             window.npWrapped = {
                 stats: s, timing,
+                all: async () => (await renderAll(list.map(it => { const sp = it.share?.(); return sp && { tone: it.tone, ...sp }; }).filter(Boolean), year, helpers.art)).toDataURL('image/jpeg', .92),
                 share: async id => { const it = list.find(x => x.id === id); const spec = it?.share?.(); return spec ? (await renderShare({ tone: it.tone, ...spec }, year, helpers.art)).toDataURL('image/png') : null; },
             };
             // 要用到的头像先把颜色取好（也顺便认出默认头像），卡片里就能直接用

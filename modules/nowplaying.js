@@ -275,7 +275,17 @@ export default function nowplaying() {
         renderHead();
     }
 
+    // 刚打开页面时，酒馆可能还没给面板写 data-menu-type（要等第一次换页），主题的样子都挂在它上面：先按哪一块露着补上
+    function ensureMenuType() {
+        if (!panel || panel.dataset.menuType) return;
+        const vis = id => { const el = document.getElementById(id); return !!el && getComputedStyle(el).display !== 'none'; };
+        const t = vis('rm_ch_create_block') ? (SillyTavern.getContext().characterId != null ? 'character_edit' : 'create')
+            : vis('rm_group_chats_block') ? 'group_edit' : vis('rm_characters_block') ? 'characters' : '';
+        if (t) panel.dataset.menuType = t;
+    }
+
     function renderHead() {
+        ensureMenuType();
         const type = panel?.dataset.menuType || '';
         const editing = root.classList.contains('np-editing');
         rhead.dataset.mode = type === 'characters' ? 'lib' : type === 'character_edit' ? (editing ? 'edit' : 'about') : type === 'group_edit' ? 'group' : 'other';
@@ -454,14 +464,19 @@ export default function nowplaying() {
     const moList = new MutationObserver(() => { decorateList(); decorateAvatars(); });
     if (charList) moList.observe(charList, { childList: true });
     // 面板换了页（列表 / 单个角色 / 新建 / 群聊）：退出编辑，换标题
-    const moPanel = new MutationObserver(() => {
+    // 面板每次打开也重画一遍（第一次打开时酒馆的数据可能刚到）
+    const moPanel = new MutationObserver(recs => {
+        if (recs.every(r => r.attributeName === 'class')) {
+            if (panel.classList.contains('openDrawer')) { renderHead(); renderAbout(); decorateList(); decorateAvatars(); }
+            return;
+        }
         if (panel.dataset.menuType !== 'character_edit') root.classList.remove('np-editing');
         closeMenu();
         renderAbout();
         renderHead();
         decorateAvatars();
     });
-    if (panel) moPanel.observe(panel, { attributes: true, attributeFilter: ['data-menu-type'] });
+    if (panel) moPanel.observe(panel, { attributes: true, attributeFilter: ['data-menu-type', 'class'] });
 
     // 专辑头滚出去以后，顶上显示细栏
     const onScroll = () => root.classList.toggle('np-scrolled', hero.isConnected && chatEl.scrollTop > hero.offsetHeight - 40);
