@@ -30,7 +30,7 @@ export default function nowplaying() {
 
     // ---------- 界面 ----------
     const hero = mk('div', { id: 'np_hero' });
-    hero.innerHTML = '<img class="np-cover" alt=""><div class="np-info"><div class="np-kicker">角色</div><div class="np-title"></div><div class="np-meta"></div></div>';
+    hero.innerHTML = '<div class="np-cover"></div><div class="np-info"><div class="np-kicker">角色</div><div class="np-title"></div><div class="np-meta"></div></div>';
     const actions = mk('div', { id: 'np_actions' });
     actions.innerHTML = '<div class="np-play" title="继续写"><i class="fa-solid fa-play"></i></div><span class="np-hint">继续写</span>';
     made.push(hero, actions);
@@ -65,12 +65,13 @@ export default function nowplaying() {
         const c = SillyTavern.getContext();
         if (c.groupId) {
             const g = c.groups.find(x => x.id === c.groupId);
-            const first = c.characters.find(ch => g?.members?.includes(ch.avatar));
-            return { name: g?.name || '群聊', kind: '群聊', avatar: first?.avatar, };
+            // 成员里还在的角色（被删掉的跳过）；封面最多拼四个，像歌单封面
+            const avatars = (g?.members || []).filter(a => c.characters.some(ch => ch.avatar === a));
+            return { name: g?.name || '群聊', kind: '群聊', avatar: avatars[0], avatars: avatars.slice(0, 4), members: avatars.length };
         }
         const ch = c.characters[c.characterId];
         if (!ch) return null;
-        return { name: ch.name, kind: '角色', avatar: ch.avatar };
+        return { name: ch.name, kind: '角色', avatar: ch.avatar, avatars: [ch.avatar] };
     }
 
 
@@ -130,11 +131,18 @@ export default function nowplaying() {
         const c = SillyTavern.getContext();
         const n = c.chat?.length || 0;
         const words = (c.chat || []).reduce((s, m) => s + (m.mes?.length || 0), 0);
-        hero.querySelector('.np-cover').src = avatarUrl(cur.avatar);
-        if (changed('hero', cur.avatar)) tick(hero);
+        const cover = hero.querySelector('.np-cover');
+        const key = cur.avatars.join('|');
+        if (cover.dataset.key !== key) {
+            cover.dataset.key = key;
+            cover.dataset.n = cur.avatars.length;
+            cover.innerHTML = cur.avatars.map(a => `<img src="${esc(cur.avatars.length > 1 ? thumbUrl(a) : avatarUrl(a))}" alt="">`).join('');
+        }
+        if (changed('hero', key)) tick(hero);
         hero.querySelector('.np-kicker').textContent = cur.kind;
         hero.querySelector('.np-title').textContent = cur.name;
-        hero.querySelector('.np-meta').innerHTML = `<b>${esc(c.name1)}</b> · ${n} 条消息 · 约 ${words.toLocaleString()} 字`;
+        const who = cur.members ? ` · ${cur.members} 位成员` : '';
+        hero.querySelector('.np-meta').innerHTML = `<b>${esc(c.name1)}</b>${who} · ${n} 条消息 · 约 ${words.toLocaleString()} 字`;
         top.querySelector('.np-top-name').textContent = cur.name;
         root.style.setProperty('--np-name', JSON.stringify(cur.name));
         // 专辑头永远是聊天的第一块（「加载更多」按钮也挪到它后面）
@@ -148,10 +156,14 @@ export default function nowplaying() {
         const last = [...(c.chat || [])].reverse().find(m => !m.is_user && !m.is_system);
         const total = last?.swipes?.length || 1;
         const at = (last?.swipe_id ?? 0) + 1;
+        // 群聊里「正在播放」的是最后开口的那位（像歌单里正在放的那首歌的歌手），下面一行写群名
+        const speaker = cur?.members && last?.original_avatar ? c.characters.find(ch => ch.avatar === last.original_avatar) : null;
+        const nowName = speaker?.name || cur?.name;
+        const nowSub = total > 1 ? `第 ${at} / ${total} 版回复` : speaker ? cur.name : '正在播放';
         now.innerHTML = cur
-            ? `<img src="${esc(thumbUrl(cur.avatar))}" alt=""><div style="min-width:0"><div class="np-n">${esc(cur.name)}</div><div class="np-s">${total > 1 ? `第 ${at} / ${total} 版回复` : '正在播放'}</div></div>`
+            ? `<img src="${esc(thumbUrl(speaker?.avatar || cur.avatar))}" alt=""><div style="min-width:0"><div class="np-n">${esc(nowName)}</div><div class="np-s">${esc(nowSub)}</div></div>`
             : '';
-        if (changed('now', `${cur?.name}|${at}/${total}`)) tick(now);
+        if (changed('now', `${nowName}|${at}/${total}`)) tick(now);
         const lastMes = document.querySelector('#chat .last_mes');
         const canSwipe = lastMes?.getAttribute('is_user') === 'false';
         prev.classList.toggle('np-off', !canSwipe || at <= 1);
@@ -166,9 +178,11 @@ export default function nowplaying() {
     function markCur() {
         if (!charList) return;
         const c = SillyTavern.getContext();
-        const want = c.groupId ? null : String(c.characterId);
-        charList.querySelectorAll('.np-cur').forEach(el => { if (el.dataset.chid !== want) el.classList.remove('np-cur'); });
-        if (want != null) charList.querySelector(`.character_select[data-chid="${want}"]`)?.classList.add('np-cur');
+        // 正在聊的那一行：单聊看 data-chid，群聊看 data-grid
+        const sel = c.groupId ? `.group_select[data-grid="${c.groupId}"]` : c.characterId != null ? `.character_select[data-chid="${c.characterId}"]` : null;
+        const want = sel ? charList.querySelector(sel) : null;
+        charList.querySelectorAll('.np-cur').forEach(el => { if (el !== want) el.classList.remove('np-cur'); });
+        want?.classList.add('np-cur');
     }
 
     // 列表每行的副标题：「角色 · 6 天前」「群聊 · 3 位」
@@ -205,15 +219,15 @@ export default function nowplaying() {
     function renderHead() {
         const type = panel?.dataset.menuType || '';
         const editing = root.classList.contains('np-editing');
-        rhead.dataset.mode = type === 'characters' ? 'lib' : type === 'character_edit' ? (editing ? 'edit' : 'about') : 'other';
-        rhead.querySelector('.np-rh-title').textContent = { lib: '资料库', about: '正在播放', edit: '编辑设定' }[rhead.dataset.mode] || '';
+        rhead.dataset.mode = type === 'characters' ? 'lib' : type === 'character_edit' ? (editing ? 'edit' : 'about') : type === 'group_edit' ? 'group' : 'other';
+        rhead.querySelector('.np-rh-title').textContent = { lib: '资料库', about: '正在播放', edit: '编辑设定', group: '群聊' }[rhead.dataset.mode] || '';
         rhead.querySelector('.np-rh-back').title = rhead.dataset.mode === 'edit' ? '回到展示页' : '资料库';
         rhead.querySelector('.np-rh-pin').classList.toggle('np-on', !!pinBox?.checked);
     }
 
     rhead.querySelector('.np-rh-back').addEventListener('click', () => {
         if (rhead.dataset.mode === 'edit') setEditing(false);
-        else if (rhead.dataset.mode === 'about') click('#rm_button_characters');
+        else if (rhead.dataset.mode === 'about' || rhead.dataset.mode === 'group') click('#rm_button_characters');
     });
     rhead.querySelector('.np-rh-done').addEventListener('click', () => setEditing(false));
     rhead.querySelector('.np-rh-pin').addEventListener('click', () => { pinBox?.click(); setTimeout(renderHead); });
