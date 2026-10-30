@@ -96,6 +96,20 @@ function summarize(msgs, owner) {
     return years;
 }
 
+// 聊天的「指纹」：开头几条消息的时间和前几十个字。导入的备份和原聊天开头一样，指纹相同的只算一份
+function fingerprint(msgs) {
+    const head = [];
+    for (const m of msgs) {
+        if (!m || typeof m.mes !== 'string' || !('is_user' in m)) continue;
+        head.push(`${m.send_date}|${m.is_user ? 1 : 0}|${m.mes.slice(0, 40)}`);
+        if (head.length === 4) break;
+    }
+    if (head.length < 2) return null;
+    let h = 5381;
+    for (const ch of head.join('\n')) h = ((h << 5) + h + ch.codePointAt(0)) >>> 0;
+    return `${head.length}:${h.toString(36)}`;
+}
+
 // ---------- 缓存 ----------
 function openDb() {
     return new Promise(resolve => {
@@ -127,7 +141,7 @@ const dbPut = (db, k, v) => new Promise(resolve => {
 // ---------- 读全部聊天 ----------
 // onProgress(读完几个, 一共几个)；signal 用来取消
 // 统计的算法改了就加一，旧缓存自动作废
-const CACHE_V = 3;
+const CACHE_V = 4;
 async function collect(year, { onProgress, signal }) {
     const c = SillyTavern.getContext();
     const headers = c.getRequestHeaders();
@@ -183,16 +197,18 @@ async function collect(year, { onProgress, signal }) {
         while (queue.length) {
             if (signal.aborted) throw new DOMException('取消', 'AbortError');
             const job = queue.shift();
-            let years;
+            let years, fp;
             const hit = job.sig ? await dbGet(db, job.key) : null;
-            if (hit && hit.sig === job.sig) years = hit.years;
+            if (hit && hit.sig === job.sig) ({ years, fp } = hit);
             else {
                 const msgs = await job.load();
                 fetched++;
-                years = summarize(Array.isArray(msgs) ? msgs : [], job.owner);
-                if (job.sig) dbPut(db, job.key, { sig: job.sig, years });
+                const list = Array.isArray(msgs) ? msgs : [];
+                years = summarize(list, job.owner);
+                fp = fingerprint(list);
+                if (job.sig) dbPut(db, job.key, { sig: job.sig, years, fp });
             }
-            out.push({ owner: job.owner, group: job.group, chat: job.chat, years });
+            out.push({ owner: job.owner, group: job.group, chat: job.chat, years, fp });
             onProgress(++done, jobs.length);
         }
     }
@@ -204,6 +220,20 @@ async function collect(year, { onProgress, signal }) {
 // ---------- 一年的总账 ----------
 function tally(year, chats) {
     const c = SillyTavern.getContext();
+    // 同一位角色（或同一个群）下指纹一样的聊天是备份副本：只留消息最多的那份
+    const size = x => Object.values(x.years).reduce((p, Y) => p + Y.u + Y.a, 0);
+    const keep = new Map();
+    let copies = 0;
+    for (const x of chats) {
+        if (!x.fp) continue;
+        const k = `${x.owner || x.group}|${x.fp}`;
+        const was = keep.get(k);
+        if (!was) { keep.set(k, x); continue; }
+        copies++;
+        if (size(x) > size(was)) keep.set(k, x);
+    }
+    const kept = new Set(keep.values());
+    chats = chats.filter(x => !x.fp || kept.has(x));
     const n = daysInYear(year);
     const now = new Date();
     // 今年只排到今天
@@ -254,7 +284,7 @@ function tally(year, chats) {
         active: days.filter(Boolean).length,
         busiest: { doy: peak(days), n: days[peak(days)] },
         wordiest: { doy: wd, n: uwDays[wd], by: wordyBy && whoIs(wordyBy.owner, wordyBy.group)?.name },
-        top, first, longest, swipe, ownerDays, undated,
+        top, first, longest, swipe, ownerDays, undated, copies,
         bigU: bigU && { ...bigU, by: whoIs(bigU.owner, bigU.group)?.name },
     };
 }
@@ -329,7 +359,7 @@ function cards(s, h) {
         html: `<div class="npw-k">酒馆年报</div>
             <div class="npw-year">${s.year}</div>
             <p class="npw-lead"><span>这一年，</span><span>你来了 <b>${fmt(s.active)}</b> 天。</span></p>
-            <p class="npw-sub">底下这条波形是你的 ${s.year}：每一根是一天，越高那天聊得越多。</p>`,
+            <p class="npw-sub">底下这条波形是你的 ${s.year}：每一根是一天，越高那天聊得越多。${s.copies ? `<br>另有 ${s.copies} 份聊天是备份副本，没有重复算。` : ''}</p>`,
         wave: { data: s.days },
         share: () => ({ kicker: '酒馆年报', big: String(s.year), lines: [`这一年，我来了 ${fmt(s.active)} 天。`], wave: { data: s.days } }),
     });
@@ -1050,12 +1080,15 @@ export function open(helpers = {}) {
     wrap.querySelector('.npw-prev').addEventListener('click', () => go(-1));
     wrap.querySelector('.npw-next').addEventListener('click', () => go(1));
     wrap.querySelector('.npw-close').addEventListener('click', () => close());
+    // 年报开着时，方向键 / 空格 / Esc 都归年报，不让酒馆拿去换版回复（swipe）或关面板
     const onKey = e => {
-        if (e.key === 'Escape') { e.stopPropagation(); close(); }
-        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
-        if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+        const k = { Escape: 0, ArrowRight: 1, ' ': 1, ArrowLeft: -1 }[e.key];
+        if (k === undefined || e.target.closest?.('textarea, input, [contenteditable="true"]')) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (k === 0) close(); else go(k);
     };
-    document.addEventListener('keydown', onKey, true);
+    addEventListener('keydown', onKey, true);
     const onResize = () => {
         const cv = card.querySelector('canvas');
         const it = list[at];
@@ -1069,7 +1102,7 @@ export function open(helpers = {}) {
     current = () => {
         ac.abort();
         cancelAnimationFrame(raf);
-        document.removeEventListener('keydown', onKey, true);
+        removeEventListener('keydown', onKey, true);
         removeEventListener('resize', onResize);
         wrap.remove();
     };

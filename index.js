@@ -327,6 +327,7 @@ async function checkThemes() {
         }
     }
     const { merged, renamed } = await retireThemes();
+    await reapplyActive(updated);
     save();
     const uniq = a => [...new Set(a)].map(x => `「${x}」`).join('');
     if (renamed.length) refreshToast(renamed.join('，'));
@@ -338,6 +339,20 @@ async function checkThemes() {
     syncThemes();
     renderAllOptions();
     applyOptions();
+}
+
+// 酒馆启动时用的是设置里存的那份 CSS，不会重读主题文件：主题更新后正在用的那套要重新选一次才生效。
+// 每个版本只做一次（之后你在「自订 CSS」里的改动不会被反复覆盖）；这次刚更新的等下次加载再做（酒馆内存里还是旧主题）
+async function reapplyActive(updatedNow) {
+    const name = currentTheme();
+    const fam = families.find(f => f.themes.some(t => t.name === name));
+    if (!fam || updatedNow.includes(fam.family)) return;
+    const s = settings();
+    const ver = s.themes[name];
+    if (!isVersion(ver) || (s.applied ||= {})[name] === ver) return;
+    const mine = (await serverThemes()).find(x => x.name === name);
+    if (mine && mine.custom_css !== ctx().powerUserSettings?.custom_css) await useTheme(name);
+    s.applied[name] = ver;
 }
 
 // 变体改成选项以后（themes.json 里的 retired）：以前由本扩展装上的那几份删掉；

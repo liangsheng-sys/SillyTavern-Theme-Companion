@@ -483,7 +483,14 @@ export default function nowplaying() {
     chatEl.addEventListener('scroll', onScroll, { passive: true });
 
     // 播放条实际多高
-    const ro = new ResizeObserver(() => root.style.setProperty('--np-bar', `${Math.ceil(form.getBoundingClientRect().height)}px`));
+    // --np-bar-rest：输入框只有一行时的高度（左右面板按这个让位，不跟着输入框长高）
+    const ta = document.getElementById('send_textarea');
+    const ro = new ResizeObserver(() => {
+        const h = form.getBoundingClientRect().height;
+        root.style.setProperty('--np-bar', `${Math.ceil(h)}px`);
+        const extra = ta ? Math.max(0, ta.getBoundingClientRect().height - parseFloat(getComputedStyle(ta).minHeight || 0)) : 0;
+        root.style.setProperty('--np-bar-rest', `${Math.ceil(h - extra)}px`);
+    });
     ro.observe(form);
 
     renderAll();
@@ -506,6 +513,7 @@ export default function nowplaying() {
         root.classList.remove('np-js', 'np-scrolled', 'np-editing');
         root.style.removeProperty('--np-art');
         root.style.removeProperty('--np-bar');
+        root.style.removeProperty('--np-bar-rest');
         root.style.removeProperty('--np-name');
     };
 }
