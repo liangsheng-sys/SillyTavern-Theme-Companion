@@ -214,11 +214,15 @@ export default function nowplaying() {
         <div class="np-by"></div>
         <div class="np-acts">
             <div class="np-act np-fav interactable" tabindex="0" title="收藏"></div>
+            <div class="np-act np-world interactable" tabindex="0" title="角色世界书"></div>
+            <div class="np-act np-chatlore interactable" tabindex="0" title="聊天世界书"></div>
             <div class="np-act np-edit interactable" tabindex="0" title="编辑设定"></div>
             <div class="np-act np-more interactable" tabindex="0" title="更多"></div>
         </div>
         <div class="np-card"><div class="np-card-img">关于这位角色</div><div class="np-card-stat"></div><div class="np-card-body"></div></div>`;
     if (chBlock) { chBlock.prepend(about); made.push(about); }
+
+    const shown = el => el && el.style.display !== 'none' && !el.classList.contains('displayNone');
 
     function renderAbout() {
         const c = SillyTavern.getContext();
@@ -232,6 +236,13 @@ export default function nowplaying() {
         const creator = ch.data?.creator;
         about.querySelector('.np-by').textContent = [creator ? `作者 ${creator}` : '角色', ch.data?.character_version].filter(Boolean).join(' · ');
         // 收藏状态以酒馆按钮为准（点了以后要等自动保存，角色数据才会变）
+        // 世界书、聊天世界书：挂上了就是绿的（酒馆给按钮加 world_set）；按钮不在就不显示
+        const lore = [['.np-world', '#world_button'], ['.np-chatlore', '#rm_ch_create_block .chat_lorebook_button']];
+        lore.forEach(([mine, theirs]) => {
+            const el = document.querySelector(theirs);
+            about.querySelector(mine).hidden = !shown(el);
+            about.querySelector(mine).classList.toggle('np-on', !!el?.classList.contains('world_set'));
+        });
         const favBtn = document.getElementById('favorite_button');
         about.querySelector('.np-fav').classList.toggle('np-on', favBtn ? favBtn.classList.contains('fav_on') : (ch.fav === true || ch.fav === 'true'));
         const mine = c.groupId ? 0 : (c.chat || []).filter(m => m.is_user).length;
@@ -244,11 +255,13 @@ export default function nowplaying() {
 
     about.querySelector('.np-fav').addEventListener('click', () => { click('#favorite_button'); setTimeout(renderAbout, 50); });
     about.querySelector('.np-edit').addEventListener('click', () => setEditing(true));
+    // 酒馆的世界书键：挂了书就打开那本，按住 Shift 点是换一本；把 Shift 一起传过去
+    about.querySelector('.np-world').addEventListener('click', e => document.getElementById('world_button')?.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: e.shiftKey })));
+    about.querySelector('.np-chatlore').addEventListener('click', () => click('#rm_ch_create_block .chat_lorebook_button'));
     about.querySelector('.np-card').addEventListener('click', () => about.querySelector('.np-card-body').classList.toggle('np-open'));
 
     // ---------- ⋯ 菜单 ----------
     const menu = mk('div', { id: 'np_menu', hidden: true }, document.body);
-    const shown = el => el && el.style.display !== 'none' && !el.classList.contains('displayNone');
     function menuItems() {
         const btn = (icon, label, sel, cls = '') => {
             const el = document.querySelector(sel);
@@ -257,8 +270,6 @@ export default function nowplaying() {
         const list = [
             { icon: 'fa-pencil', label: '编辑设定', run: () => setEditing(true) },
             btn('fa-book', '高级定义', '#advanced_div'),
-            btn('fa-globe', '角色世界书', '#world_button'),
-            btn('fa-passport', '聊天世界书', '#rm_ch_create_block .chat_lorebook_button'),
             btn('fa-face-smile', '角色关联', '#char_connections_button'),
             btn('fa-file-export', '导出', '#export_button'),
             btn('fa-clone', '复制一份', '#dupe_button'),
