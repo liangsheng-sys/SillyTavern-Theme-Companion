@@ -291,7 +291,12 @@ export default function nowplaying() {
     rhead.querySelector('.np-rh-done').addEventListener('click', () => setEditing(false));
     // 年报：第一次点才载入（带上和本文件一样的版本号，更新后不吃旧缓存）
     const wrapped = () => import(new URL(`./nowplaying-wrapped.js${new URL(import.meta.url).search}`, import.meta.url));
-    rhead.querySelector('.np-rh-wrap').addEventListener('click', () => wrapped().then(m => m.open()).catch(e => {
+    // 年报里的封面和底色跟主题其他地方同一套：真头像取主色，默认头像按名字配色、画首字
+    const wrapHelpers = {
+        colorOf: file => isDefault(file).then(d => (d ? genColor(nameOf(file)) : pickColor(file))),
+        cover: (file, large) => coverHTML(file, '', large ? avatarUrl(file) : thumbUrl(file)),
+    };
+    rhead.querySelector('.np-rh-wrap').addEventListener('click', () => wrapped().then(m => m.open(wrapHelpers)).catch(e => {
         console.error('[正在播放] 年报载入失败', e);
         toastr?.error?.('年报没能载入，刷新页面再试一次');
     }));
