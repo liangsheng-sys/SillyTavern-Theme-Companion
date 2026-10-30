@@ -277,6 +277,7 @@ const hourName = h => `${h < 5 ? '凌晨' : h < 9 ? '早上' : h < 12 ? '上午'
 
 // ---------- 卡片 ----------
 // 每张卡：tone 底色（'base' = 面板色，否则一个颜色值）、html、wave 底下的音轨或 dial 钟面、mount 装上交互
+// share()：存图时画什么（没有就不能存；猜一猜不存，免得剧透）。图里只有数字、名字和头像，不带聊天原文
 // h：{ color(头像) → 封面色, cover(头像, 大不大) → 封面 HTML }，由 companion.js 传进来
 function cards(s, h) {
     const esc = x => String(x ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -290,6 +291,7 @@ function cards(s, h) {
             <p class="npw-lead"><span>这一年，</span><span>你来了 <b>${fmt(s.active)}</b> 天。</span></p>
             <p class="npw-sub">底下这条波形是你的 ${s.year}：每一根是一天，越高那天聊得越多。</p>`,
         wave: { data: s.days },
+        share: () => ({ kicker: '酒馆年报', big: String(s.year), lines: [`这一年，我来了 ${fmt(s.active)} 天。`], wave: { data: s.days } }),
     });
     if (!s.total) {
         list.push({ id: 'empty', tone: 'var(--np-cover-6)', html: `<div class="npw-k">${s.year}</div><p class="npw-lead">这一年还没有聊天记录。</p>` });
@@ -302,6 +304,7 @@ function cards(s, h) {
             <div class="npw-num"><span data-count="${s.total}">${fmt(s.total)}</span><small>条</small></div>
             <p class="npw-lead"><span>你写了 <b>${fmt(s.u)}</b> 条，</span><span>角色们回了 <b>${fmt(s.a)}</b> 条。</span></p>`,
         wave: { data: s.days, line: s.busiest.doy, note: `最热闹的一天 · ${md(dateOf(s.year, s.busiest.doy))} · ${fmt(s.busiest.n)} 条` },
+        share: () => ({ kicker: '这一年的消息', big: fmt(s.total), unit: '条', lines: [`我写了 ${fmt(s.u)} 条，角色们回了 ${fmt(s.a)} 条。`], wave: list.find(x => x.id === 'total').wave }),
     });
     const w = big(s.uw);
     list.push({
@@ -312,6 +315,7 @@ function cards(s, h) {
             <p class="npw-lead">${wordsLike(s.uw)}。</p>
             <p class="npw-sub">只算你自己发的消息，角色写的不算。</p>`,
         wave: { data: s.uwDays, line: s.wordiest.doy, note: `写得最多的一天 · ${md(dateOf(s.year, s.wordiest.doy))} · ${fmt(s.wordiest.n)} 字` },
+        share: () => ({ kicker: '我亲手写下的字', big: w.num, unit: `${w.unit}字`, lines: [`${wordsLike(s.uw)}。`], wave: list.find(x => x.id === 'words').wave }),
     });
 
     const top = s.top;
@@ -353,6 +357,11 @@ function cards(s, h) {
             html: `<div class="npw-k">${five.length > 1 ? `年度前${'一二三四五'[five.length - 1]}` : '年度角色'}</div>
                 <ol class="npw-top">${five.map((x, i) => `<li><b>${i + 1}</b>${h.cover(x.avatar, i === 0)}<span><em>${esc(x.name)}</em><small>${fmt(x.count)} 条消息</small></span></li>`).join('')}</ol>`,
             wave: { data: s.days.map((_, i) => s.ownerDays[no1.avatar]?.[i] || 0), note: `你和 ${esc(no1.name)} 的这一年` },
+            share: () => ({
+                kicker: five.length > 1 ? `我的年度前${'一二三四五'[five.length - 1]}` : '我的年度角色',
+                list: five.map(x => ({ avatar: x.avatar, name: x.name, sub: `${fmt(x.count)} 条消息` })),
+                wave: { ...list.find(x => x.id === 'top').wave, note: `我和 ${no1.name} 的这一年` },
+            }),
         });
     }
 
@@ -362,14 +371,16 @@ function cards(s, h) {
         const win = bestWindow(s.hours);
         const sh = win.shift;
         const peakH = s.hours.indexOf(Math.max(...s.hours));
+        const pct = Math.round((win.sum / mine) * 100);
         list.push({
             id: 'hours',
             tone: 'var(--np-cover-5)',
             html: `<div class="npw-k">你的时段人格</div>
                 <div class="npw-name">${sh.name}</div>
                 <p class="npw-lead">${sh.line}</p>
-                <p class="npw-sub">你 <b>${Math.round((win.sum / mine) * 100)}%</b> 的消息发在${hourName(win.from)}到${hourName(win.to)}之间，最常在${hourName(peakH)}出现。</p>`,
+                <p class="npw-sub">你 <b>${pct}%</b> 的消息发在${hourName(win.from)}到${hourName(win.to)}之间，最常在${hourName(peakH)}出现。</p>`,
             dial: { hours: s.hours, win },
+            share: () => ({ kicker: '我的时段人格', big: sh.name, lines: [sh.line, `${pct}% 的消息发在${hourName(win.from)}到${hourName(win.to)}之间。`], dial: { hours: s.hours, win } }),
         });
     }
 
@@ -390,6 +401,7 @@ function cards(s, h) {
                 <button class="npw-btn npw-peek" type="button">看看是哪一句</button>
                 <blockquote class="npw-quote" hidden>${esc(quote.length > 160 ? `${quote.slice(0, 160)}…` : quote)}</blockquote>`,
             wave: { data: s.days, line: dayOfYear(d) },
+            share: () => ({ kicker: '最纠结的一句', big: String(sw.n), unit: '版', lines: [`这条回复换了 ${sw.n} 版，我才留下它。`, `${swWho ? `来自 ${swWho.name} · ` : ''}${md(d)}`], wave: { data: s.days, line: dayOfYear(d) } }),
             mount(card) {
                 card.querySelector('.npw-peek').addEventListener('click', e => {
                     e.stopPropagation();
@@ -413,6 +425,11 @@ function cards(s, h) {
                 <p class="npw-lead"><span>和 ${esc(lgWho.name)}，</span><span>${m1 === m2 ? `在 ${m1} 月里一口气聊完。` : `从 ${m1} 月聊到 ${m2} 月。`}</span></p>
                 <p class="npw-sub">这一场里，有 <b>${Object.keys(lg.days).length}</b> 天你们在说话。</p>`,
             wave: { data: s.days, hi: daySet(lg.days), note: '这一场在这一年里的位置' },
+            share: () => ({
+                kicker: '最长的一场', big: fmt(lg.n), unit: '条消息',
+                lines: [`和 ${lgWho.name}，${m1 === m2 ? `在 ${m1} 月里一口气聊完。` : `从 ${m1} 月聊到 ${m2} 月。`}`, `这一场里，有 ${Object.keys(lg.days).length} 天我们在说话。`],
+                wave: { data: s.days, hi: daySet(lg.days), note: '这一场在这一年里的位置' },
+            }),
         });
     }
 
@@ -427,6 +444,55 @@ function cards(s, h) {
                 <div class="npw-date">${d.getMonth() + 1}月${d.getDate()}日<small>${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}</small></div>
                 <div class="npw-who">${h.cover(fw.avatar, true)}<p class="npw-lead">是对 <b>${esc(fw.name)}</b> 说的。</p></div>`,
             wave: { data: s.days, line: dayOfYear(d) },
+            share: () => ({
+                kicker: '今年的第一句话', big: `${d.getMonth() + 1}月${d.getDate()}日`, unit: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+                cover: fw.avatar, lines: [`是对 ${fw.name} 说的。`], wave: { data: s.days, line: dayOfYear(d) },
+            }),
+        });
+    }
+
+    // 角色写回忆（可选）：点了按钮、看过要发什么、再点「发送」，才用你现在连着的 API
+    if (no1) {
+        const mem = { state: 'idle', text: '', err: '' };
+        const prompt = memoryPrompt(s, no1);
+        const paint = (box, ui) => {
+            const btn = (cls, label) => `<button class="npw-btn ${cls}" type="button">${label}</button>`;
+            box.innerHTML = {
+                idle: `<p class="npw-sub">会用你在酒馆里现在连着的 API 写一段。不点就不会发送任何东西。</p>${btn('npw-ask', '请 TA 写一段')}`,
+                confirm: `<p class="npw-sub">下面这些会发给你现在连着的 API（约 ${fmt(prompt.system.length + prompt.user.length)} 字）：</p>
+                    <pre class="npw-pre">${esc(`${prompt.system}\n\n${prompt.user}`)}</pre>
+                    <div class="npw-btns">${btn('npw-send', '发送')}${btn('npw-cancel2', '算了')}</div>`,
+                busy: '<p class="npw-lead npw-busy">正在写…</p>',
+                done: `<blockquote class="npw-quote npw-memo">${esc(mem.text)}</blockquote><div class="npw-btns">${btn('npw-ask', '再写一版')}</div>`,
+                error: `<p class="npw-sub">没写成：${esc(mem.err)}。检查一下酒馆的 API 连接，再试一次。</p>${btn('npw-ask', '再试一次')}`,
+            }[mem.state];
+            const on = (sel, fn) => box.querySelector(sel)?.addEventListener('click', e => { e.stopPropagation(); fn(); });
+            on('.npw-ask', () => { mem.state = 'confirm'; paint(box, ui); });
+            on('.npw-cancel2', () => { mem.state = mem.text ? 'done' : 'idle'; paint(box, ui); });
+            on('.npw-send', async () => {
+                mem.state = 'busy';
+                paint(box, ui);
+                try {
+                    const out = await SillyTavern.getContext().generateRaw({ systemPrompt: prompt.system, prompt: prompt.user, responseLength: 500 });
+                    // 去掉表示动作的 *星号*，只留字
+                    mem.text = String(out || '').replace(/\*+/g, '').trim();
+                    if (!mem.text) throw new Error('API 返回了空白');
+                    mem.state = 'done';
+                } catch (e) {
+                    mem.err = e?.message || String(e);
+                    mem.state = 'error';
+                }
+                ui.refresh('memory');
+            });
+        };
+        list.push({
+            id: 'memory',
+            tone: h.color(no1.avatar),
+            html: `<div class="npw-k">角色写回忆</div>
+                <div class="npw-who">${h.cover(no1.avatar, true)}<p class="npw-lead">想听 <b>${esc(no1.name)}</b> 说说你们的这一年吗？</p></div>
+                <div class="npw-mem"></div>`,
+            mount(card, ui) { paint(card.querySelector('.npw-mem'), ui); },
+            share: () => (mem.text ? { kicker: `${no1.name} 写给我的回忆`, cover: no1.avatar, quote: mem.text } : null),
         });
     }
 
@@ -443,39 +509,55 @@ function cards(s, h) {
                 <div><small>时段人格</small><b class="npw-sm">${shName}</b></div>
             </div>
             ${top.length ? `<div class="npw-k">年度角色</div><ol class="npw-mini">${top.slice(0, 3).map((x, i) => `<li>${h.cover(x.avatar)}<span><b>${i + 1}</b> ${esc(x.name)}</span></li>`).join('')}</ol>` : ''}
-            <p class="npw-sub npw-sign">正在播放 · 酒馆年报</p>`,
+            <button class="npw-btn npw-save-end" type="button">存成图片</button>`,
         wave: { data: s.days },
+        mount(card, ui) { card.querySelector('.npw-save-end').addEventListener('click', e => { e.stopPropagation(); ui.save(); }); },
+        share: () => ({
+            kicker: `我的 ${s.year} 酒馆`,
+            grid: [['来了', fmt(s.active), '天'], ['消息', s.total < 1e5 ? fmt(s.total) : big(s.total).num, s.total < 1e5 ? '条' : '万条'], ['写下', w.num, `${w.unit}字`], ['时段人格', shName, '']],
+            covers: top.slice(0, 3).map(x => ({ avatar: x.avatar, name: x.name })),
+            wave: { data: s.days },
+        }),
     });
     return list;
 }
 
+// 回忆卡发给 API 的话：角色设定（替换掉 {{char}} {{user}}）+ 你们这一年的几个数字 + 一句要求
+function memoryPrompt(s, no1) {
+    const c = SillyTavern.getContext();
+    const ch = c.characters.find(x => x.avatar === no1.avatar) || {};
+    const name = no1.name, user = c.name1 || '你';
+    const fill = t => String(t || '').replace(/\{\{char\}\}/gi, name).replace(/\{\{user\}\}/gi, user).trim();
+    const desc = fill(ch.description || ch.data?.description).slice(0, 1500);
+    const pers = fill(ch.personality || ch.data?.personality).slice(0, 300);
+    const days = Object.keys(s.ownerDays[no1.avatar] || {}).length;
+    const facts = [`这一年（${s.year} 年），你和${user}一共聊了 ${fmt(no1.count)} 条消息，有 ${days} 天在一起说话。`];
+    if (s.longest?.owner === no1.avatar) {
+        const m1 = new Date(s.longest.min).getMonth() + 1, m2 = new Date(s.longest.max).getMonth() + 1;
+        facts.push(m1 === m2 ? `你们聊得最长的一场在 ${m1} 月，有 ${fmt(s.longest.n)} 条消息。` : `你们聊得最长的一场从 ${m1} 月一直到 ${m2} 月，有 ${fmt(s.longest.n)} 条消息。`);
+    }
+    return {
+        system: [`你是${name}。`, desc && `下面是你的设定：\n${desc}`, pers && `性格：${pers}`].filter(Boolean).join('\n'),
+        user: `${facts.join('')}\n请用${name}自己的口吻和说话习惯，对${user}写一段一百五十字左右的年终回忆。可以提到这些数字，也可以只说感受。只写这段话本身，不要标题，不要旁白说明。`,
+    };
+}
+
 // ---------- 音轨 ----------
 // 像音频软件里的音轨：每天一根，以中线上下对称；底下一行月份刻度
-// hi：哪些天点亮（其余压暗）；line：哪一天画一根播放头
-function drawWave(cv, wave, year, t = 1) {
-    const r = cv.getBoundingClientRect();
-    const dpr = devicePixelRatio || 1;
-    if (!r.width) return;
-    cv.width = Math.round(r.width * dpr);
-    cv.height = Math.round(r.height * dpr);
-    const g = cv.getContext('2d');
-    g.scale(dpr, dpr);
-    const css = getComputedStyle(cv);
-    const ink = css.getPropertyValue('--npw-ink').trim() || '#fff';
-    const font = css.fontFamily;
+// hi：哪些天点亮（其余压暗）；line：哪一天画一根播放头。label 是月份字号（存图时放大）
+function paintWave(g, W, Ht, wave, year, t, ink, font, label = 11) {
     const { data, hi, line } = wave;
     const max = Math.max(1, ...data);
-    const W = r.width;
-    const LABEL = 18;
-    const H = r.height - LABEL;
+    const LABEL = label * 1.6;
+    const H = Ht - LABEL;
     const mid = H / 2;
     const step = W / data.length;
-    const bw = Math.max(1, step - (step > 2.5 ? 1 : 0));
+    const bw = step > 2.5 ? step * .7 : Math.max(1, step);
     const dim = hi || line != null;
     g.fillStyle = ink;
     // 中线：没聊的日子也连着，像一条还没放到的轨道
     g.globalAlpha = .3;
-    g.fillRect(0, mid - .5, W, 1);
+    g.fillRect(0, mid - .5, W, Math.max(1, label / 11));
     // 从左往右放出来：t 是 0..1 的进度
     const upto = data.length * t;
     for (let i = 0; i < data.length && i < upto; i++) {
@@ -486,65 +568,255 @@ function drawWave(cv, wave, year, t = 1) {
         g.fillRect(i * step, mid - h / 2, bw, h);
     }
     if (line != null && t >= 1) {
+        const lw = Math.max(2, label / 5);
         g.globalAlpha = 1;
-        g.fillRect(line * step + bw / 2 - 1, 0, 2, H);
+        g.fillRect(line * step + bw / 2 - lw / 2, 0, lw, H);
     }
     // 月份刻度
     g.globalAlpha = .9;
-    g.font = `700 11px ${font}`;
+    g.font = `700 ${label}px ${font}`;
     g.textBaseline = 'bottom';
     for (let m = 0; m < 12; m++) {
         const doy = dayOfYear(new Date(year, m, 1));
         if (doy >= data.length) break;
-        if (m % (W < 300 ? 3 : 2)) continue;
-        g.fillText(`${m + 1}月`, doy * step, r.height);
+        if (m % (W / label < 27 ? 3 : 2)) continue;
+        g.fillText(`${m + 1}月`, doy * step, Ht);
     }
+    g.globalAlpha = 1;
 }
 
 // ---------- 钟面 ----------
-// 24 小时一圈，0 点在正上方；每小时一根往外长的条，你的时段那一段亮，其余压暗
-function drawDial(cv, dial, t = 1) {
+// 24 小时一圈，0 点在正上方；每小时一根往外长的条，你最常来的那三个小时亮，其余压暗
+function paintDial(g, W, Ht, dial, t, ink, font, label = 12) {
+    const cx = W / 2, cy = Ht / 2;
+    const R = Math.min(cx, cy) - label * 1.4;
+    const r0 = R * .34;
+    const max = Math.max(1, ...dial.hours);
+    g.fillStyle = g.strokeStyle = ink;
+    g.globalAlpha = .3;
+    g.lineWidth = Math.max(1, label / 12);
+    g.beginPath();
+    g.arc(cx, cy, r0, 0, Math.PI * 2);
+    g.stroke();
+    const span = Math.PI * 2 / 24;
+    const gap = label / 4;
+    for (let i = 0; i < 24; i++) {
+        const len = (R - r0) * Math.sqrt(dial.hours[i] / max) * t;
+        const a0 = -Math.PI / 2 + i * span + span * .12;
+        const a1 = a0 + span * .76;
+        g.globalAlpha = inWindow(i, dial.win) ? 1 : .38;
+        g.beginPath();
+        g.arc(cx, cy, r0 + gap + len, a0, a1);
+        g.arc(cx, cy, r0 + gap, a1, a0, true);
+        g.closePath();
+        g.fill();
+    }
+    g.globalAlpha = .9;
+    g.font = `700 ${label}px ${font}`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    [0, 6, 12, 18].forEach(hh => {
+        const a = -Math.PI / 2 + hh * span;
+        g.fillText(String(hh), cx + Math.cos(a) * (r0 - label * 1.2), cy + Math.sin(a) * (r0 - label * 1.2));
+    });
+    g.textAlign = 'start';
+    g.globalAlpha = 1;
+}
+
+// 网页里：按画布实际大小、清晰度画
+function onCanvas(cv, paint) {
     const r = cv.getBoundingClientRect();
-    const dpr = devicePixelRatio || 1;
     if (!r.width) return;
+    const dpr = devicePixelRatio || 1;
     cv.width = Math.round(r.width * dpr);
     cv.height = Math.round(r.height * dpr);
     const g = cv.getContext('2d');
     g.scale(dpr, dpr);
     const css = getComputedStyle(cv);
-    const ink = css.getPropertyValue('--npw-ink').trim() || '#fff';
-    const font = css.fontFamily;
-    const cx = r.width / 2, cy = r.height / 2;
-    const R = Math.min(cx, cy) - 16;
-    const r0 = R * .34;
-    const max = Math.max(1, ...dial.hours);
-    g.fillStyle = g.strokeStyle = ink;
-    g.globalAlpha = .3;
-    g.lineWidth = 1;
-    g.beginPath();
-    g.arc(cx, cy, r0, 0, Math.PI * 2);
-    g.stroke();
-    const span = Math.PI * 2 / 24;
-    for (let i = 0; i < 24; i++) {
-        const v = dial.hours[i];
-        const len = (R - r0) * Math.sqrt(v / max) * t;
-        const a0 = -Math.PI / 2 + i * span + span * .12;
-        const a1 = a0 + span * .76;
-        g.globalAlpha = inWindow(i, dial.win) ? 1 : .38;
+    paint(g, r.width, r.height, css.getPropertyValue('--npw-ink').trim() || '#fff', css.fontFamily);
+}
+const drawWave = (cv, wave, year, t = 1) => onCanvas(cv, (g, W, H, ink, font) => paintWave(g, W, H, wave, year, t, ink, font));
+const drawDial = (cv, dial, t = 1) => onCanvas(cv, (g, W, H, ink, font) => paintDial(g, W, H, dial, t, ink, font));
+
+// ---------- 存成图片 ----------
+// 1080×1920 竖图，直接在画布上画（不截网页）：标签、大数字、几行字、封面 / 排行 / 总结格子、底下音轨或钟面、落款
+// art(头像) → 默认头像时给 { initial, color }，否则 null（画真头像）
+async function renderShare(spec, year, art) {
+    const W = 1080, H = 1920, P = 96;
+    const cv = document.createElement('canvas');
+    cv.width = W;
+    cv.height = H;
+    const g = cv.getContext('2d');
+    // 颜色和字体都从主题变量里取（用户在可改区改了，图也跟着变）
+    const probe = document.createElement('div');
+    probe.style.display = 'none';
+    (document.getElementById('np_wrap') || document.body).append(probe);
+    const resolve = v => { probe.style.color = ''; probe.style.color = v; return getComputedStyle(probe).color; };
+    const base = spec.tone === 'base';
+    const bg = resolve(base ? 'var(--np-panel)' : spec.tone);
+    const fg = resolve(base ? 'var(--np-text)' : 'var(--np-on-art)');
+    const sub = base ? resolve('var(--np-sub)') : fg;
+    const ink = base ? resolve('var(--np-accent)') : fg;
+    const onArt = resolve('var(--np-on-art)');
+    const font = getComputedStyle(probe).fontFamily;
+    await Promise.all(['900 200px', '800 60px', '700 40px', '500 40px'].map(f => document.fonts.load(`${f} ${font}`, '年报 2026').catch(() => {})));
+
+    const loadImg = srcUrl => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = srcUrl; });
+    const covers = {};
+    const want = [spec.cover, ...(spec.list || []).map(x => x.avatar), ...(spec.covers || []).map(x => x.avatar)].filter(Boolean);
+    await Promise.all(want.map(async av => {
+        const gen = art?.(av);
+        covers[av] = gen ? { gen: { initial: gen.initial, color: resolve(gen.color) } } : { img: await loadImg(`/characters/${encodeURIComponent(av)}`) };
+    }));
+    probe.remove();
+
+    const setFont = (size, weight) => { g.font = `${weight} ${size}px ${font}`; };
+    const say = (s, size, weight, x, y, color = fg) => { setFont(size, weight); g.fillStyle = color; g.fillText(s, x, y); return g.measureText(s).width; };
+    // 中文逐字断行，英文单词不拆；句末标点不放到行首
+    const wrapText = (s, max) => {
+        const out = [];
+        let cur = '';
+        for (const tk of String(s).match(/[A-Za-z0-9][A-Za-z0-9,.'’:%~-]*|\s+|./gu) || []) {
+            if (cur.trim() && g.measureText(cur + tk).width > max && !/^[，。、！？；：）」』…,.!?]/.test(tk)) { out.push(cur); cur = tk.trimStart(); } else cur += tk;
+        }
+        if (cur) out.push(cur);
+        return out;
+    };
+    const drawCover = (av, x, y, sz) => {
+        const c = covers[av] || {};
+        g.save();
         g.beginPath();
-        g.arc(cx, cy, r0 + 3 + len, a0, a1);
-        g.arc(cx, cy, r0 + 3, a1, a0, true);
-        g.closePath();
-        g.fill();
+        g.roundRect(x, y, sz, sz, sz * .04);
+        g.clip();
+        if (c.gen) {
+            g.fillStyle = c.gen.color;
+            g.fillRect(x, y, sz, sz);
+            setFont(sz * .52, 900);
+            g.fillStyle = onArt;
+            g.textAlign = 'center';
+            g.textBaseline = 'middle';
+            g.fillText(c.gen.initial, x + sz / 2, y + sz / 2 + sz * .02);
+        } else if (c.img) {
+            const k = Math.max(sz / c.img.naturalWidth, sz / c.img.naturalHeight);
+            const dw = c.img.naturalWidth * k, dh = c.img.naturalHeight * k;
+            g.drawImage(c.img, x + (sz - dw) / 2, y + (sz - dh) * .18, dw, dh);
+        } else {
+            g.fillStyle = sub;
+            g.globalAlpha = .2;
+            g.fillRect(x, y, sz, sz);
+        }
+        g.restore();
+    };
+
+    g.fillStyle = bg;
+    g.fillRect(0, 0, W, H);
+    g.textBaseline = 'alphabetic';
+    let y = P + 44;
+    say(spec.kicker, 42, 700, P, y);
+    y += 40;
+
+    if (spec.big) {
+        const cjk = /[㐀-鿿]/.test(spec.big);
+        let size = cjk ? 160 : 240;
+        const unitSize = 72;
+        const width = () => {
+            setFont(size, 900);
+            const bw = g.measureText(spec.big).width;
+            setFont(unitSize, 800);
+            return bw + (spec.unit ? g.measureText(spec.unit).width + 28 : 0);
+        };
+        while (width() > W - 2 * P && size > 60) size -= 6;
+        y += size * .92;
+        const bw = say(spec.big, size, 900, P - size * .03, y);
+        if (spec.unit) say(spec.unit, unitSize, 800, P + bw + 28, y);
+        y += 36;
     }
-    g.globalAlpha = .9;
-    g.font = `700 12px ${font}`;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    [[0, '0'], [6, '6'], [12, '12'], [18, '18']].forEach(([hh, label]) => {
-        const a = -Math.PI / 2 + hh * span;
-        g.fillText(label, cx + Math.cos(a) * (r0 - 14), cy + Math.sin(a) * (r0 - 14));
+    if (spec.cover) {
+        y += 20;
+        drawCover(spec.cover, P, y, 280);
+        y += 280 + 30;
+    }
+    (spec.lines || []).forEach((line, i) => {
+        const size = i ? 40 : 58;
+        setFont(size, i ? 500 : 700);
+        for (const l of wrapText(line, W - 2 * P)) {
+            y += size * 1.45;
+            say(l, size, i ? 500 : 700, P, y, i ? sub : fg);
+        }
+        y += i ? 6 : 14;
     });
+    if (spec.list) {
+        y += 30;
+        spec.list.forEach((x, i) => {
+            const sz = i ? 112 : 196;
+            say(String(i + 1), 64, 900, P, y + sz / 2 + 22);
+            drawCover(x.avatar, P + 84, y, sz);
+            const tx = P + 84 + sz + 32;
+            setFont(i ? 50 : 66, 800);
+            let name = x.name;
+            while (g.measureText(name).width > W - P - tx && name.length > 1) name = name.slice(0, -1);
+            if (name !== x.name) name = `${name.slice(0, -1)}…`;
+            say(name, i ? 50 : 66, 800, tx, y + sz / 2 - (i ? 2 : 8));
+            say(x.sub, 36, 500, tx, y + sz / 2 + (i ? 46 : 50), sub);
+            y += sz + 28;
+        });
+    }
+    if (spec.grid) {
+        y += 40;
+        const colW = (W - 2 * P - 48) / 2;
+        spec.grid.forEach(([label, value, unit], i) => {
+            const x = P + (i % 2) * (colW + 48);
+            const yy = y + Math.floor(i / 2) * 230;
+            say(label, 36, 700, x, yy + 40, sub);
+            const cjk = /[㐀-鿿]/.test(value);
+            const vw = say(value, cjk ? 76 : 120, 900, x, yy + (cjk ? 150 : 165));
+            if (unit) say(unit, 44, 700, x + vw + 14, yy + 165);
+        });
+        y += Math.ceil(spec.grid.length / 2) * 230;
+    }
+    if (spec.covers?.length) {
+        y += 30;
+        const sz = (W - 2 * P - 72) / 3;
+        spec.covers.forEach((x, i) => {
+            const cx = P + i * (sz + 36);
+            drawCover(x.avatar, cx, y, sz);
+            const rw = say(String(i + 1), 42, 800, cx, y + sz + 60, ink);
+            setFont(42, 700);
+            let name = x.name;
+            while (g.measureText(name).width > sz - rw - 14 && name.length > 1) name = name.slice(0, -1);
+            say(name === x.name ? name : `${name.slice(0, -1)}…`, 42, 700, cx + rw + 14, y + sz + 60);
+        });
+        y += sz + 90;
+    }
+    if (spec.quote) {
+        y += 30;
+        setFont(46, 500);
+        const lines = wrapText(spec.quote.replace(/\s*\n\s*/g, ' '), W - 2 * P - 48).slice(0, 16);
+        g.fillStyle = fg;
+        g.fillRect(P, y + 10, 6, lines.length * 46 * 1.6 + 10);
+        lines.forEach((l, i) => say(l, 46, 500, P + 40, y + 46 + i * 46 * 1.6));
+        y += lines.length * 46 * 1.6 + 40;
+    }
+
+    // 底下的音轨 / 钟面，落款
+    const foot = H - P + 14;
+    if (spec.wave) {
+        const top = foot - 80 - 520;
+        if (spec.wave.note) say(spec.wave.note, 38, 700, P, top - 24);
+        g.save();
+        g.translate(P, top);
+        paintWave(g, W - 2 * P, 520, spec.wave, year, 1, ink, font, 30);
+        g.restore();
+    } else if (spec.dial) {
+        const top = Math.max(y + 20, foot - 80 - 760);
+        g.save();
+        g.translate(P, top);
+        paintDial(g, W - 2 * P, foot - 70 - top, spec.dial, 1, ink, font, 32);
+        g.restore();
+    }
+    g.textBaseline = 'alphabetic';
+    say(`正在播放 · 酒馆年报 ${year}`, 32, 700, P, foot, sub);
+    return cv;
 }
 
 // ---------- 界面 ----------
@@ -555,7 +827,8 @@ export function close() {
     current = null;
 }
 
-// helpers：{ colorOf(头像) → Promise<颜色>, cover(头像, 大不大) → 封面 HTML }（companion.js 提供，默认头像会画成首字封面）
+// helpers：{ colorOf(头像) → Promise<颜色>, cover(头像, 大不大) → 封面 HTML, art(头像) → 默认头像的 { initial, color } }
+// （companion.js 提供，默认头像会画成首字封面）
 export function open(helpers = {}) {
     close();
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('reduced-motion');
@@ -567,6 +840,7 @@ export function open(helpers = {}) {
     wrap.innerHTML = `<div class="npw-stage">
             <div class="npw-bars"></div>
             <button class="npw-close" type="button" title="关掉（Esc）" aria-label="关掉"></button>
+            <button class="npw-save" type="button" title="存成图片" aria-label="存成图片" hidden></button>
             <div class="npw-card"></div>
             <div class="npw-tap npw-prev" aria-hidden="true"></div>
             <div class="npw-tap npw-next" aria-hidden="true"></div>
@@ -609,7 +883,8 @@ export function open(helpers = {}) {
         const art = it.wave ? `<div class="npw-wave">${it.wave.note ? `<div class="npw-note">${it.wave.note}</div>` : ''}<canvas></canvas></div>`
             : it.dial ? '<div class="npw-dial"><canvas></canvas></div>' : '';
         card.innerHTML = `<div class="npw-body">${it.html}</div>${art}`;
-        it.mount?.(card);
+        it.mount?.(card, ui);
+        saveBtn.hidden = !it.share?.();
         // 换卡时重播入场动画
         card.classList.remove('npw-in');
         void card.offsetWidth;
@@ -629,6 +904,34 @@ export function open(helpers = {}) {
         };
         raf = requestAnimationFrame(frame);
     }
+
+    const saveBtn = wrap.querySelector('.npw-save');
+    async function save() {
+        const it = list[at];
+        const spec = it?.share?.();
+        if (!spec || saveBtn.disabled) return;
+        saveBtn.disabled = true;
+        try {
+            const cv = await renderShare({ tone: it.tone, ...spec }, year, helpers.art);
+            const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `酒馆年报-${year}-${it.id}.png`;
+            document.body.append(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            toastr?.success?.('已存成图片');
+        } catch (e) {
+            console.error('[正在播放] 存图失败', e);
+            toastr?.error?.(`存图失败：${e?.message || e}`);
+        } finally {
+            saveBtn.disabled = false;
+        }
+    }
+    saveBtn.addEventListener('click', save);
+    // 卡片里的交互用：refresh 重画某张卡（还停在那张时）；save 存当前这张
+    const ui = { refresh: id => { if (list[at]?.id === id) show(at); }, save };
 
     const go = d => { if (list.length) show(at + d); };
     wrap.querySelector('.npw-prev').addEventListener('click', () => go(-1));
@@ -662,7 +965,11 @@ export function open(helpers = {}) {
         .then(async ({ chats, timing }) => {
             if (ac.signal.aborted) return;
             const s = tally(year, chats);
-            window.npWrapped = { stats: s, timing };
+            // 调试用：npWrapped.share('top') 拿到某张卡的存图（data URL）
+            window.npWrapped = {
+                stats: s, timing,
+                share: async id => { const it = list.find(x => x.id === id); const spec = it?.share?.(); return spec ? (await renderShare({ tone: it.tone, ...spec }, year, helpers.art)).toDataURL('image/png') : null; },
+            };
             // 要用到的头像先把颜色取好（也顺便认出默认头像），卡片里就能直接用
             const need = new Set([...s.top.slice(0, 5).map(x => x.avatar), whoIs(s.swipe?.who)?.avatar, whoIs(s.longest?.owner, s.longest?.group)?.avatar, whoIs(s.first?.owner, s.first?.group)?.avatar].filter(Boolean));
             const colors = {};

@@ -295,6 +295,7 @@ export default function nowplaying() {
     const wrapHelpers = {
         colorOf: file => isDefault(file).then(d => (d ? genColor(nameOf(file)) : pickColor(file))),
         cover: (file, large) => coverHTML(file, '', large ? avatarUrl(file) : thumbUrl(file)),
+        art: file => (genSync(file) ? { initial: initial(nameOf(file)), color: genColor(nameOf(file)) } : null),
     };
     rhead.querySelector('.np-rh-wrap').addEventListener('click', () => wrapped().then(m => m.open(wrapHelpers)).catch(e => {
         console.error('[正在播放] 年报载入失败', e);
