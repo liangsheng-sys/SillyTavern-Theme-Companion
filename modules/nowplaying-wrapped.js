@@ -42,7 +42,13 @@ const dateOf = (y, doy) => new Date(y, 0, 1 + doy);
 
 // 中文按字、英文和数字按词
 function words(s) {
-    s = String(s || '');
+    s = String(s || '')
+        .replace(/```[\s\S]*?```/g, ' ')
+        .replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, ' ')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/data:[\w/+.-]+;base64,[A-Za-z0-9+/=\s]*/g, ' ')
+        .replace(/https?:\/\/\S+/g, ' ')
+        .replace(/[A-Za-z0-9+/=_-]{40,}/g, ' ');
     return (s.match(/[㐀-鿿豈-﫿぀-ヿ가-힯]/g) || []).length + (s.match(/[A-Za-z0-9][A-Za-z0-9'’-]*/g) || []).length;
 }
 
@@ -72,6 +78,7 @@ function summarize(msgs, owner) {
             const w = words(m.mes);
             Y.u++;
             Y.uw += w;
+            if (!Y.bigU || w > Y.bigU.w) Y.bigU = { w, t: dated ? t : 0 };
             if (dated) {
                 Y.uwDays[doy] = (Y.uwDays[doy] || 0) + w;
                 Y.hours[d.getHours()]++;
@@ -120,7 +127,7 @@ const dbPut = (db, k, v) => new Promise(resolve => {
 // ---------- 读全部聊天 ----------
 // onProgress(读完几个, 一共几个)；signal 用来取消
 // 统计的算法改了就加一，旧缓存自动作废
-const CACHE_V = 2;
+const CACHE_V = 3;
 async function collect(year, { onProgress, signal }) {
     const c = SillyTavern.getContext();
     const headers = c.getRequestHeaders();
@@ -206,7 +213,7 @@ function tally(year, chats) {
     const hours = Array(24).fill(0);
     const who = {};
     const ownerDays = {};
-    let u = 0, a = 0, uw = 0, first = null, longest = null, swipe = null, undated = 0;
+    let u = 0, a = 0, uw = 0, first = null, longest = null, swipe = null, undated = 0, bigU = null;
     for (const x of chats) {
         const Y = x.years[year];
         if (!Y) continue;
@@ -227,6 +234,7 @@ function tally(year, chats) {
         const len = Y.u + Y.a;
         if (Y.min && (!longest || len > longest.n)) longest = { n: len, min: Y.min, max: Y.max, owner: x.owner, group: x.group, chat: x.chat, days: Y.days };
         if (Y.swipe && (!swipe || Y.swipe.n > swipe.n)) swipe = Y.swipe;
+        if (Y.bigU && (!bigU || Y.bigU.w > bigU.w)) bigU = { ...Y.bigU, owner: x.owner, group: x.group };
     }
     const peak = arr => arr.reduce((best, v, i) => (v > arr[best] ? i : best), 0);
     // 那一天字数最多的那场聊天
@@ -247,6 +255,7 @@ function tally(year, chats) {
         busiest: { doy: peak(days), n: days[peak(days)] },
         wordiest: { doy: wd, n: uwDays[wd], by: wordyBy && whoIs(wordyBy.owner, wordyBy.group)?.name },
         top, first, longest, swipe, ownerDays, undated,
+        bigU: bigU && { ...bigU, by: whoIs(bigU.owner, bigU.group)?.name },
     };
 }
 
@@ -344,7 +353,7 @@ function cards(s, h) {
         html: `<div class="npw-k">你亲手写下的字</div>
             <div class="npw-num"><span data-count="${w.unit ? '' : s.uw}">${w.num}</span><small>${w.unit}字</small></div>
             <p class="npw-lead">${wordsLike(s.uw)}。</p>
-            <p class="npw-sub">只算你自己发的消息，角色写的不算。</p>`,
+            <p class="npw-sub">只算你自己发的消息，角色写的不算。${s.bigU?.w >= 50 ? `<br>最长的一条有 ${fmt(s.bigU.w)} 字${s.bigU.by ? `，写给 ${esc(s.bigU.by)}` : ''}${s.bigU.t ? `（${md(new Date(s.bigU.t))}）` : ''}。` : ''}</p>`,
         wave: { data: s.uwDays, line: s.wordiest.doy, note: `写得最多的一天 · ${md(dateOf(s.year, s.wordiest.doy))} · ${fmt(s.wordiest.n)} 字${s.wordiest.by ? `<br>大多在和${esc(s.wordiest.by)}聊` : ''}` },
         share: () => ({ kicker: '我亲手写下的字', big: w.num, unit: `${w.unit}字`, lines: [`${wordsLike(s.uw)}。`], wave: list.find(x => x.id === 'words').wave }),
     });
