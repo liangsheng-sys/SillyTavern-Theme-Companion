@@ -1,7 +1,7 @@
 [
     {
         "family": "纸上访谈",
-        "version": "1.0.6",
+        "version": "1.0.7",
         "variantLabel": "变体",
         "options": [
             {
@@ -33,6 +33,10 @@
                     [
                         "var(--mz-kai)",
                         "楷体"
+                    ],
+                    [
+                        "system-ui, -apple-system, sans-serif",
+                        "系统默认"
                     ]
                 ]
             },
@@ -49,6 +53,10 @@
                     [
                         "var(--mz-serif)",
                         "宋体"
+                    ],
+                    [
+                        "system-ui, -apple-system, sans-serif",
+                        "系统默认"
                     ]
                 ]
             },
@@ -238,7 +246,7 @@
     },
     {
         "family": "银盐显影",
-        "version": "1.1.4",
+        "version": "1.1.5",
         "variantLabel": "调色",
         "options": [
             {
@@ -326,6 +334,10 @@
                     [
                         "var(--yy-serif)",
                         "宋体"
+                    ],
+                    [
+                        "system-ui, -apple-system, sans-serif",
+                        "系统默认"
                     ]
                 ]
             },
@@ -655,7 +667,7 @@
     },
     {
         "family": "粗野指北",
-        "version": "1.0.7",
+        "version": "1.0.8",
         "variantLabel": "变体",
         "options": [
             {
@@ -1072,7 +1084,7 @@
     },
     {
         "family": "WPS文档",
-        "version": "1.2.0",
+        "version": "1.2.1",
         "variantLabel": "变体",
         "options": [
             {
@@ -1173,6 +1185,12 @@
                         "label": "微软雅黑",
                         "font": "'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', sans-serif",
                         "css": "html:root:root { --wps-body-font: 'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', sans-serif; --wps-font-name: '微软雅黑'; }"
+                    },
+                    {
+                        "value": "system",
+                        "label": "系统默认",
+                        "font": "system-ui, -apple-system, sans-serif",
+                        "css": "html:root:root { --wps-body-font: system-ui, -apple-system, sans-serif; --wps-font-name: '系统默认'; }"
                     }
                 ]
             },
@@ -1281,6 +1299,10 @@
                     [
                         "inherit",
                         "和正文一样"
+                    ],
+                    [
+                        "system-ui, -apple-system, sans-serif",
+                        "系统默认"
                     ]
                 ]
             },
@@ -1350,7 +1372,7 @@
     },
     {
         "family": "XP Messenger",
-        "version": "1.0.3",
+        "version": "1.0.4",
         "variantLabel": "配色",
         "options": [
             {
@@ -1446,6 +1468,10 @@
                     [
                         "inherit",
                         "和正文一样"
+                    ],
+                    [
+                        "system-ui, -apple-system, sans-serif",
+                        "系统默认"
                     ]
                 ]
             },
@@ -1494,7 +1520,7 @@
     },
     {
         "family": "正在播放",
-        "version": "0.2.5",
+        "version": "0.2.6",
         "variantLabel": "变体",
         "options": [],
         "themes": [
