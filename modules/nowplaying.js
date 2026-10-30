@@ -111,6 +111,15 @@ export default function nowplaying() {
     }
 
     // ---------- 画 ----------
+    // 重新播一次 CSS 里的「切歌」动画（motion.css 的 .np-tick）
+    function tick(el) {
+        el.classList.remove('np-tick');
+        void el.offsetWidth;
+        el.classList.add('np-tick');
+    }
+    const seen = {};
+    const changed = (key, val) => { const was = seen[key]; seen[key] = val; return was !== undefined && was !== val; };
+
     function renderHero() {
         const cur = current();
         if (!cur) {
@@ -122,6 +131,7 @@ export default function nowplaying() {
         const n = c.chat?.length || 0;
         const words = (c.chat || []).reduce((s, m) => s + (m.mes?.length || 0), 0);
         hero.querySelector('.np-cover').src = avatarUrl(cur.avatar);
+        if (changed('hero', cur.avatar)) tick(hero);
         hero.querySelector('.np-kicker').textContent = cur.kind;
         hero.querySelector('.np-title').textContent = cur.name;
         hero.querySelector('.np-meta').innerHTML = `<b>${esc(c.name1)}</b> · ${n} 条消息 · 约 ${words.toLocaleString()} 字`;
@@ -141,6 +151,7 @@ export default function nowplaying() {
         now.innerHTML = cur
             ? `<img src="${esc(thumbUrl(cur.avatar))}" alt=""><div style="min-width:0"><div class="np-n">${esc(cur.name)}</div><div class="np-s">${total > 1 ? `第 ${at} / ${total} 版回复` : '正在播放'}</div></div>`
             : '';
+        if (changed('now', `${cur?.name}|${at}/${total}`)) tick(now);
         const lastMes = document.querySelector('#chat .last_mes');
         const canSwipe = lastMes?.getAttribute('is_user') === 'false';
         prev.classList.toggle('np-off', !canSwipe || at <= 1);
@@ -232,6 +243,7 @@ export default function nowplaying() {
         const name = ch.name;
         const sub = s => String(s || '').replace(/\{\{char\}\}/gi, name).replace(/\{\{user\}\}/gi, c.name1).trim();
         about.querySelector('.np-big').src = avatarUrl(ch.avatar);
+        if (changed('about', ch.avatar)) tick(about);
         about.querySelector('.np-name').textContent = name;
         const creator = ch.data?.creator;
         about.querySelector('.np-by').textContent = [creator ? `作者 ${creator}` : '角色', ch.data?.character_version].filter(Boolean).join(' · ');
