@@ -3,9 +3,9 @@
  * 样子全在主题 CSS 里，这里只负责：
  * 1. 取色：读当前角色的头像，挑一个主色写进 <html> 的 --np-art（保证上面的白字对比度够）
  * 2. 专辑头（#np_hero）、滚动后的细栏（#np_top）：封面、「角色」、大名字、几条消息
- * 3. 左栏资料库（#np_lib）：角色按最近聊天排，点一下换过去；右栏正在播放（#np_side）：大头像和简介
- * 4. 播放条：左边正在播放（#np_now），右边加 重新生成 / 上一版 / 下一版（点的是酒馆自己的按钮）
- * 5. 播放条实际多高写进 --np-bar，聊天面板和两栏跟着让位
+ * 3. 播放条：左边正在播放（#np_now），右边加 重新生成 / 上一版 / 下一版（点的是酒馆自己的按钮）
+ * 4. 播放条实际多高写进 --np-bar，聊天面板和酒馆的左右面板跟着让位
+ * 左右两栏用酒馆自己的面板（左 = AI 设置，右 = 角色），样子在 CSS 里
  */
 export default function nowplaying() {
     const st = SillyTavern.getContext();
@@ -35,9 +35,6 @@ export default function nowplaying() {
     const top = mk('div', { id: 'np_top' }, sheld);
     top.innerHTML = '<div class="np-play" title="继续写"><i class="fa-solid fa-play"></i></div><span class="np-top-name"></span>';
 
-    const lib = mk('aside', { id: 'np_lib', className: 'np-panel' }, document.body);
-    const side = mk('aside', { id: 'np_side', className: 'np-panel' }, document.body);
-
     const now = mk('div', { id: 'np_now' });
     items.prepend(now);
     made.push(now);
@@ -66,22 +63,13 @@ export default function nowplaying() {
         if (c.groupId) {
             const g = c.groups.find(x => x.id === c.groupId);
             const first = c.characters.find(ch => g?.members?.includes(ch.avatar));
-            return { name: g?.name || '群聊', kind: '群聊', avatar: first?.avatar, desc: '', by: `${g?.members?.length || 0} 位角色` };
+            return { name: g?.name || '群聊', kind: '群聊', avatar: first?.avatar, };
         }
         const ch = c.characters[c.characterId];
         if (!ch) return null;
-        return { name: ch.name, kind: '角色', avatar: ch.avatar, desc: ch.description || ch.data?.description || '', by: ch.data?.creator ? `作者 ${ch.data.creator}` : '' };
+        return { name: ch.name, kind: '角色', avatar: ch.avatar };
     }
 
-    function ago(ms) {
-        if (!ms) return '';
-        const d = (Date.now() - ms) / 864e5;
-        if (d < 1) return '今天';
-        if (d < 2) return '昨天';
-        if (d < 30) return `${Math.floor(d)} 天前`;
-        if (d < 365) return `${Math.floor(d / 30)} 个月前`;
-        return `${Math.floor(d / 365)} 年前`;
-    }
 
     // ---------- 取色 ----------
     const colorCache = new Map();
@@ -125,6 +113,7 @@ export default function nowplaying() {
         hero.querySelector('.np-title').textContent = cur.name;
         hero.querySelector('.np-meta').innerHTML = `<b>${esc(c.name1)}</b> · ${n} 条消息 · 约 ${words.toLocaleString()} 字`;
         top.querySelector('.np-top-name').textContent = cur.name;
+        root.style.setProperty('--np-name', JSON.stringify(cur.name));
         // 专辑头永远是聊天的第一块（「加载更多」按钮也挪到它后面）
         if (chatEl.firstElementChild !== hero) chatEl.prepend(hero);
         if (hero.nextElementSibling !== actions) hero.after(actions);
@@ -146,29 +135,16 @@ export default function nowplaying() {
         regen.classList.toggle('np-off', !c.chat?.length);
     }
 
-    function renderLib() {
-        const c = SillyTavern.getContext();
-        const list = c.characters
-            .map((ch, i) => ({ ch, i }))
-            .sort((a, b) => (b.ch.date_last_chat || 0) - (a.ch.date_last_chat || 0));
-        const cur = c.groupId ? -1 : Number(c.characterId);
-        lib.innerHTML = '<div class="np-panel-head"><i class="fa-solid fa-layer-group"></i>资料库</div><div class="np-chips"><span class="np-chip">角色</span></div>'
-            + list.map(({ ch, i }) => `<div class="np-item${i === cur ? ' np-cur' : ''}" data-i="${i}"><img src="${esc(thumbUrl(ch.avatar))}" alt="" loading="lazy"><div class="np-t"><div class="np-n">${esc(ch.name)}</div><div class="np-s">角色 · ${esc(ago(ch.date_last_chat) || '还没聊过')}</div></div>${i === cur ? '<i class="np-vol fa-solid fa-volume-high"></i>' : ''}</div>`).join('');
-    }
 
-    function renderSide() {
-        const cur = current();
-        if (!cur) { side.innerHTML = ''; return; }
+
+    // 角色面板列表里，正在聊的那个标出来（酒馆每次打开面板都重画列表）
+    const charList = document.getElementById('rm_print_characters_block');
+    function markCur() {
+        if (!charList) return;
         const c = SillyTavern.getContext();
-        const mine = (c.chat || []).filter(m => m.is_user).length;
-        const desc = cur.desc.replace(/\{\{char\}\}/gi, cur.name).replace(/\{\{user\}\}/gi, c.name1).trim();
-        side.innerHTML = `<div class="np-panel-head" style="padding-inline:0">正在播放</div>
-            <img class="np-big" src="${esc(avatarUrl(cur.avatar))}" alt="">
-            <div class="np-name">${esc(cur.name)}</div>
-            <div class="np-by">${esc(cur.by || cur.kind)}</div>
-            <div class="np-card"><div class="np-card-img">关于这位${esc(cur.kind)}</div>
-            <div class="np-card-stat">这段聊天里你说了 ${mine} 句</div>
-            <div class="np-card-body" style="padding-top:8px">${esc(desc || '（没有写简介）')}</div></div>`;
+        const want = c.groupId ? null : String(c.characterId);
+        charList.querySelectorAll('.np-cur').forEach(el => { if (el.dataset.chid !== want) el.classList.remove('np-cur'); });
+        if (want != null) charList.querySelector(`.character_select[data-chid="${want}"]`)?.classList.add('np-cur');
     }
 
     function renderAll() {
@@ -176,14 +152,9 @@ export default function nowplaying() {
         paintArt(cur?.avatar);
         renderHero();
         renderNow();
-        renderLib();
-        renderSide();
+        markCur();
     }
 
-    lib.addEventListener('click', e => {
-        const it = e.target.closest('.np-item');
-        if (it) SillyTavern.getContext().selectCharacterById(Number(it.dataset.i));
-    });
 
     // ---------- 跟着酒馆 ----------
     const { eventSource, eventTypes: T } = st;
@@ -207,6 +178,8 @@ export default function nowplaying() {
         if (current() && chatEl.firstElementChild !== hero) renderHero();
     });
     mo.observe(chatEl, { childList: true });
+    const moList = new MutationObserver(markCur);
+    if (charList) moList.observe(charList, { childList: true });
 
     // 专辑头滚出去以后，顶上显示细栏
     const onScroll = () => root.classList.toggle('np-scrolled', hero.isConnected && chatEl.scrollTop > hero.offsetHeight - 40);
@@ -222,12 +195,15 @@ export default function nowplaying() {
     return () => {
         subs.forEach(([ev, fn]) => eventSource.removeListener(ev, fn));
         mo.disconnect();
+        moList.disconnect();
+        charList?.querySelectorAll('.np-cur').forEach(el => el.classList.remove('np-cur'));
         ro.disconnect();
         chatEl.removeEventListener('scroll', onScroll);
         made.forEach(el => el.remove());
         root.classList.remove('np-js', 'np-scrolled');
         root.style.removeProperty('--np-art');
         root.style.removeProperty('--np-bar');
+        root.style.removeProperty('--np-name');
     };
 }
 
