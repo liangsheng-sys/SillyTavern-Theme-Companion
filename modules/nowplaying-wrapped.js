@@ -142,7 +142,22 @@ const dbPut = (db, k, v) => new Promise(resolve => {
 // onProgress(读完几个, 一共几个)；signal 用来取消
 // 统计的算法改了就加一，旧缓存自动作废
 const CACHE_V = 4;
-async function collect(year, { onProgress, signal }) {
+// 同一次打开网页里再看年报：角色和聊天都没变就直接用上次读好的（列文件那一步也省了）
+let memo = null;
+function memoKey(c, year) {
+    const chars = c.characters.map(ch => `${ch.avatar}:${ch.date_last_chat}:${ch.chat_size}`).join('|');
+    const groups = (c.groups || []).map(g => `${g.id}:${(g.chats || []).length}`).join('|');
+    return `${year}#${c.getCurrentChatId?.() ?? ''}:${c.chat?.length ?? 0}#${chars}#${groups}`;
+}
+async function collect(year, opts) {
+    const c = SillyTavern.getContext();
+    const key = memoKey(c, year);
+    if (memo?.key === key) return { chats: memo.chats, timing: { ...memo.timing, memo: true } };
+    const r = await collectFresh(year, opts);
+    memo = { key, ...r };
+    return r;
+}
+async function collectFresh(year, { onProgress, signal }) {
     const c = SillyTavern.getContext();
     const headers = c.getRequestHeaders();
     const post = (url, body) => fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal }).then(r => (r.ok ? r.json() : null));
