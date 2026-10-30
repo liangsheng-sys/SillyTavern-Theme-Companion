@@ -2,12 +2,14 @@
  * 正在播放的小脚本：主题伴侣在用这套主题时载入，换走主题时清理
  * 样子全在主题 CSS 里，这里只负责：
  * 1. 取色：读当前角色的头像，挑一个主色写进 <html> 的 --np-art（保证上面的白字对比度够）
+ *    没传头像的角色（酒馆的默认剪影图）：按名字分一种 --np-cover-N 当封面色，封面画名字的第一个字
  * 2. 专辑头（#np_hero）、滚动后的细栏（#np_top）：封面、「角色」、大名字、几条消息
  * 3. 播放条：左边正在播放（#np_now），右边加 重新生成 / 上一版 / 下一版（点的是酒馆自己的按钮）
  * 4. 播放条实际多高写进 --np-bar，聊天面板和酒馆的左右面板跟着让位
  * 5. 右边角色面板：自己的标题栏（#np_rhead）；角色列表每行写「角色 · 几天前」；
  *    单个角色先显示展示页（#np_about：大封面、名字、收藏 / 编辑 / ⋯），点「编辑」才露出酒馆的编辑表单；
  *    ⋯ 菜单（#np_menu）里的每一项都是去点酒馆原来的按钮，找不到的按钮不显示
+ * 6. 资料库标题栏的「年报」：点了才载入 wrapped.js（扩展里是 modules/nowplaying-wrapped.js）
  * 左右两栏用酒馆自己的面板（左 = AI 设置，右 = 角色），样子在 CSS 里
  */
 export default function nowplaying() {
@@ -102,10 +104,66 @@ export default function nowplaying() {
         return p;
     }
 
+    // ---------- 默认头像 ----------
+    // 酒馆给没传头像的角色存一份默认图（黑剪影问号；新版灰紫底，旧版灰底），文件名是角色名，所以只能按样子认：
+    // 缩成 12×18，黑剪影的形状和默认图一样（九成以上的格子对得上）、底色几乎没颜色，就算默认头像。
+    // 认出来的按名字从可改区 --np-cover-1..8 里固定分一种颜色，封面写名字第一个字
+    const nameOf = file => SillyTavern.getContext().characters.find(ch => ch.avatar === file)?.name || '';
+    const genKnown = new Map();
+    const genCache = new Map();
+    let refPx;
+    function isDefault(file) {
+        if (!file) return Promise.resolve(false);
+        if (genCache.has(file)) return genCache.get(file);
+        refPx ??= loadImg('/img/ai4.png').then(shrink);
+        const p = Promise.all([refPx, loadImg(thumbUrl(file)).then(shrink)])
+            .then(([a, b]) => {
+                const dark = (p, i) => Math.max(p[i], p[i + 1], p[i + 2]) < 60;
+                let same = 0, n = 0, tint = 0;
+                for (let i = 0; i < a.length; i += 4, n++) {
+                    if (dark(a, i) === dark(b, i)) same++;
+                    if (dark(a, i) || dark(b, i)) continue;
+                    tint = Math.max(tint, Math.max(b[i], b[i + 1], b[i + 2]) - Math.min(b[i], b[i + 1], b[i + 2]));
+                }
+                return same / n > .9 && tint < 50;
+            })
+            .catch(() => false)
+            .then(v => { genKnown.set(file, v); if (v) soon(); return v; });
+        genCache.set(file, p);
+        return p;
+    }
+    // 已经认出来是默认头像就 true；还没认过的先当真头像画，认完再重画
+    const genSync = file => { if (!genKnown.has(file)) isDefault(file); return genKnown.get(file) === true; };
+    // 封面：真头像是 <img>，默认头像是一块底色上写首字
+    const coverHTML = (file, cls, url) => genSync(file)
+        ? `<span class="np-gen ${cls}" style="--np-gen:${genColor(nameOf(file))}"><b>${esc(initial(nameOf(file)))}</b></span>`
+        : `<img class="${cls}" src="${esc(url)}" alt="">`;
+
+    // 酒馆自己画的头像（资料库、群成员、聊天里每条消息）：在外框上写 data-np-gen，CSS 把图盖住画首字
+    function decorateAvatars() {
+        document.querySelectorAll('#right-nav-panel .avatar:not(.avatar_collage) > img, #chat .mes .avatar > img').forEach(img => {
+            const box = img.parentElement;
+            if (box.id === 'avatar_div_div') return;
+            let file = null;
+            try {
+                const u = new URL(img.getAttribute('src') || '', location.href);
+                if (u.pathname.endsWith('/thumbnail') && u.searchParams.get('type') === 'avatar') file = u.searchParams.get('file');
+            } catch { /* 不是网址就跳过 */ }
+            const name = file && nameOf(file);
+            if (name && genSync(file)) {
+                box.dataset.npGen = initial(name);
+                box.style.setProperty('--np-gen', genColor(name));
+            } else if (box.dataset.npGen) {
+                delete box.dataset.npGen;
+                box.style.removeProperty('--np-gen');
+            }
+        });
+    }
+
     let artFile;
     async function paintArt(file) {
         artFile = file;
-        const c = await pickColor(file);
+        const c = await isDefault(file) ? genColor(nameOf(file)) : await pickColor(file);
         if (artFile !== file) return;
         if (c) root.style.setProperty('--np-art', c);
         else root.style.removeProperty('--np-art');
@@ -133,10 +191,11 @@ export default function nowplaying() {
         const words = (c.chat || []).reduce((s, m) => s + (m.mes?.length || 0), 0);
         const cover = hero.querySelector('.np-cover');
         const key = cur.avatars.join('|');
-        if (cover.dataset.key !== key) {
-            cover.dataset.key = key;
+        const drawn = cur.avatars.map(a => a + (genSync(a) ? '*' : '')).join('|');
+        if (cover.dataset.key !== drawn) {
+            cover.dataset.key = drawn;
             cover.dataset.n = cur.avatars.length;
-            cover.innerHTML = cur.avatars.map(a => `<img src="${esc(cur.avatars.length > 1 ? thumbUrl(a) : avatarUrl(a))}" alt="">`).join('');
+            cover.innerHTML = cur.avatars.map(a => coverHTML(a, '', cur.avatars.length > 1 ? thumbUrl(a) : avatarUrl(a))).join('');
         }
         if (changed('hero', key)) tick(hero);
         hero.querySelector('.np-kicker').textContent = cur.kind;
@@ -161,7 +220,7 @@ export default function nowplaying() {
         const nowName = speaker?.name || cur?.name;
         const nowSub = total > 1 ? `第 ${at} / ${total} 版回复` : speaker ? cur.name : '正在播放';
         now.innerHTML = cur
-            ? `<img src="${esc(thumbUrl(speaker?.avatar || cur.avatar))}" alt=""><div style="min-width:0"><div class="np-n">${esc(nowName)}</div><div class="np-s">${esc(nowSub)}</div></div>`
+            ? `${coverHTML(speaker?.avatar || cur.avatar, '', thumbUrl(speaker?.avatar || cur.avatar))}<div style="min-width:0"><div class="np-n">${esc(nowName)}</div><div class="np-s">${esc(nowSub)}</div></div>`
             : '';
         if (changed('now', `${nowName}|${at}/${total}`)) tick(now);
         const lastMes = document.querySelector('#chat .last_mes');
@@ -206,7 +265,7 @@ export default function nowplaying() {
     const panel = document.getElementById('right-nav-panel');
     const chBlock = document.getElementById('rm_ch_create_block');
     const rhead = mk('div', { id: 'np_rhead' });
-    rhead.innerHTML = '<div class="np-rh-back interactable" tabindex="0"></div><div class="np-rh-title"></div><div class="np-rh-done menu_button interactable" tabindex="0">完成</div><div class="np-rh-pin interactable" tabindex="0" title="固定面板"></div>';
+    rhead.innerHTML = `<div class="np-rh-back interactable" tabindex="0"></div><div class="np-rh-title"></div><div class="np-rh-wrap interactable" tabindex="0" title="这一年你和角色们聊了什么">${new Date().getFullYear()} 年报</div><div class="np-rh-done menu_button interactable" tabindex="0">完成</div><div class="np-rh-pin interactable" tabindex="0" title="固定面板"></div>`;
     if (panel) { panel.prepend(rhead); made.push(rhead); }
     const pinBox = document.getElementById('rm_button_panel_pin');
     const click = sel => { const el = typeof sel === 'string' ? document.querySelector(sel) : sel; el?.click(); return !!el; };
@@ -230,11 +289,17 @@ export default function nowplaying() {
         else if (rhead.dataset.mode === 'about' || rhead.dataset.mode === 'group') click('#rm_button_characters');
     });
     rhead.querySelector('.np-rh-done').addEventListener('click', () => setEditing(false));
+    // 年报：第一次点才载入（带上和本文件一样的版本号，更新后不吃旧缓存）
+    const wrapped = () => import(new URL(`./nowplaying-wrapped.js${new URL(import.meta.url).search}`, import.meta.url));
+    rhead.querySelector('.np-rh-wrap').addEventListener('click', () => wrapped().then(m => m.open()).catch(e => {
+        console.error('[正在播放] 年报载入失败', e);
+        toastr?.error?.('年报没能载入，刷新页面再试一次');
+    }));
     rhead.querySelector('.np-rh-pin').addEventListener('click', () => { pinBox?.click(); setTimeout(renderHead); });
 
     // ---------- 右边面板：单个角色的展示页 ----------
     const about = mk('div', { id: 'np_about' });
-    about.innerHTML = `<img class="np-big" alt="">
+    about.innerHTML = `<div class="np-big"></div>
         <div class="np-name"></div>
         <div class="np-by"></div>
         <div class="np-acts">
@@ -256,7 +321,12 @@ export default function nowplaying() {
         if (!ch) return;
         const name = ch.name;
         const sub = s => String(s || '').replace(/\{\{char\}\}/gi, name).replace(/\{\{user\}\}/gi, c.name1).trim();
-        about.querySelector('.np-big').src = avatarUrl(ch.avatar);
+        const big = about.querySelector('.np-big');
+        const bigKey = ch.avatar + (genSync(ch.avatar) ? '*' : '');
+        if (big.dataset.key !== bigKey) {
+            big.dataset.key = bigKey;
+            big.innerHTML = coverHTML(ch.avatar, '', avatarUrl(ch.avatar));
+        }
         if (changed('about', ch.avatar)) tick(about);
         about.querySelector('.np-name').textContent = name;
         const creator = ch.data?.creator;
@@ -348,13 +418,14 @@ export default function nowplaying() {
         decorateList();
         renderAbout();
         renderHead();
+        decorateAvatars();
     }
 
 
     // ---------- 跟着酒馆 ----------
     const { eventSource, eventTypes: T } = st;
     const soon = (() => { let t; return () => { clearTimeout(t); t = setTimeout(renderAll, 60); }; })();
-    const light = () => { renderNow(); renderHero(); };
+    const light = () => { renderNow(); renderHero(); decorateAvatars(); };
     const subs = [
         [T.CHAT_CHANGED, soon],
         [T.CHARACTER_EDITED, soon],
@@ -365,7 +436,7 @@ export default function nowplaying() {
         [T.MESSAGE_DELETED, light],
         [T.GENERATION_ENDED, light],
         [T.CHARACTER_MESSAGE_RENDERED, light],
-        [T.MORE_MESSAGES_LOADED, renderHero],
+        [T.MORE_MESSAGES_LOADED, light],
     ].filter(([ev]) => ev);
     subs.forEach(([ev, fn]) => eventSource.on(ev, fn));
 
@@ -374,7 +445,7 @@ export default function nowplaying() {
         if (current() && chatEl.firstElementChild !== hero) renderHero();
     });
     mo.observe(chatEl, { childList: true });
-    const moList = new MutationObserver(decorateList);
+    const moList = new MutationObserver(() => { decorateList(); decorateAvatars(); });
     if (charList) moList.observe(charList, { childList: true });
     // 面板换了页（列表 / 单个角色 / 新建 / 群聊）：退出编辑，换标题
     const moPanel = new MutationObserver(() => {
@@ -382,6 +453,7 @@ export default function nowplaying() {
         closeMenu();
         renderAbout();
         renderHead();
+        decorateAvatars();
     });
     if (panel) moPanel.observe(panel, { attributes: true, attributeFilter: ['data-menu-type'] });
 
@@ -405,14 +477,49 @@ export default function nowplaying() {
         document.removeEventListener('keydown', onKey);
         charList?.querySelectorAll('[data-np-sub]').forEach(el => delete el.dataset.npSub);
         charList?.querySelectorAll('.np-cur').forEach(el => el.classList.remove('np-cur'));
+        document.querySelectorAll('[data-np-gen]').forEach(el => { delete el.dataset.npGen; el.style.removeProperty('--np-gen'); });
         ro.disconnect();
         chatEl.removeEventListener('scroll', onScroll);
         made.forEach(el => el.remove());
+        wrapped().then(m => m.close()).catch(() => {});
         root.classList.remove('np-js', 'np-scrolled', 'np-editing');
         root.style.removeProperty('--np-art');
         root.style.removeProperty('--np-bar');
         root.style.removeProperty('--np-name');
     };
+}
+
+// ---------- 默认头像用的小工具 ----------
+function loadImg(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+    });
+}
+
+// 整张图拉伸成 12×18（默认图和缩略图都是 2:3）
+function shrink(img) {
+    const cv = document.createElement('canvas');
+    cv.width = 12;
+    cv.height = 18;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0, 12, 18);
+    return g.getImageData(0, 0, 12, 18).data;
+}
+
+// 同一个名字永远分到同一种颜色
+function genColor(name) {
+    let h = 5381;
+    for (const ch of String(name)) h = (h * 33 + ch.codePointAt(0)) >>> 0;
+    return `var(--np-cover-${h % 8 + 1})`;
+}
+
+// 名字的第一个字（跳过开头的括号、标点、表情）；英文大写
+function initial(name) {
+    const s = String(name || '').replace(/^[\s\p{P}\p{S}]+/u, '');
+    return ([...s][0] || '?').toUpperCase();
 }
 
 // ---------- 从头像里挑主色 ----------
