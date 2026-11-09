@@ -1532,5 +1532,20 @@
         ],
         "draft": true,
         "module": "modules/nowplaying.js"
+    },
+    {
+        "family": "絮语",
+        "version": "0.1.0",
+        "variantLabel": "变体",
+        "options": [],
+        "themes": [
+            {
+                "name": "絮语",
+                "file": "絮语.json",
+                "label": "絮语"
+            }
+        ],
+        "draft": true,
+        "module": "modules/xuyu.js"
     }
 ]
