@@ -1570,6 +1570,217 @@
                         "角色消息一张张灰卡片"
                     ]
                 ]
+            },
+            {
+                "type": "toggle",
+                "var": "--xy-bubble",
+                "label": "你的消息用气泡",
+                "default": true,
+                "on": "1",
+                "off": "0",
+                "note": "淡紫色、左下角接近直角的气泡；关掉后你的话和角色一样直接写在底上"
+            },
+            {
+                "type": "head",
+                "label": "名字"
+            },
+            {
+                "type": "select",
+                "var": "--xy-name",
+                "label": "名字样式",
+                "default": "pill",
+                "choices": [
+                    [
+                        "pill",
+                        "胶囊（声波 + 名字）"
+                    ],
+                    [
+                        "text",
+                        "彩色名字"
+                    ],
+                    [
+                        "avatar",
+                        "圆头像"
+                    ]
+                ]
+            },
+            {
+                "key": "charColor",
+                "type": "select",
+                "label": "角色的颜色",
+                "default": "glow",
+                "choices": [
+                    {
+                        "value": "glow",
+                        "label": "杏黄（默认）",
+                        "css": "html:root:root { --xy-char-c: #FFA946; --xy-char-ink: #1A1A1A; --xy-char-t-day: #8A4B00; --xy-char-t-night: #FFA946; }"
+                    },
+                    {
+                        "value": "dawn",
+                        "label": "淡紫",
+                        "css": "html:root:root { --xy-char-c: #F0D7FF; --xy-char-ink: #1A1A1A; --xy-char-t-day: #6E3FA6; --xy-char-t-night: #F0D7FF; }"
+                    },
+                    {
+                        "value": "signal",
+                        "label": "粉",
+                        "css": "html:root:root { --xy-char-c: #FFBCF2; --xy-char-ink: #1A1A1A; --xy-char-t-day: #9B2F7F; --xy-char-t-night: #FFBCF2; }"
+                    },
+                    {
+                        "value": "flare",
+                        "label": "橘红",
+                        "css": "html:root:root { --xy-char-c: #FF6C4C; --xy-char-ink: #1A1A1A; --xy-char-t-day: #A82C12; --xy-char-t-night: #FF8F73; }"
+                    },
+                    {
+                        "value": "pulse",
+                        "label": "酒红",
+                        "css": "html:root:root { --xy-char-c: #7F1C34; --xy-char-ink: #FFFFEB; --xy-char-t-day: #7F1C34; --xy-char-t-night: #F2A7B8; }"
+                    },
+                    {
+                        "value": "cream",
+                        "label": "奶油",
+                        "css": "html:root:root { --xy-char-c: #FFFFEB; --xy-char-ink: #1A1A1A; --xy-char-t-day: #1A1A1A; --xy-char-t-night: #FFFFEB; }"
+                    }
+                ],
+                "note": "胶囊的底色；彩色名字样式下是名字的颜色（白天自动用深一档，保证看得清）"
+            },
+            {
+                "key": "youColor",
+                "type": "select",
+                "label": "你的颜色",
+                "default": "dawn",
+                "choices": [
+                    {
+                        "value": "glow",
+                        "label": "杏黄",
+                        "css": "html:root:root { --xy-you-c: #FFA946; --xy-you-ink: #1A1A1A; --xy-you-t-day: #8A4B00; --xy-you-t-night: #FFA946; }"
+                    },
+                    {
+                        "value": "dawn",
+                        "label": "淡紫（默认）",
+                        "css": "html:root:root { --xy-you-c: #F0D7FF; --xy-you-ink: #1A1A1A; --xy-you-t-day: #6E3FA6; --xy-you-t-night: #F0D7FF; }"
+                    },
+                    {
+                        "value": "signal",
+                        "label": "粉",
+                        "css": "html:root:root { --xy-you-c: #FFBCF2; --xy-you-ink: #1A1A1A; --xy-you-t-day: #9B2F7F; --xy-you-t-night: #FFBCF2; }"
+                    },
+                    {
+                        "value": "flare",
+                        "label": "橘红",
+                        "css": "html:root:root { --xy-you-c: #FF6C4C; --xy-you-ink: #1A1A1A; --xy-you-t-day: #A82C12; --xy-you-t-night: #FF8F73; }"
+                    },
+                    {
+                        "value": "pulse",
+                        "label": "酒红",
+                        "css": "html:root:root { --xy-you-c: #7F1C34; --xy-you-ink: #FFFFEB; --xy-you-t-day: #7F1C34; --xy-you-t-night: #F2A7B8; }"
+                    },
+                    {
+                        "value": "cream",
+                        "label": "奶油",
+                        "css": "html:root:root { --xy-you-c: #FFFFEB; --xy-you-ink: #1A1A1A; --xy-you-t-day: #1A1A1A; --xy-you-t-night: #FFFFEB; }"
+                    }
+                ],
+                "note": "你的胶囊和气泡的颜色"
+            },
+            {
+                "type": "toggle",
+                "var": "--xy-group-colors",
+                "label": "群聊每人一色",
+                "default": true,
+                "on": "1",
+                "off": "0",
+                "note": "第一个角色用「角色的颜色」，其余按群成员顺序轮流用别的颜色"
+            },
+            {
+                "type": "head",
+                "label": "字"
+            },
+            {
+                "key": "kai",
+                "type": "select",
+                "label": "斜体的中文字体",
+                "default": "huiwen",
+                "choices": [
+                    {
+                        "value": "huiwen",
+                        "label": "汇文正楷（默认）"
+                    },
+                    {
+                        "value": "wenkai",
+                        "label": "霞鹜文楷",
+                        "css": "html:root:root { --xy-kai: 'LXGW WenKai'; --xy-kai-85: 'XY WenKai 85'; }"
+                    }
+                ]
+            },
+            {
+                "type": "head",
+                "label": "欢迎页"
+            },
+            {
+                "key": "photo",
+                "type": "select",
+                "label": "照片",
+                "default": "118",
+                "choices": [
+                    {
+                        "value": "118",
+                        "label": "窗边的人（默认）",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-118.webp\"); }"
+                    },
+                    {
+                        "value": "127",
+                        "label": "加班",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-127.webp\"); }"
+                    },
+                    {
+                        "value": "105",
+                        "label": "雨伞夜街",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-105.webp\"); }"
+                    },
+                    {
+                        "value": "166",
+                        "label": "夜街光斑",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-166.webp\"); }"
+                    },
+                    {
+                        "value": "140",
+                        "label": "夜里骑车",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-140.webp\"); }"
+                    },
+                    {
+                        "value": "185",
+                        "label": "百叶窗灯泡",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-185.webp\"); }"
+                    },
+                    {
+                        "value": "83",
+                        "label": "雨天窗外",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-83.webp\"); }"
+                    },
+                    {
+                        "value": "94",
+                        "label": "雨窗街景",
+                        "css": "html:root:root { --xy-photo: url(\"{EXT}modules/xuyu-photo-94.webp\"); }"
+                    },
+                    {
+                        "value": "none",
+                        "label": "不要照片（深绿卡片）",
+                        "css": "html:root:root { --xy-photo: var(--xy-photo-fallback); }"
+                    }
+                ],
+                "note": "照片来自 Wikimedia Commons（CC0），做了慢快门拖影和调色"
+            },
+            {
+                "type": "text",
+                "var": "--xy-welcome-big",
+                "label": "大字",
+                "default": "零点以后，"
+            },
+            {
+                "type": "text",
+                "var": "--xy-welcome-alt",
+                "label": "后半句",
+                "default": "慢慢说"
             }
         ],
         "themes": [
