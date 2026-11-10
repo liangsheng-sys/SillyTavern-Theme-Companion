@@ -252,3 +252,27 @@ html.dn-switching body *::after {
     width: auto;
     white-space: nowrap;
 }
+
+/* 列表里勾选、一起装 */
+.daynight-settings .dn-pick {
+    flex: none;
+    margin: 0;
+}
+
+.daynight-settings .dn-pick-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin: 4px 0 8px;
+}
+
+.daynight-settings .dn-pick-bar .menu_button {
+    margin: 0;
+    padding: 3px 12px;
+    white-space: nowrap;
+}
+
+.daynight-settings .dn-pick-bar .menu_button.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}

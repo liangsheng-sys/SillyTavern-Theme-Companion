@@ -25,6 +25,7 @@ const DEFAULTS = {
     themes: {},              // 主题名 → 装的版本（'manual' = 用户自己导入的，版本未知）
     opts: {},                // 系列名 → { 选项 → 值 }
     autoUpdateThemes: false,
+    autoInstallNew: false,   // 自动安装新主题（1.11 起默认不装，由用户在列表里挑）
     autoUpdateExt: false,
     tryDrafts: false,        // 试用施工中的主题（默认不装、不列出）
 };
@@ -240,6 +241,18 @@ function refreshToast(title) {
     stickyToast('点这里刷新页面后生效', title, () => location.reload());
 }
 
+// 一次装几套（列表里勾选的）
+async function installMany(fams) {
+    let ok = 0;
+    for (const fam of fams) {
+        for (const t of familyState(fam).missing) if (await saveTheme(t)) { settings().themes[t.name] = fam.version; ok++; }
+    }
+    save();
+    if (ok) refreshToast(`已安装${fams.map(f => `「${f.family}」`).join('')}`);
+    else toastr.error('保存失败，请检查酒馆是否在运行', '主题伴侣');
+    syncThemes();
+}
+
 async function installFamily(fam, list = familyState(fam).missing) {
     const done = [];
     for (const t of list) if (await saveTheme(t)) { settings().themes[t.name] = fam.version; done.push(t); }
@@ -314,8 +327,10 @@ async function checkThemes() {
         for (const t of fam.themes) {
             const rec = s.themes[t.name];
             if (!have.has(t.name)) {
-                // 只给已经装了的系列补上新成员；装过又被用户删掉的不再装，面板里可以手动装
-                if (famHere && !rec && await saveTheme(t)) { s.themes[t.name] = fam.version; added.push(fam.family); }
+                // 已经装了的系列补上新成员；勾了「自动安装新主题」的连没装过的新系列也装上。
+                // 装过又被用户删掉的（有记录）不再装，面板里可以手动装
+                const famNew = s.autoInstallNew && !fam.themes.some(x => s.themes[x.name]);
+                if ((famHere || famNew) && !rec && await saveTheme(t)) { s.themes[t.name] = fam.version; added.push(fam.family); }
                 continue;
             }
             // 用户自己导入的：内容和附带的一样就记成这个版本，不一样就是版本未知（算旧版）
@@ -433,9 +448,20 @@ async function retireThemes() {
     return { merged, renamed };
 }
 
+const picked = new Set();   // 列表里勾了要装的系列名
+
 function themeRow(fam, st) {
     const row = document.createElement('div');
     row.className = 'dn-theme';
+    if (!st.installed.length) {
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.className = 'dn-pick';
+        box.title = '勾上，一起装';
+        box.checked = picked.has(fam.family);
+        box.onchange = () => { box.checked ? picked.add(fam.family) : picked.delete(fam.family); syncPickBar(); };
+        row.append(box);
+    }
     if (fam.thumb) {
         const img = document.createElement('img');
         img.className = 'dn-thumb';
@@ -486,10 +512,41 @@ function syncThemes() {
     }
     const sub = (text) => { const d = document.createElement('div'); d.className = 'dn-subhead'; d.textContent = text; box.append(d); };
     if (mine.length) { sub('已安装'); box.append(...mine); }
-    if (other.length) { sub(mine.length ? '还没装的' : '挑想装的主题'); box.append(...other); }
+    if (other.length) {
+        sub(mine.length ? '还没装的' : '挑想装的主题');
+        box.append(...other);
+        const bar = document.createElement('div');
+        bar.className = 'dn-pick-bar';
+        bar.innerHTML = '<div class="menu_button dn-pick-all"></div><div class="menu_button dn-pick-go"></div>';
+        box.append(bar);
+        const names = families.filter(f => !hidden(f) && !familyState(f).installed.length).map(f => f.family);
+        for (const n of [...picked]) if (!names.includes(n)) picked.delete(n);
+        bar.querySelector('.dn-pick-all').onclick = () => {
+            const all = names.every(n => picked.has(n));
+            for (const n of names) all ? picked.delete(n) : picked.add(n);
+            syncThemes();
+        };
+        bar.querySelector('.dn-pick-go').onclick = () => {
+            const fams = families.filter(f => picked.has(f.family));
+            if (!fams.length) return;
+            picked.clear();
+            installMany(fams);
+        };
+        syncPickBar(names);
+    }
     if (!families.length) box.textContent = '（没有找到附带的主题）';
     $('#dn_update_all').toggle(staleCount > 1);
     $('#dn_drafts_row').toggle(families.some(f => f.draft));
+}
+
+function syncPickBar(names) {
+    const bar = document.querySelector('#dn_themes .dn-pick-bar');
+    if (!bar) return;
+    names ||= families.filter(f => !hidden(f) && !familyState(f).installed.length).map(f => f.family);
+    bar.querySelector('.dn-pick-all').textContent = names.length && names.every(n => picked.has(n)) ? '全不选' : '全选';
+    const go = bar.querySelector('.dn-pick-go');
+    go.textContent = picked.size ? `安装勾选的 ${picked.size} 套` : '安装勾选的';
+    go.classList.toggle('disabled', !picked.size);
 }
 
 async function updateAll() {
@@ -1074,6 +1131,7 @@ function syncExt() {
     $('#dn_ext_update').toggle(ext.state === 'behind');
     $('#dn_ext_auto').prop('checked', settings().autoUpdateExt);
     $('#dn_theme_auto').prop('checked', settings().autoUpdateThemes);
+    $('#dn_theme_new').prop('checked', settings().autoInstallNew);
     $('#dn_drafts').prop('checked', settings().tryDrafts);
 }
 
@@ -1133,6 +1191,7 @@ const PANEL = `
             <div class="dn-head" id="dn_themes_head">主题</div>
             <div id="dn_themes"></div>
             <div id="dn_update_all" class="menu_button dn-wide">全部更新</div>
+            <label class="dn-row dn-check"><input id="dn_theme_new" type="checkbox"><span>自动安装新主题</span><small>勾上时把还没装过的主题都装上，以后扩展带来新主题也直接装（不勾就只提醒一次）。自己删掉的不会再装回来</small></label>
             <label class="dn-row dn-check"><input id="dn_theme_auto" type="checkbox"><span>自动更新主题</span><small>会覆盖你在「UI 主题」里对这些主题做的修改；关掉时只提醒</small></label>
             <label id="dn_drafts_row" class="dn-row dn-check"><input id="dn_drafts" type="checkbox"><span>试用施工中的主题</span><small>还没正式发布的主题，勾上后列在上面，可能随时大改</small></label>
 
@@ -1197,6 +1256,11 @@ function mountUi() {
     $('#dn_end').on('change', function () { settings().dayEnd = this.value; save(); apply(); });
     $('#dn_paper').on('change', function () { settings().paper = this.value; save(); apply(false); });
     $('#dn_theme_auto').on('change', function () { settings().autoUpdateThemes = this.checked; save(); });
+    $('#dn_theme_new').on('change', async function () {
+        settings().autoInstallNew = this.checked;
+        save();
+        if (this.checked) await checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e));
+    });
     $('#dn_drafts').on('change', async function () {
         settings().tryDrafts = this.checked;
         save();
