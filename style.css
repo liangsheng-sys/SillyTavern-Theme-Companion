@@ -75,19 +75,54 @@ html.dn-switching body *::after {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 6px 0;
+    margin: 8px 0;
 }
 
-.daynight-settings .dn-theme small {
+/* 缩略图：16:10，点开看大图 */
+.daynight-settings .dn-thumb {
+    flex: none;
+    width: 96px;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    cursor: zoom-in;
+}
+
+.daynight-settings .dn-theme-info {
     flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.daynight-settings .dn-theme-info > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 8px;
+}
+
+.daynight-settings .dn-theme-state,
+.daynight-settings .dn-blurb {
     opacity: 0.8;
+}
+
+.daynight-settings .dn-blurb {
+    line-height: 1.4;
 }
 
 .daynight-settings .dn-theme-act {
     display: flex;
+    flex-direction: column;
     flex-shrink: 0;
     gap: 6px;
     margin-left: auto;
+}
+
+.daynight-settings .dn-ext .dn-theme-act {
+    flex-direction: row;
 }
 
 .daynight-settings .dn-theme-act .menu_button {
@@ -98,6 +133,27 @@ html.dn-switching body *::after {
 
 .daynight-settings .dn-theme-name {
     flex: 0 0 auto;
+    font-weight: 600;
+}
+
+/* 看大图的弹窗 */
+.dn-thumb-big {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+.dn-thumb-big img {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 8px;
+}
+
+.dn-thumb-big > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 /* 主题设置 */

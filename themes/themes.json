@@ -242,7 +242,9 @@
                 "file": "纸上访谈.json",
                 "label": "纸上访谈"
             }
-        ]
+        ],
+        "blurb": "当代杂志的访谈页：衬线正文、问答排版，夜读和昼读两张纸",
+        "thumb": "assets/thumbs/mozhi.webp"
     },
     {
         "family": "银盐显影",
@@ -634,6 +636,8 @@
                 "label": "硒调色（默认）"
             }
         ],
+        "blurb": "暗房夜、展厅昼：灰阶分区配色、红笔圈记号，五种调色",
+        "thumb": "assets/thumbs/yinyan.webp",
         "retired": [
             {
                 "name": "银盐显影 · 无调色",
@@ -1075,6 +1079,8 @@
                 "label": "粗野指北"
             }
         ],
+        "blurb": "粗野主义建筑的导视牌：混凝土墙、楼层号、天花灯格",
+        "thumb": "assets/thumbs/daoshi.webp",
         "retired": [
             {
                 "name": "导视",
@@ -1368,6 +1374,8 @@
                 "label": "WPS文档"
             }
         ],
+        "blurb": "把聊天排成一份 WPS 文档：功能区、能拖的标尺、宋体正文",
+        "thumb": "assets/thumbs/wps.webp",
         "module": "modules/wps.js"
     },
     {
@@ -1500,6 +1508,8 @@
             }
         ],
         "bgVar": "--xp-st-bg",
+        "blurb": "2005 年的 MSN 聊天窗：蓝色窗框、开始菜单、表情和昵称",
+        "thumb": "assets/thumbs/xp.webp",
         "module": "modules/xp.js",
         "retired": [
             {
@@ -1531,13 +1541,37 @@
             }
         ],
         "draft": true,
+        "blurb": "音乐播放器：正在播放的封面、歌词式正文、年度报告",
+        "thumb": "assets/thumbs/nowplaying.webp",
         "module": "modules/nowplaying.js"
     },
     {
         "family": "絮语",
         "version": "0.1.0",
         "variantLabel": "变体",
-        "options": [],
+        "options": [
+            {
+                "type": "head",
+                "label": "版面"
+            },
+            {
+                "type": "select",
+                "var": "--xy-layout",
+                "label": "聊天的底",
+                "default": "stage",
+                "note": "整块灰底：聊天区是一块灰色大圆角底，角色的话铺在浅色那层上。灰卡片：聊天区是纸，角色每条消息一张灰卡片，字的那块露出纸色，和你的淡紫气泡一深一浅",
+                "choices": [
+                    [
+                        "stage",
+                        "整块灰底"
+                    ],
+                    [
+                        "cards",
+                        "角色消息一张张灰卡片"
+                    ]
+                ]
+            }
+        ],
         "themes": [
             {
                 "name": "絮语",
@@ -1546,6 +1580,8 @@
             }
         ],
         "draft": true,
+        "blurb": "奶油纸和深绿：大字标题、胶囊名字、键帽按钮，有照片的欢迎页",
+        "thumb": "assets/thumbs/xuyu.webp",
         "module": "modules/xuyu.js"
     }
 ]

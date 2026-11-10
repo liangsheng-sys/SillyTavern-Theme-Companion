@@ -294,8 +294,9 @@ function checkThemeChange() {
     if (currentTheme() !== lastTheme) onThemeChange();
 }
 
-// 加载时：没装过的直接装；装过旧版的按「自动更新主题」决定覆盖还是只提醒
-// 施工中的系列：只有勾了「试用施工中的主题」才装、才列出来
+// 加载时：不再自动装新主题（主题越来越多，由用户在面板里挑）——新系列只提醒一次，点提醒打开主题列表；
+// 已经装了的系列照常：缺的新成员补上，旧版按「自动更新主题」决定覆盖还是只提醒
+// 施工中的系列：只有勾了「试用施工中的主题」才列出来
 const hidden = (fam) => fam.draft && !settings().tryDrafts;
 
 async function checkThemes() {
@@ -304,14 +305,17 @@ async function checkThemes() {
     const s = settings();
     const have = installedNames();
     const added = [], updated = [];
+    // 第一次用这个扩展（什么都没记过）：不装任何主题，提示去面板里挑；现有的系列都算提醒过了
+    const firstRun = !s.welcomed && !Object.keys(s.themes).length;
     for (const fam of families) {
-        if (hidden(fam)) continue;   // 施工中的系列不自动装
+        if (hidden(fam)) continue;
+        const famHere = fam.themes.some(t => have.has(t.name));
         let staleHere = false;
         for (const t of fam.themes) {
             const rec = s.themes[t.name];
             if (!have.has(t.name)) {
-                // 装过又被用户删掉的不再自动装，面板里可以手动装
-                if (!rec && await saveTheme(t)) { s.themes[t.name] = fam.version; added.push(fam.family); }
+                // 只给已经装了的系列补上新成员；装过又被用户删掉的不再装，面板里可以手动装
+                if (famHere && !rec && await saveTheme(t)) { s.themes[t.name] = fam.version; added.push(fam.family); }
                 continue;
             }
             // 用户自己导入的：内容和附带的一样就记成这个版本，不一样就是版本未知（算旧版）
@@ -326,6 +330,7 @@ async function checkThemes() {
             toastr.info(`在「扩展 → 主题伴侣」里可以一键更新到 ${fam.version}`, `「${fam.family}」有新版本`, { timeOut: 10000 });
         }
     }
+    announceNew(firstRun);
     const { merged, renamed } = await retireThemes();
     await reapplyActive(updated);
     save();
@@ -339,6 +344,50 @@ async function checkThemes() {
     syncThemes();
     renderAllOptions();
     applyOptions();
+}
+
+// 新系列：没装过、没记录过、没提醒过的，提醒一次（点一下打开主题列表）。第一次用扩展只给一条总的提示
+function announceNew(firstRun) {
+    const s = settings();
+    const seen = (s.announced ||= {});
+    const fresh = families.filter(f => !hidden(f) && !seen[f.family]
+        && !f.themes.some(t => s.themes[t.name] || installedNames().has(t.name)));
+    for (const f of families) if (!hidden(f) && (firstRun || fresh.includes(f))) seen[f.family] = true;
+    for (const f of families) if (f.themes.some(t => s.themes[t.name])) seen[f.family] = true;
+    if (!s.welcomed) {
+        s.welcomed = true;
+        if (firstRun) {
+            stickyToast('点这里打开主题列表，挑想装的', '主题伴侣：主题需要自己装', openThemeList);
+            return;
+        }
+    }
+    if (!fresh.length) return;
+    const names = fresh.map(f => `「${f.family}」`).join('');
+    const text = fresh.length === 1 && fresh[0].blurb ? fresh[0].blurb : '点这里打开主题列表看看';
+    toastr.info(text, `新主题${names}可以装了`, { timeOut: 12000, extendedTimeOut: 6000, onclick: openThemeList });
+}
+
+// 打开「扩展」面板并展开本扩展、滚到主题列表
+function openThemeList() {
+    const drawer = document.querySelector('#extensions-settings-button .drawer-toggle');
+    const content = document.getElementById('rm_extensions_block');
+    if (drawer && content && !content.classList.contains('openDrawer')) drawer.click();
+    setTimeout(() => {
+        const box = document.getElementById('daynight_settings');
+        const inner = box?.querySelector('.inline-drawer-content');
+        if (inner && getComputedStyle(inner).display === 'none') box.querySelector('.inline-drawer-toggle')?.click();
+        setTimeout(() => document.getElementById('dn_themes_head')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }, 400);
+}
+
+// 缩略图点开看大图
+function showThumb(fam) {
+    const { callGenericPopup, POPUP_TYPE } = ctx();
+    const html = `<div class="dn-thumb-big"><img src="${new URL(fam.thumb, HERE).href}" alt=""><div><b></b><small></small></div></div>`;
+    const el = $(html);
+    el.find('b').text(fam.family);
+    el.find('small').text(fam.blurb || '');
+    callGenericPopup(el, POPUP_TYPE.TEXT, '', { wide: false, okButton: '关闭' });
 }
 
 // 酒馆启动时用的是设置里存的那份 CSS，不会重读主题文件：主题更新后正在用的那套要重新选一次才生效。
@@ -384,36 +433,60 @@ async function retireThemes() {
     return { merged, renamed };
 }
 
+function themeRow(fam, st) {
+    const row = document.createElement('div');
+    row.className = 'dn-theme';
+    if (fam.thumb) {
+        const img = document.createElement('img');
+        img.className = 'dn-thumb';
+        img.loading = 'lazy';
+        img.alt = '';
+        img.title = '看大图';
+        img.src = new URL(fam.thumb, HERE).href;
+        img.onclick = () => showThumb(fam);
+        row.append(img);
+    }
+    const info = document.createElement('div');
+    info.className = 'dn-theme-info';
+    info.innerHTML = '<div><span class="dn-theme-name"></span><small class="dn-theme-state"></small></div><small class="dn-blurb"></small>';
+    info.querySelector('.dn-theme-name').textContent = fam.family;
+    const n = fam.themes.length > 1 ? `（含 ${fam.themes.length - 1} 种${fam.variantLabel}）` : '';
+    info.querySelector('.dn-theme-state').textContent = !st.installed.length ? `${fam.version}${n}${fam.draft ? ' · 施工中' : ''}`
+        : st.stale.length ? `可更新到 ${fam.version}`
+        : `${fam.version}${st.using ? ' · 使用中' : ''}${st.missing.length ? ` · 缺 ${st.missing.length} 个${fam.variantLabel}` : ''}`;
+    info.querySelector('.dn-blurb').textContent = fam.blurb || '';
+    row.append(info);
+    const act = document.createElement('span');
+    act.className = 'dn-theme-act';
+    const btn = (label, fn) => {
+        const b = document.createElement('div');
+        b.className = 'menu_button';
+        b.textContent = label;
+        b.onclick = fn;
+        act.append(b);
+    };
+    if (st.missing.length) btn(st.installed.length ? '补装' : '安装', () => installFamily(fam));
+    if (st.stale.length) btn('更新', () => updateFamily(fam));
+    if (st.installed.length && !st.using) btn('使用', () => useTheme(st.installed[0].name));
+    row.append(act);
+    return row;
+}
+
 function syncThemes() {
     const box = document.getElementById('dn_themes');
     if (!box) return;
     box.innerHTML = '';
     let staleCount = 0;
+    const mine = [], other = [];
     for (const fam of families) {
         if (hidden(fam)) continue;   // 施工中的不列出来
         const st = familyState(fam);
         if (st.stale.length) staleCount++;
-        const row = document.createElement('div');
-        row.className = 'dn-theme';
-        row.innerHTML = '<span class="dn-theme-name"></span><small></small><span class="dn-theme-act"></span>';
-        row.children[0].textContent = fam.family;
-        const n = fam.themes.length > 1 ? `（含 ${fam.themes.length - 1} 种${fam.variantLabel}）` : '';
-        row.children[1].textContent = !st.installed.length ? `未安装 · ${fam.version}${n}`
-            : st.stale.length ? `可更新到 ${fam.version}`
-            : `${fam.version}${st.using ? ' · 使用中' : ''}${st.missing.length ? ` · 缺 ${st.missing.length} 个${fam.variantLabel}` : ''}`;
-        const act = row.children[2];
-        const btn = (label, fn) => {
-            const b = document.createElement('div');
-            b.className = 'menu_button';
-            b.textContent = label;
-            b.onclick = fn;
-            act.append(b);
-        };
-        if (st.missing.length) btn(st.installed.length ? '补装' : '安装', () => installFamily(fam));
-        if (st.stale.length) btn('更新', () => updateFamily(fam));
-        if (st.installed.length && !st.using) btn('使用', () => useTheme(st.installed[0].name));
-        box.append(row);
+        (st.installed.length ? mine : other).push(themeRow(fam, st));
     }
+    const sub = (text) => { const d = document.createElement('div'); d.className = 'dn-subhead'; d.textContent = text; box.append(d); };
+    if (mine.length) { sub('已安装'); box.append(...mine); }
+    if (other.length) { sub(mine.length ? '还没装的' : '挑想装的主题'); box.append(...other); }
     if (!families.length) box.textContent = '（没有找到附带的主题）';
     $('#dn_update_all').toggle(staleCount > 1);
     $('#dn_drafts_row').toggle(families.some(f => f.draft));
@@ -1057,11 +1130,11 @@ const PANEL = `
             </div>
             <small class="dn-note">夜版颜色在「UI 主题」的颜色选择器里改；更细的地方在「自订 CSS」最上方的「可改区」里改。</small>
 
-            <div class="dn-head">附带的主题</div>
+            <div class="dn-head" id="dn_themes_head">主题</div>
             <div id="dn_themes"></div>
             <div id="dn_update_all" class="menu_button dn-wide">全部更新</div>
             <label class="dn-row dn-check"><input id="dn_theme_auto" type="checkbox"><span>自动更新主题</span><small>会覆盖你在「UI 主题」里对这些主题做的修改；关掉时只提醒</small></label>
-            <label id="dn_drafts_row" class="dn-row dn-check"><input id="dn_drafts" type="checkbox"><span>试用施工中的主题</span><small>还没正式发布的主题，可能随时大改</small></label>
+            <label id="dn_drafts_row" class="dn-row dn-check"><input id="dn_drafts" type="checkbox"><span>试用施工中的主题</span><small>还没正式发布的主题，勾上后列在上面，可能随时大改</small></label>
 
             <div class="dn-head">扩展</div>
             <div class="dn-row dn-ext">
