@@ -1547,7 +1547,7 @@
     },
     {
         "family": "絮语",
-        "version": "0.1.1",
+        "version": "1.0.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -1790,7 +1790,6 @@
                 "label": "絮语"
             }
         ],
-        "draft": true,
         "blurb": "奶油纸和深绿：大字标题、胶囊名字、键帽按钮，有照片的欢迎页",
         "thumb": "assets/thumbs/xuyu.webp",
         "module": "modules/xuyu.js"
