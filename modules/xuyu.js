@@ -4,7 +4,8 @@
 //    主题设置里换照片用的是 html:root:root（优先级更高），会盖过这条。
 // 3. 群聊每人一种颜色：按群成员顺序，第一个角色用「角色的颜色」，其余轮流用别的预置颜色。
 //    规则包在 @container style(--xy-group-colors: 1) 里，主题设置的开关是改这个变量，切换马上生效。
-// 没装扩展时这些都没有：大字里的中文按原大小显示，欢迎页是一张深绿卡片，群聊大家同一种颜色。
+// 4. 字幕条（q）两边挨着字时加类名，CSS 里空出一点（挨着标点就不用，标点自带空白）。
+// 没装扩展时这些都没有：大字里的中文按原大小显示，欢迎页是一张深绿卡片，群聊大家同一种颜色，字幕条两边不留空。
 
 // 预置颜色：底色、压在底上的字、白天的字用色、夜里的字用色（和主题设置里的一致）
 const PALETTE = [
@@ -57,6 +58,33 @@ export default function xuyu() {
         group.textContent = `@container style(--xy-group-colors: 1) {\n${rules.join('')}}\n`;
     }
 
+    // 字幕条（q）两边：挨着字就加 xy-q-l / xy-q-r（CSS 里空出一点），挨着标点、空格、段首段尾不加
+    const PUNCT = /[\s，。、；：？！…—～·「」『』（）《》〈〉【】〔〕“”‘’＂＇,.;:?!()[\]"'\-–]/;
+    const edge = (q, back) => {
+        for (let n = back ? q.previousSibling : q.nextSibling; n; n = back ? n.previousSibling : n.nextSibling) {
+            const t = n.textContent;
+            if (t) return back ? t[t.length - 1] : t[0];
+        }
+        return '';
+    };
+    const markQ = (scope) => {
+        for (const q of scope.querySelectorAll('.mes_text q')) {
+            const l = edge(q, true), r = edge(q, false);
+            q.classList.toggle('xy-q-l', !!l && !PUNCT.test(l));
+            q.classList.toggle('xy-q-r', !!r && !PUNCT.test(r));
+        }
+    };
+    const chat = document.getElementById('chat');
+    let qFrame = 0;
+    const qWatch = new MutationObserver(() => {
+        if (qFrame) return;
+        qFrame = requestAnimationFrame(() => { qFrame = 0; markQ(chat); });
+    });
+    if (chat) {
+        markQ(chat);
+        qWatch.observe(chat, { childList: true, subtree: true, characterData: true });
+    }
+
     const events = st?.eventSource && st.eventTypes
         ? [st.eventTypes.CHAT_CHANGED, st.eventTypes.GROUP_UPDATED].filter(Boolean)
         : [];
@@ -65,6 +93,9 @@ export default function xuyu() {
 
     return () => {
         for (const e of events) st.eventSource.removeListener(e, paintGroup);
+        qWatch.disconnect();
+        if (qFrame) cancelAnimationFrame(qFrame);
+        chat?.querySelectorAll('q.xy-q-l, q.xy-q-r').forEach(q => q.classList.remove('xy-q-l', 'xy-q-r'));
         link.remove();
         photo.remove();
         group.remove();

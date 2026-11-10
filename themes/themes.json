@@ -1698,7 +1698,7 @@
             {
                 "key": "kai",
                 "type": "select",
-                "label": "斜体的中文字体",
+                "label": "代替斜体的中文字体",
                 "default": "huiwen",
                 "choices": [
                     {
