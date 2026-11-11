@@ -1,12 +1,7 @@
 /* 主题伴侣 · 作者 mangosagocreamwithpomelo（Discord）· 设计与实现 Claude Opus 5.5（Anthropic） */
 
-/* 切换的一瞬间：颜色缓缓过渡，像开灯关灯（开启「减少动态效果」时不会加这个类） */
-html.dn-switching body,
-html.dn-switching body *,
-html.dn-switching body *::before,
-html.dn-switching body *::after {
-    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, outline-color 0.5s ease, fill 0.5s ease !important;
-}
+/* 切换的一瞬间颜色缓缓过渡：那条规则在 index.js 里（DN_SWITCH_CSS），只在切换的 0.7 秒里挂上。
+ * 放在这里会让每个元素每次重算样式都多试四条 * 规则，流式输出时整页每帧都在重算 */
 
 .daynight-settings .dn-row {
     display: flex;

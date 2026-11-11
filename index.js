@@ -90,6 +90,25 @@ function themeVar(name) {
     return getComputedStyle(root).getPropertyValue(name).trim().replace(/^['"]|['"]$/g, '');
 }
 
+// 切换的一瞬间：颜色缓缓过渡，像开灯关灯（开启「减少动态效果」时不加）。
+// 只在切换的那 0.7 秒里挂上：body * 这种规则平时也会让每个元素多试一次
+const DN_SWITCH_CSS = `html.dn-switching body,
+html.dn-switching body *,
+html.dn-switching body *::before,
+html.dn-switching body *::after {
+    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, outline-color 0.5s ease, fill 0.5s ease !important;
+}`;
+function switchCss(on) {
+    let el = document.getElementById('dn-switching-css');
+    if (!on) { el?.remove(); return; }
+    if (!el) {
+        el = document.createElement('style');
+        el.id = 'dn-switching-css';
+        el.textContent = DN_SWITCH_CSS;
+        document.head.append(el);
+    }
+}
+
 function paint(day, paper, animate = true) {
     const changed = root.classList.contains('dn-day') !== day;
     const swap = () => {
@@ -106,8 +125,9 @@ function paint(day, paper, animate = true) {
     };
     if (animate && changed && !document.body?.classList.contains('reduced-motion')) {
         root.classList.add('dn-switching');
+        switchCss(true);
         clearTimeout(paint.timer);
-        paint.timer = setTimeout(() => root.classList.remove('dn-switching'), 700);
+        paint.timer = setTimeout(() => { root.classList.remove('dn-switching'); switchCss(false); }, 700);
         // 用浏览器的视图过渡切换：默认是淡入淡出，主题可以用
         // :root[data-dn-to='day'|'night']::view-transition-new(root) 自己定动画（如「银盐显影」的开关灯）
         if (document.startViewTransition && document.visibilityState === 'visible') {
@@ -775,11 +795,13 @@ function messageMoment(mes, text) {
 }
 
 // 酒馆写进 .timestamp 的是「2026年10月17日 21:04」；这里按主题设置换个写法，原文记在 data-cp-src
-function formatDates() {
+function formatDates(scope = document.querySelectorAll('#chat .mes .timestamp')) {
     const pattern = datePattern();
-    for (const el of document.querySelectorAll('#chat .mes .timestamp')) {
+    for (const el of scope) {
         const cur = el.textContent;
         if (!cur && !el.dataset.cpSrc) continue;
+        // 这套主题不改日期写法、这条也没改过：什么都不用做（不然每帧都要给每条消息写一遍属性）
+        if (!pattern && el.dataset.cpSrc === undefined) continue;
         if (el.dataset.cpOut !== cur) el.dataset.cpSrc = cur;   // 酒馆刚写过（新消息、切换回复）
         const src = el.dataset.cpSrc;
         let out = src;
@@ -787,19 +809,37 @@ function formatDates() {
             const t = messageMoment(el.closest('.mes'), src);
             if (t) out = t.format(pattern);
         }
-        el.dataset.cpOut = out;
+        if (el.dataset.cpOut !== out) el.dataset.cpOut = out;
         if (out !== cur) el.textContent = out;
     }
 }
 
+// 聊天里有变动时只看动到的那几条消息（流式输出时每帧只动最后一条；以前是每帧把整个聊天的日期都过一遍）
 let dateQueued = false;
+const dateDirty = new Set();
 function watchDates() {
     const chat = document.getElementById('chat');
     if (!chat) return;
-    new MutationObserver(() => {
+    new MutationObserver((records) => {
+        for (const r of records) {
+            const n = r.target.nodeType === 1 ? r.target : r.target.parentElement;
+            const mes = n?.closest?.('.mes');
+            if (mes) dateDirty.add(mes);
+            else for (const a of r.addedNodes) if (a.nodeType === 1) dateDirty.add(a);
+        }
         if (dateQueued) return;
         dateQueued = true;
-        requestAnimationFrame(() => { dateQueued = false; formatDates(); });
+        requestAnimationFrame(() => {
+            dateQueued = false;
+            const list = [];
+            for (const m of dateDirty) {
+                if (!m.isConnected) continue;
+                if (m.matches('.timestamp')) list.push(m);
+                else list.push(...m.querySelectorAll('.timestamp'));
+            }
+            dateDirty.clear();
+            if (list.length) formatDates(list);
+        });
     }).observe(chat, { childList: true, subtree: true, characterData: true });
 }
 
