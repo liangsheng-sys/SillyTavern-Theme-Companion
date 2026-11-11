@@ -145,6 +145,24 @@
     border-radius: 8px;
 }
 
+/* 有整张海报时：铺满弹窗宽度（弹窗是 wide），长海报在弹窗里往下滚着看 */
+.dn-thumb-big img[src*='-big.webp'] {
+    max-width: 100%;
+}
+
+/* 发布帖链接：小字、淡一点，不抢风头 */
+.dn-thumb-big .dn-thumb-links {
+    margin-top: 6px;
+    font-size: 0.78em;
+    opacity: 0.7;
+}
+
+.dn-thumb-big .dn-thumb-links a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .dn-thumb-big > div {
     display: flex;
     flex-direction: column;

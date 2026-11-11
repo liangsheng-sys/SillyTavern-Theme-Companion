@@ -415,14 +415,24 @@ function openThemeList() {
     }, 400);
 }
 
-// 缩略图点开看大图
+// 缩略图点开看大图（有 preview 用整张海报），下面是名字、介绍，再一行小字：各社区的发布帖
 function showThumb(fam) {
     const { callGenericPopup, POPUP_TYPE } = ctx();
-    const html = `<div class="dn-thumb-big"><img src="${new URL(fam.thumb, HERE).href}" alt=""><div><b></b><small></small></div></div>`;
-    const el = $(html);
+    const src = new URL(fam.preview || fam.thumb, HERE).href;
+    const el = $(`<div class="dn-thumb-big"><img src="${src}" alt=""><div><b></b><small class="dn-thumb-blurb"></small></div></div>`);
     el.find('b').text(fam.family);
-    el.find('small').text(fam.blurb || '');
-    callGenericPopup(el, POPUP_TYPE.TEXT, '', { wide: false, okButton: '关闭' });
+    el.find('.dn-thumb-blurb').text(fam.blurb || '');
+    if (fam.links?.length) {
+        const foot = $('<small class="dn-thumb-links"></small>');
+        foot.append(document.createTextNode('欢迎留言~有任何建议反馈会尽快处理：'));
+        fam.links.forEach(([label, url], i) => {
+            if (!/^https:\/\//.test(url)) return;
+            if (i) foot.append(document.createTextNode(' · '));
+            foot.append($('<a target="_blank" rel="noopener"></a>').attr('href', url).text(label));
+        });
+        el.find('> div').append(foot);
+    }
+    callGenericPopup(el, POPUP_TYPE.TEXT, '', { wide: !!fam.preview, okButton: '关闭' });
 }
 
 // 酒馆启动时用的是设置里存的那份 CSS，不会重读主题文件：主题更新后正在用的那套要重新选一次才生效。

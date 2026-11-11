@@ -244,7 +244,22 @@
             }
         ],
         "blurb": "当代杂志的访谈页：衬线正文、问答排版，夜读和昼读两张纸",
-        "thumb": "assets/thumbs/mozhi.webp"
+        "links": [
+            [
+                "类脑",
+                "https://discord.com/channels/1134557553011998840/1560562141298171945"
+            ],
+            [
+                "旅程",
+                "https://discord.com/channels/1291925535324110879/1560568728700190730"
+            ],
+            [
+                "棱镜",
+                "https://discord.com/channels/1461731450058575986/1560583222159478934"
+            ]
+        ],
+        "thumb": "assets/thumbs/mozhi.webp",
+        "preview": "assets/thumbs/mozhi-big.webp"
     },
     {
         "family": "银盐显影",
@@ -637,7 +652,22 @@
             }
         ],
         "blurb": "暗房夜、展厅昼：灰阶分区配色、红笔圈记号，五种调色",
+        "links": [
+            [
+                "类脑",
+                "https://discord.com/channels/1134557553011998840/1561255354300502076"
+            ],
+            [
+                "旅程",
+                "https://discord.com/channels/1291925535324110879/1561263014315950171"
+            ],
+            [
+                "棱镜",
+                "https://discord.com/channels/1461731450058575986/1561256893165477898"
+            ]
+        ],
         "thumb": "assets/thumbs/yinyan.webp",
+        "preview": "assets/thumbs/yinyan-big.webp",
         "retired": [
             {
                 "name": "银盐显影 · 无调色",
@@ -1080,7 +1110,22 @@
             }
         ],
         "blurb": "粗野主义建筑的导视牌：混凝土墙、楼层号、天花灯格",
+        "links": [
+            [
+                "类脑",
+                "https://discord.com/channels/1134557553011998840/1561723476723900526"
+            ],
+            [
+                "旅程",
+                "https://discord.com/channels/1291925535324110879/1561725728570085537"
+            ],
+            [
+                "棱镜",
+                "https://discord.com/channels/1461731450058575986/1561726811430457435"
+            ]
+        ],
         "thumb": "assets/thumbs/daoshi.webp",
+        "preview": "assets/thumbs/daoshi-big.webp",
         "retired": [
             {
                 "name": "导视",
@@ -1375,7 +1420,22 @@
             }
         ],
         "blurb": "把聊天排成一份 WPS 文档：功能区、能拖的标尺、宋体正文",
+        "links": [
+            [
+                "类脑",
+                "https://discord.com/channels/1134557553011998840/1562720936380072026"
+            ],
+            [
+                "旅程",
+                "https://discord.com/channels/1291925535324110879/1562723074573606952"
+            ],
+            [
+                "棱镜",
+                "https://discord.com/channels/1461731450058575986/1562724010108911683"
+            ]
+        ],
         "thumb": "assets/thumbs/wps.webp",
+        "preview": "assets/thumbs/wps-big.webp",
         "module": "modules/wps.js"
     },
     {
@@ -1509,7 +1569,22 @@
         ],
         "bgVar": "--xp-st-bg",
         "blurb": "2005 年的 MSN 聊天窗：蓝色窗框、开始菜单、表情和昵称",
+        "links": [
+            [
+                "类脑",
+                "https://discord.com/channels/1134557553011998840/1563075269332435025"
+            ],
+            [
+                "旅程",
+                "https://discord.com/channels/1291925535324110879/1563078192095297556"
+            ],
+            [
+                "棱镜",
+                "https://discord.com/channels/1461731450058575986/1563083036579467294"
+            ]
+        ],
         "thumb": "assets/thumbs/xp.webp",
+        "preview": "assets/thumbs/xp-big.webp",
         "module": "modules/xp.js",
         "retired": [
             {
@@ -1543,11 +1618,12 @@
         "draft": true,
         "blurb": "音乐播放器：正在播放的封面、歌词式正文、年度报告",
         "thumb": "assets/thumbs/nowplaying.webp",
+        "preview": "assets/thumbs/nowplaying-big.webp",
         "module": "modules/nowplaying.js"
     },
     {
         "family": "絮语",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "variantLabel": "变体",
         "options": [
             {
@@ -1625,7 +1701,23 @@
                 "default": true,
                 "on": "1",
                 "off": "0",
-                "note": "电脑上聊天区右边一根竖轨，橘红药丸停在正在看的那一楼，点一下跳过去（手机上没有）"
+                "note": "电脑上聊天区旁边一根竖轨，橘红药丸停在正在看的那一楼，点一下跳过去（手机上没有）"
+            },
+            {
+                "type": "select",
+                "var": "--xy-floors-side",
+                "label": "楼层导航放在",
+                "default": "left",
+                "choices": [
+                    [
+                        "left",
+                        "左边"
+                    ],
+                    [
+                        "right",
+                        "右边"
+                    ]
+                ]
             },
             {
                 "type": "head",
@@ -1838,7 +1930,22 @@
             }
         ],
         "blurb": "奶油纸和深绿：大字标题、胶囊名字、键帽按钮，有照片的欢迎页",
+        "links": [
+            [
+                "类脑",
+                "https://discord.com/channels/1134557553011998840/1569673379068383282"
+            ],
+            [
+                "旅程",
+                "https://discord.com/channels/1291925535324110879/1569674439887683624"
+            ],
+            [
+                "棱镜",
+                "https://discord.com/channels/1461731450058575986/1569674810752110725"
+            ]
+        ],
         "thumb": "assets/thumbs/xuyu.webp",
+        "preview": "assets/thumbs/xuyu-big.webp",
         "module": "modules/xuyu.js"
     }
 ]

@@ -115,7 +115,7 @@ export default function xuyu() {
     nav.innerHTML = '<div class="xy-fl-view"><ol class="xy-fl-list"></ol></div><i class="xy-fl-pill"></i>';
     const list = nav.querySelector('ol');
     document.body.append(nav);
-    let floors = [], cur = -1, start = 0;
+    let floors = [], cur = -1, start = 0, jumping = 0, jumpTimer = 0;
 
     function buildFloors() {
         floors = chat ? [...chat.querySelectorAll(':scope > .mes')] : [];
@@ -138,7 +138,7 @@ export default function xuyu() {
     }
 
     function updateFloors() {
-        if (!floors.length || !chat) return;
+        if (!floors.length || !chat || jumping) return;
         const box = chat.getBoundingClientRect();
         let i;
         if (chat.scrollHeight - chat.scrollTop - chat.clientHeight < 8) i = floors.length - 1;
@@ -152,6 +152,10 @@ export default function xuyu() {
             }
             i = lo;
         }
+        selectFloor(i);
+    }
+
+    function selectFloor(i) {
         if (i === cur) return;
         list.children[cur]?.classList.remove('on');
         cur = i;
@@ -163,17 +167,39 @@ export default function xuyu() {
         nav.style.setProperty('--xy-fl-pos', cur - start);
     }
 
-    // 右边放不下（聊天区太宽、窗口太窄）就不显示
+    // 聊天区两边放不下（聊天区太宽、窗口太窄）就不显示
     function placeFloors() {
         const r = document.getElementById('sheld')?.getBoundingClientRect();
-        const room = r ? window.innerWidth - r.right : 0;
-        nav.classList.toggle('xy-fl-noroom', room < 150);
+        const room = r ? Math.min(r.left, window.innerWidth - r.right) : 0;
+        nav.classList.toggle('xy-fl-noroom', room < 170);
     }
 
+    // 跳楼：药丸先过去；远的先瞬间挪到目标前半屏，只平滑滚最后一小段（长聊天一路平滑滚过去会卡）；
+    // 滚动途中不再逐帧算「正在看哪一楼」，停下来再对一次
+    const endJump = () => {
+        if (!jumping) return;
+        jumping = 0;
+        clearTimeout(jumpTimer);
+        chat.removeEventListener('scrollend', endJump);
+        updateFloors();
+    };
     nav.addEventListener('click', (e) => {
         const li = e.target.closest('li');
-        const m = li && floors[Number(li.dataset.i)];
-        if (m) m.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        const i = li ? Number(li.dataset.i) : -1;
+        const m = floors[i];
+        if (!m) return;
+        selectFloor(i);
+        const target = Math.max(0, chat.scrollTop + m.getBoundingClientRect().top - chat.getBoundingClientRect().top - 8);
+        const dist = target - chat.scrollTop;
+        const near = chat.clientHeight * 0.6;
+        const calm = document.body.classList.contains('reduced-motion') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (calm) { chat.scrollTo({ top: target, behavior: 'instant' }); return; }
+        if (Math.abs(dist) > near * 2) chat.scrollTo({ top: target - Math.sign(dist) * near, behavior: 'instant' });
+        jumping = 1;
+        clearTimeout(jumpTimer);
+        jumpTimer = setTimeout(endJump, 900);
+        chat.addEventListener('scrollend', endJump, { once: true });
+        chat.scrollTo({ top: target, behavior: 'smooth' });
     });
 
     let scrollFrame = 0;
@@ -232,6 +258,8 @@ export default function xuyu() {
         genWatch.disconnect();
         if (frame) cancelAnimationFrame(frame);
         if (scrollFrame) cancelAnimationFrame(scrollFrame);
+        clearTimeout(jumpTimer);
+        chat?.removeEventListener('scrollend', endJump);
         chat?.removeEventListener('scroll', onScroll);
         window.removeEventListener('resize', placeFloors);
         document.body.classList.remove('xy-gen');
