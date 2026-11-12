@@ -1950,7 +1950,7 @@
     },
     {
         "family": "农场对话框（小样）",
-        "version": "0.6.0",
+        "version": "0.6.1",
         "variantLabel": "变体",
         "options": [
             {
@@ -1975,6 +1975,24 @@
                     {
                         "value": "board",
                         "label": "木板分栏"
+                    }
+                ]
+            },
+            {
+                "key": "font",
+                "type": "select",
+                "label": "字体",
+                "default": "pixel",
+                "note": "像素字：Z 工坊像素圆体 16px（Astro_2539）+ 缝合像素 12px（TakWolf），都是 OFL 开源字体，主题伴侣自带一份。普通字：微软雅黑 / 苹方，长文读着更省眼",
+                "choices": [
+                    {
+                        "value": "pixel",
+                        "label": "像素字"
+                    },
+                    {
+                        "value": "plain",
+                        "label": "普通字（不用像素字）",
+                        "css": "html:root:root { --sv-font: var(--sv-plain-font); --sv-name-font: var(--sv-plain-font); } html:root:root .mes_text :is(strong, b, h1, h2, h3, h4, h5, h6), html:root:root .mes_reasoning :is(strong, b, h1, h2, h3, h4, h5, h6) { font-weight: 700; text-shadow: 1px 1px 0 var(--sv-ink-shadow); }"
                     }
                 ]
             },

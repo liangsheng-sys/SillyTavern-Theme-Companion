@@ -440,6 +440,20 @@ export default function farm(api) {
     }
     offs.push(clearBg);
 
+    // ---------------- 像素字：扩展自己带一份（assets/farm/fonts/，两套都是 OFL，原样未改） ----------------
+    // 主题 CSS 开头从 ZeoSeven 引字体，有的网络连不上，就掉回微软雅黑；这里从酒馆自己的服务器再给一份，
+    // 用别名 SV RoundPix / SV Fusion（--sv-font 里排在 ZeoSeven 那两个前面）
+    const fontCss = document.createElement('style');
+    fontCss.id = 'sv_fonts';
+    try {
+        const f = n => new URL(`../assets/farm/fonts/${n}`, import.meta.url).href;
+        fontCss.textContent = `
+@font-face { font-family: 'SV RoundPix'; src: url("${f('ZLabsRoundPix_16px_M_CN.woff2')}") format('woff2'); font-display: swap; }
+@font-face { font-family: 'SV Fusion'; src: url("${f('fusion-pixel-12px-monospaced-latin.otf.woff2')}") format('woff2'); font-display: swap; }`;
+        document.head.append(fontCss);
+    } catch { /* 拿不到扩展地址就只用 ZeoSeven 的 */ }
+    offs.push(() => fontCss.remove());
+
     // ---------------- 生成中 ----------------
     const genOn = (_type, _opts, dryRun) => { if (!dryRun) root.classList.add('sv-gen'); };
     const genOff = () => { root.classList.remove('sv-gen'); energy(); };
