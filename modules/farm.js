@@ -76,11 +76,11 @@ function clockArt(hour) {
         if (y < 31) return MIX(V('sky'), 'white', 58);
         return MIX(V('sun'), 'white', 50);
     };
-    // 指针：早上 6 点朝下，中午朝左，晚上 8 点以后朝上（夜里停在朝上）；转轴在木板左边缘
+    // 指针：早上 6 点朝下，中午朝左，晚上 8 点以后朝上（夜里停在朝上）；转轴就是表盘的圆心（木板盖住圆的右边一小半）
     const t = Math.min(1, Math.max(0, (hour - 6) / 14));
     const a = t * Math.PI;
     const vx = -Math.sin(a), vy = Math.cos(a), nx = -vy, ny = vx;
-    const px = bx - 0.5, py = R;
+    const px = R, py = R;
     const L = 14;
     const hand = new Map();
     const put = (x, y, c) => { const k = `${Math.floor(x)},${Math.floor(y)}`; if (!hand.has(k) || c === V('sun')) hand.set(k, c); };
@@ -127,12 +127,10 @@ function clockArt(hour) {
             if (c && (y === 18 || y === 21) && x >= 46 && x <= 50) return DK;
             if (c) return c;
         }
-        // 左右各一颗钉子
-        if ((x === bx + 3 || x === W - 5) && (y === 19 || y === 20)) return y === 19 ? V('nail') : O;
         return F;
     };
     return pix(W, H, (x, y) => {
-        // 转轴：一颗小钉压在木板边上，外面一圈描边
+        // 转轴：圆心一颗小钉，外面一圈描边
         const ax = Math.abs(x + 0.5 - px), ay = Math.abs(y + 0.5 - py);
         if (ax <= 1 && ay <= 1) return x + 0.5 < px && y + 0.5 < py ? BR : DK;
         if (ax <= 2 && ay <= 2 && !(ax > 1.5 && ay > 1.5)) return O;
@@ -419,10 +417,27 @@ export default function farm(api) {
     // 旧版的季节配色撤掉了，用过的人 <html> 上可能还留着 data-sv-season，顺手清掉
     delete root.dataset.svSeason;
     function layout() {
-        const v = opt('layout', 'full') === 'board' ? 'board' : 'full';
+        const v = ['board', 'plain'].includes(opt('layout', 'full')) ? opt('layout', 'full') : 'full';
         if (root.dataset.svLayout !== v) root.dataset.svLayout = v;
     }
     offs.push(() => { delete root.dataset.svLayout; });
+
+    // ---------------- 背景：预设的像素天空 / 风景（图在扩展的 assets/farm/，tools/farm/backgrounds.py 生成） ----------------
+    // 「跟着时间」：6~17 点晴空、17~19 点傍晚、其余星空；选「酒馆里选的背景」就不管，用户在背景面板挑图时伴侣也会自动切过去
+    const BG = ['day', 'dusk', 'night', 'valley', 'beach'];
+    const skyNow = () => { const h = new Date().getHours(); return h >= 6 && h < 17 ? 'day' : h >= 17 && h < 19 ? 'dusk' : 'night'; };
+    const clearBg = () => { delete root.dataset.svBg; root.style.removeProperty('--sv-bg-img'); };
+    function background() {
+        const pick = opt('bg', 'auto');
+        const v = pick === 'auto' ? skyNow() : BG.includes(pick) ? pick : '';
+        if (!v) { if (root.dataset.svBg) clearBg(); return; }
+        if (root.dataset.svBg === v) return;
+        let url;
+        try { url = new URL(`../assets/farm/${v}.png`, import.meta.url).href; } catch { return; }
+        root.style.setProperty('--sv-bg-img', `url("${url}")`);
+        root.dataset.svBg = v;
+    }
+    offs.push(clearBg);
 
     // ---------------- 生成中 ----------------
     const genOn = (_type, _opts, dryRun) => { if (!dryRun) root.classList.add('sv-gen'); };
@@ -434,11 +449,13 @@ export default function farm(api) {
     const onRender = () => { count(); allHearts(); avatars(); };
     tick();
     layout();
+    background();
     onChat();
     const t1 = setInterval(tick, 20 * 1000);
     // 主题设置改了，一两秒内跟上
     const t2 = setInterval(() => {
         layout();
+        background();
         avatars();
         const m = opt('emax', 200000);
         if (m !== lastMax) { lastMax = m; energy(); }

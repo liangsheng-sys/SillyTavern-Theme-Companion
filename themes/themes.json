@@ -1950,7 +1950,7 @@
     },
     {
         "family": "农场对话框（小样）",
-        "version": "0.4.0",
+        "version": "0.5.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -1962,15 +1962,57 @@
                 "type": "select",
                 "label": "角色消息排版",
                 "default": "full",
-                "note": "铺满：头像和名牌挂在纸的右上角，字绕着走；木板分栏：右边一栏木板挂头像（之前的样子）。手机上两种只差头像那一条有没有木板",
+                "note": "铺满：头像和名牌挂在纸的右上角，字绕着走（电脑上默认在那一角垫一小块木板）；木板分栏：右边一整栏木板挂头像。手机上只差头像那一条有没有木板",
                 "choices": [
                     {
                         "value": "full",
-                        "label": "铺满"
+                        "label": "铺满（头像那一角垫木板）"
+                    },
+                    {
+                        "value": "plain",
+                        "label": "铺满（不垫木板）"
                     },
                     {
                         "value": "board",
                         "label": "木板分栏"
+                    }
+                ]
+            },
+            {
+                "key": "bg",
+                "type": "select",
+                "label": "背景",
+                "default": "auto",
+                "onBackgroundPick": "st",
+                "note": "像素天空和风景是主题自带的（素材都是 CC0：云 Gabl、云海和海边 Stealthix、山谷 MatiasVME）。在酒馆的背景面板里挑了图，会自动切到「酒馆里选的背景」",
+                "choices": [
+                    {
+                        "value": "auto",
+                        "label": "跟着时间（白天晴空、傍晚霞光、夜里星空）"
+                    },
+                    {
+                        "value": "day",
+                        "label": "晴空"
+                    },
+                    {
+                        "value": "dusk",
+                        "label": "傍晚"
+                    },
+                    {
+                        "value": "night",
+                        "label": "星空"
+                    },
+                    {
+                        "value": "valley",
+                        "label": "山谷"
+                    },
+                    {
+                        "value": "beach",
+                        "label": "海边"
+                    },
+                    {
+                        "value": "st",
+                        "label": "酒馆里选的背景"
                     }
                 ]
             },
