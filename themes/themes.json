@@ -1950,7 +1950,7 @@
     },
     {
         "family": "农场对话框（小样）",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2050,6 +2050,16 @@
                         "css": "#sv_energy { display: none !important; }"
                     }
                 ]
+            },
+            {
+                "key": "emax",
+                "type": "number",
+                "var": "--sv-emax",
+                "label": "体力条的上限（词符）",
+                "default": 200000,
+                "min": 0,
+                "step": 1000,
+                "note": "满格 = 这么多词符。填 0 = 跟酒馆里设的上下文长度"
             },
             {
                 "key": "hearts",
