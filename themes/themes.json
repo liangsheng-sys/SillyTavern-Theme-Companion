@@ -1947,5 +1947,155 @@
         "thumb": "assets/thumbs/xuyu.webp",
         "preview": "assets/thumbs/xuyu-big.webp",
         "module": "modules/xuyu.js"
+    },
+    {
+        "family": "农场对话框（小样）",
+        "version": "0.2.0",
+        "variantLabel": "变体",
+        "options": [
+            {
+                "type": "head",
+                "label": "样子"
+            },
+            {
+                "key": "season",
+                "type": "select",
+                "label": "季节配色",
+                "default": "summer",
+                "note": "春偏粉、秋偏红、冬偏蓝。选了春 / 秋 / 冬时，酒馆「UI 主题」里改纸色不生效，换回夏就好",
+                "choices": [
+                    [
+                        "summer",
+                        "夏（原色）"
+                    ],
+                    [
+                        "spring",
+                        "春"
+                    ],
+                    [
+                        "fall",
+                        "秋"
+                    ],
+                    [
+                        "winter",
+                        "冬"
+                    ],
+                    [
+                        "auto",
+                        "跟着日历换"
+                    ]
+                ]
+            },
+            {
+                "key": "avatar",
+                "type": "select",
+                "label": "头像",
+                "default": "pixel",
+                "note": "像素颗粒是把小缩略图放大；清晰原图会改用角色卡的原图",
+                "choices": [
+                    {
+                        "value": "pixel",
+                        "label": "像素颗粒"
+                    },
+                    {
+                        "value": "clear",
+                        "label": "清晰原图",
+                        "css": "html:root:root { --sv-ava-render: auto; }"
+                    }
+                ]
+            },
+            {
+                "type": "toggle",
+                "var": "--sv-deco",
+                "label": "叶子装饰",
+                "default": true,
+                "on": "1",
+                "off": "0"
+            },
+            {
+                "type": "head",
+                "label": "小部件"
+            },
+            {
+                "key": "clock",
+                "type": "select",
+                "label": "日历时钟（电脑，屏幕够宽才有）",
+                "default": "on",
+                "choices": [
+                    {
+                        "value": "on",
+                        "label": "要"
+                    },
+                    {
+                        "value": "off",
+                        "label": "不要",
+                        "css": "#sv_clock { display: none !important; }"
+                    }
+                ]
+            },
+            {
+                "key": "energy",
+                "type": "select",
+                "label": "体力条 = 上下文用了多少",
+                "default": "on",
+                "note": "按最近一次发出去的提示词算，七成变黄、九成变红；鼠标停上去看数字",
+                "choices": [
+                    {
+                        "value": "on",
+                        "label": "要"
+                    },
+                    {
+                        "value": "off",
+                        "label": "不要",
+                        "css": "#sv_energy { display: none !important; }"
+                    }
+                ]
+            },
+            {
+                "key": "hearts",
+                "type": "select",
+                "label": "好感心心",
+                "default": "on",
+                "note": "点心心改，按角色名存在酒馆设置里",
+                "choices": [
+                    {
+                        "value": "on",
+                        "label": "要"
+                    },
+                    {
+                        "value": "off",
+                        "label": "不要",
+                        "css": "#chat .mes .sv-hearts { display: none !important; }"
+                    }
+                ]
+            },
+            {
+                "key": "gen",
+                "type": "select",
+                "label": "生成中的小箭头",
+                "default": "on",
+                "choices": [
+                    {
+                        "value": "on",
+                        "label": "要"
+                    },
+                    {
+                        "value": "off",
+                        "label": "不要",
+                        "css": "html.sv-gen #chat .mes .mes_block::after { display: none !important; }"
+                    }
+                ]
+            }
+        ],
+        "themes": [
+            {
+                "name": "农场对话框（小样）",
+                "file": "农场对话框（小样）.json",
+                "label": "农场对话框（小样）"
+            }
+        ],
+        "draft": true,
+        "blurb": "像素农场对话框：纸板写字、木板挂大头像和卷轴名牌，右上角日历时钟",
+        "module": "modules/farm.js"
     }
 ]
