@@ -1950,7 +1950,7 @@
     },
     {
         "family": "农场对话框（小样）",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -1984,7 +1984,7 @@
                 "label": "背景",
                 "default": "auto",
                 "onBackgroundPick": "st",
-                "note": "像素天空和风景是主题自带的（素材都是 CC0：云 Gabl、云海和海边 Stealthix、山谷 MatiasVME）。在酒馆的背景面板里挑了图，会自动切到「酒馆里选的背景」",
+                "note": "像素天空是主题自带的（素材都是 CC0：云 Gabl、云海 Stealthix）。在酒馆的背景面板里挑了图，会自动切到「酒馆里选的背景」",
                 "choices": [
                     {
                         "value": "auto",
@@ -2001,14 +2001,6 @@
                     {
                         "value": "night",
                         "label": "星空"
-                    },
-                    {
-                        "value": "valley",
-                        "label": "山谷"
-                    },
-                    {
-                        "value": "beach",
-                        "label": "海边"
                     },
                     {
                         "value": "st",

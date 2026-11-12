@@ -424,12 +424,13 @@ export default function farm(api) {
 
     // ---------------- 背景：预设的像素天空 / 风景（图在扩展的 assets/farm/，tools/farm/backgrounds.py 生成） ----------------
     // 「跟着时间」：6~17 点晴空、17~19 点傍晚、其余星空；选「酒馆里选的背景」就不管，用户在背景面板挑图时伴侣也会自动切过去
-    const BG = ['day', 'dusk', 'night', 'valley', 'beach'];
+    const BG = ['day', 'dusk', 'night'];
     const skyNow = () => { const h = new Date().getHours(); return h >= 6 && h < 17 ? 'day' : h >= 17 && h < 19 ? 'dusk' : 'night'; };
     const clearBg = () => { delete root.dataset.svBg; root.style.removeProperty('--sv-bg-img'); };
     function background() {
         const pick = opt('bg', 'auto');
-        const v = pick === 'auto' ? skyNow() : BG.includes(pick) ? pick : '';
+        // st = 用酒馆里选的背景；撤掉了的旧选项（山谷、海边）按「跟着时间」算
+        const v = pick === 'st' ? '' : BG.includes(pick) ? pick : skyNow();
         if (!v) { if (root.dataset.svBg) clearBg(); return; }
         if (root.dataset.svBg === v) return;
         let url;
