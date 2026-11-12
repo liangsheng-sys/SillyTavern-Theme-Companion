@@ -1,13 +1,13 @@
 // 农场对话框 · 主题伴侣附带的脚本（用这套主题时载入，换走时清理）
-// 1. 日历时钟：聊天区右边挂一块板（右边面板钉住时挂左边）—— 左边半圆表盘（天色按钟点变，金色指针从早上六点朝下转到半夜朝上）、
+// 1. 日历时钟：聊天区右边挂一块板（右边面板钉住时挂左边）—— 左边大半个圆的表盘（一圈天色，金色指针从早上六点朝下转到晚上朝上）、
 //    右边三格：星期和日期、季节和昼夜两个小图标、时间；底下用两根小棍吊着一块计数牌：这个聊天一共几楼。
 // 2. 体力条 = 上下文用了多少：最近一次发出去的提示词有多少词符 / 上限（默认 200000，主题设置里改；填 0 跟酒馆的上下文长度）。
 //    电脑竖着挂在聊天区旁边，手机横着贴在输入框上沿。
-// 3. 季节配色：主题设置里选「跟着日历」时，按月份给 <html> 写 data-sv-season；选了固定的季节就写那个。
+// 3. 排版：主题设置里选「木板分栏」时给 <html> 写 data-sv-layout="board"（默认「铺满」：不要木板那一栏，字绕着头像铺满）。
 // 4. 生成中：<html> 加 sv-gen，最后一条角色消息右下角出现一只一上一下跳的小箭头。
 // 5. 好感心心：每条角色消息的名牌下面一排十颗心，点一下改，按角色名存在酒馆设置里（extension_settings.farm_hearts）。
 // 6. 头像「清晰原图」：把聊天里的头像缩略图换成原图（样式那边同时把像素放大关掉）。
-// 时钟和体力条是脚本画的像素画（SVG，一格一个「像素」，颜色全用主题变量，换季跟着变；格子大小 = --sv-p）。
+// 时钟和体力条是脚本画的像素画（SVG，一格一个「像素」，颜色全用主题变量；格子大小 = --sv-p）。
 // 没装扩展就没有这些（只有主题本身的样子）。
 
 const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -54,23 +54,34 @@ function field(x, y, w, h) {
     return V('scroll');
 }
 
-// 时钟：左边半圆表盘（R = 半径）+ 右边木板（三格）；hour 带小数
-const CK = { W: 62, H: 38, R: 19, bx: 16 };
-const STARS = [[5, 9], [10, 5], [12, 13], [4, 17], [9, 22], [13, 28], [6, 30]];
-function clockArt(hour, season, night) {
+// 时钟：左边大半个圆的表盘（圆心在木板左边缘往里一点，露出六成多）+ 右边一块有厚度的木板（三格，格子是凹进去的）
+// 表盘背景是固定的一圈天色：朝下 = 清早，朝左 = 白天，朝上 = 夜里（月牙和星星）；金色指针指着现在几点
+const CK = { W: 73, H: 40, R: 20, bx: 25 };
+const STARS = [[18, 4], [22, 7], [13, 6], [21, 12], [10, 9]];
+const TILES = [29, 58];      // 两个小图标格的左边（10×10，第 15~24 行）
+function clockArt(hour) {
     const { W, H, R, bx } = CK;
-    const dusk = !night && (hour < 7 || hour >= 17);
-    const sky = y => {
-        if (night) return y < 13 ? MIX(V('sky-dk'), O, 50) : y < 25 ? MIX(V('sky-dk'), O, 20) : V('sky-dk');
-        if (dusk) return y < 10 ? V('sky-dk') : y < 19 ? MIX(V('petal'), V('sky'), 35) : y < 28 ? MIX(V('sun'), V('petal'), 30) : V('sun');
-        return y < 10 ? V('sky') : y < 19 ? MIX(V('sky'), 'white', 25) : y < 28 ? MIX(V('sky'), 'white', 45) : MIX(V('sky'), 'white', 62);
+    const BW = W - bx;
+    // 天色：白天那边按高低一条条横着分；朝上偏右那一角是傍晚和夜里（按角度，0 = 朝下，1 = 朝上）
+    const sky = (x, y) => {
+        const dx = x + 0.5 - R, dy = y + 0.5 - R;
+        const th = Math.atan2(-dx, dy);
+        const k = Math.abs(th) / Math.PI;   // 圆心右边（露出来的那一小条）：下半是清早、上半是夜里
+        if (k >= 0.82) return MIX(V('sky-dk'), O, 38);
+        if (k >= 0.75) return MIX(V('sky-dk'), V('petal'), 35);
+        if (k >= 0.69) return MIX(V('sky'), V('petal'), 45);
+        if (y < 11) return V('sky');
+        if (y < 18) return MIX(V('sky'), 'white', 22);
+        if (y < 25) return MIX(V('sky'), 'white', 40);
+        if (y < 31) return MIX(V('sky'), 'white', 58);
+        return MIX(V('sun'), 'white', 50);
     };
-    // 指针：早上 6 点朝下，中午朝左，晚上 8 点以后朝上（夜里停在朝上）
+    // 指针：早上 6 点朝下，中午朝左，晚上 8 点以后朝上（夜里停在朝上）；转轴在木板左边缘
     const t = Math.min(1, Math.max(0, (hour - 6) / 14));
     const a = t * Math.PI;
     const vx = -Math.sin(a), vy = Math.cos(a), nx = -vy, ny = vx;
-    const px = bx + 0.5, py = R;
-    const L = R - 4;
+    const px = bx - 0.5, py = R;
+    const L = 14;
     const hand = new Map();
     const put = (x, y, c) => { const k = `${Math.floor(x)},${Math.floor(y)}`; if (!hand.has(k) || c === V('sun')) hand.set(k, c); };
     for (let s = 1.5; s <= L - 4; s += 0.25) put(px + s * vx, py + s * vy, V('sun-dk'));
@@ -78,54 +89,78 @@ function clockArt(hour, season, night) {
         const w = (L - s) * 0.55;
         for (let o = -w; o <= w; o += 0.2) put(px + s * vx + o * nx, py + s * vy + o * ny, V('sun'));
     }
-    const isHand = (x, y) => hand.get(`${x},${y}`);
+    const isHand = (x, y) => x < bx && hand.get(`${x},${y}`);
     const nearHand = (x, y) => isHand(x - 1, y) || isHand(x + 1, y) || isHand(x, y - 1) || isHand(x, y + 1);
-    // 两个小图标格（季节、昼夜）
-    const tiles = [27, 42];
+    // 木板上一个凹进去的格子：深色边、里面左上一道阴影；格子下沿和右沿外面一道亮边（光从上面来）
+    const hole = (x, y, x0, y0, w, h) => {
+        if (x >= x0 && x < x0 + w && y >= y0 && y < y0 + h) return field(x - x0, y - y0, w, h);
+        if ((y === y0 + h && x > x0 && x <= x0 + w) || (x === x0 + w && y > y0 && y <= y0 + h)) return BR;
+        return null;
+    };
+    const board = (x, y) => {
+        const u = x - bx, v = y;
+        const r = u === BW - 1, b = v === H - 1;
+        // 圆角：四角各空两格
+        if ((u === 0 || r) && (v === 0 || b)) return null;
+        if ((u === 1 || u === BW - 2) && (v === 0 || b)) return null;
+        if ((u === 0 || r) && (v === 1 || v === H - 2)) return null;
+        if (u === 0 || v === 0 || r || b) return O;
+        if ((u === 1 || u === BW - 2) && (v === 1 || v === H - 2)) return O;
+        // 底边和右边是木板的厚度：暗两道
+        if (v === H - 2 || u === BW - 2) return DK;
+        if (v === H - 3 || u === BW - 3) return LO;
+        if (v === 1 || u === 1) return BR;
+        // 三格：日期（3~12 行）、两个小图标（15~24 行）、时间（27~36 行）；格子 28~68 列
+        const f = hole(x, y, 28, 3, 41, 10) || hole(x, y, 28, 27, 41, 10);
+        if (f) return f;
+        for (const tx of TILES) {
+            if (x >= tx && x < tx + 10 && y >= 15 && y < 25) {
+                if (x === tx || x === tx + 9 || y === 15 || y === 24) return O;
+                if (x === tx + 1 || y === 16) return MIX(V('sky'), 'white', 15);
+                return MIX(V('sky'), 'white', 45);
+            }
+            if ((y === 25 && x > tx && x <= tx + 10) || (x === tx + 10 && y > 15 && y <= 25)) return BR;
+        }
+        // 中间一块凸起的小牌子，刻两道横线
+        if (x >= 44 && x <= 52 && y >= 16 && y <= 23) {
+            const c = plank(x - 44, y - 16, 9, 8);
+            if (c && (y === 18 || y === 21) && x >= 46 && x <= 50) return DK;
+            if (c) return c;
+        }
+        // 左右各一颗钉子
+        if ((x === bx + 3 || x === W - 5) && (y === 19 || y === 20)) return y === 19 ? V('nail') : O;
+        return F;
+    };
     return pix(W, H, (x, y) => {
-        // 指针盖在最上面，外面一圈描边；转轴是一颗深色小钉
+        // 转轴：一颗小钉压在木板边上，外面一圈描边
+        const ax = Math.abs(x + 0.5 - px), ay = Math.abs(y + 0.5 - py);
+        if (ax <= 1 && ay <= 1) return x + 0.5 < px && y + 0.5 < py ? BR : DK;
+        if (ax <= 2 && ay <= 2 && !(ax > 1.5 && ay > 1.5)) return O;
+        // 指针盖在表盘上，外面一圈描边
         const hc = isHand(x, y);
         if (hc) return hc;
-        if (Math.abs(x + 0.5 - px) <= 1 && Math.abs(y + 0.5 - py) <= 1) return x + 0.5 < px && y + 0.5 < py ? BR : DK;
-        if (nearHand(x, y) && (x < bx + 4 || Math.hypot(x + 0.5 - R, y + 0.5 - R) < R - 3.5)) return O;
-        // 右边木板
-        if (x >= bx) {
-            const c = plank(x - bx, y, W - bx, H);
-            if (c !== null || (y > 0 && y < H - 1)) {
-                const fx = x - (bx + 2), fw = W - bx - 4;
-                if (fx >= 0 && fx < fw && y >= 2 && y <= 11) return field(fx, y - 2, fw, 10);
-                if (fx >= 0 && fx < fw && y >= 26 && y <= 35) return field(fx, y - 26, fw, 10);
-                for (const [i, tx] of tiles.entries()) {
-                    if (x >= tx && x < tx + 10 && y >= 14 && y < 24) {
-                        if (x === tx || x === tx + 9 || y === 14 || y === 23) return O;
-                        if (x === tx + 1 || y === 15) return MIX(V('sky'), 'white', 15);
-                        if (i === 0) return season === 'winter' ? V('sky-dk') : MIX(V('sky'), 'white', 45);
-                        return night ? V('sky-dk') : MIX(V('sky'), 'white', 45);
-                    }
-                }
-                if (c) return c;
-            }
-        }
-        // 左边半圆表盘
-        if (x >= R) return null;
+        if (x >= bx) return board(x, y);
         const d = Math.hypot(x + 0.5 - R, y + 0.5 - R);
         if (d > R) return null;
+        if (nearHand(x, y) && d < R - 4.9) return O;
+        // 表盘：粗描边 | 亮橙 | 橙 | 暗橙 | 描边
         const e = R - d;
-        if (e < 1.1) return O;
-        if (e < 2.1) return BR;
-        if (e < 3.1) return LO;
-        if (e < 3.9) return O;
-        // 天上：白天一个太阳，夜里月牙和星星
-        if (night) {
-            if (STARS.some(([sx, sy]) => sx === x && sy === y)) return V('snow');
-            const m1 = Math.hypot(x + 0.5 - 9, y + 0.5 - 11), m2 = Math.hypot(x + 0.5 - 10.6, y + 0.5 - 9.8);
-            if (m1 < 3.6 && m2 >= 3) return V('moon');
-        } else {
-            const sd = Math.hypot(x + 0.5 - 9, y + 0.5 - 11);
-            if (sd < 2.2) return MIX(V('sun'), 'white', 55);
-            if (sd < 3.6) return V('sun');
-        }
-        return sky(y);
+        if (e < 1.3) return O;
+        if (e < 2.2) return BR;
+        if (e < 3.1) return F;
+        if (e < 4.0) return LO;
+        if (e < 4.9) return O;
+        // 夜里那一角：星星和月牙
+        if (STARS.some(([sx, sy]) => sx === x && sy === y)) return V('snow');
+        const m1 = Math.hypot(x + 0.5 - 15.5, y + 0.5 - 12.5), m2 = Math.hypot(x + 0.5 - 17, y + 0.5 - 11.3);
+        if (m1 < 2.9 && m2 >= 2.4) return V('moon');
+        // 白天那边一个太阳；清早那边一个刚冒头的小太阳
+        const sd = Math.hypot(x + 0.5 - 9, y + 0.5 - 20);
+        if (sd < 1.6) return MIX(V('sun'), 'white', 60);
+        if (sd < 3.1) return V('sun');
+        const sr = Math.hypot(x + 0.5 - 14, y + 0.5 - 33.5);
+        if (sr < 2.4) return MIX(V('sun'), V('sun-dk'), 30);
+        return sky(x, y);
     }, 'sv-clock-art');
 }
 
@@ -157,7 +192,8 @@ function countArt() {
             return V('scroll');
         }
         if (edge(x, yy - 1) && yy <= ph / 2) return BR;
-        if (edge(x, yy + 1) && yy > ph / 2) return LO;
+        if (edge(x, yy + 1) && yy > ph / 2) return DK;
+        if (edge(x, yy + 2) && yy > ph / 2) return LO;
         return F;
     }, 'sv-count-art');
 }
@@ -241,10 +277,10 @@ export default function farm(api) {
         const h12 = h % 12 || 12;
         $time.textContent = `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
         // 指针每 10 分钟走一格就够了
-        const key = `${season}|${night}|${h}|${Math.floor(m / 10)}`;
+        const key = `${h}|${Math.floor(m / 10)}`;
         if (key !== lastArt) {
             lastArt = key;
-            $art.innerHTML = clockArt(h + Math.floor(m / 10) / 6, season, night);
+            $art.innerHTML = clockArt(h + Math.floor(m / 10) / 6);
         }
     }
 
@@ -379,13 +415,14 @@ export default function farm(api) {
         document.querySelectorAll('img[data-sv-thumb]').forEach(img => { img.src = img.dataset.svThumb; delete img.dataset.svThumb; });
     });
 
-    // ---------------- 季节配色 ----------------
-    function season() {
-        const pick = opt('season', 'summer');
-        const s = pick === 'auto' ? SEASON[new Date().getMonth()] : pick;
-        if (root.dataset.svSeason !== s) root.dataset.svSeason = s;
+    // ---------------- 排版：铺满（默认）/ 木板分栏 ----------------
+    // 旧版的季节配色撤掉了，用过的人 <html> 上可能还留着 data-sv-season，顺手清掉
+    delete root.dataset.svSeason;
+    function layout() {
+        const v = opt('layout', 'full') === 'board' ? 'board' : 'full';
+        if (root.dataset.svLayout !== v) root.dataset.svLayout = v;
     }
-    offs.push(() => { delete root.dataset.svSeason; });
+    offs.push(() => { delete root.dataset.svLayout; });
 
     // ---------------- 生成中 ----------------
     const genOn = (_type, _opts, dryRun) => { if (!dryRun) root.classList.add('sv-gen'); };
@@ -396,12 +433,12 @@ export default function farm(api) {
     const onChat = () => { count(); heartRules(); allHearts(); avatars(); setTimeout(energy, 300); };
     const onRender = () => { count(); allHearts(); avatars(); };
     tick();
-    season();
+    layout();
     onChat();
     const t1 = setInterval(tick, 20 * 1000);
     // 主题设置改了，一两秒内跟上
     const t2 = setInterval(() => {
-        season();
+        layout();
         avatars();
         const m = opt('emax', 200000);
         if (m !== lastMax) { lastMax = m; energy(); }

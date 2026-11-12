@@ -701,7 +701,7 @@
     },
     {
         "family": "粗野指北",
-        "version": "1.0.8",
+        "version": "1.0.9",
         "variantLabel": "变体",
         "options": [
             {
@@ -1950,7 +1950,7 @@
     },
     {
         "family": "农场对话框（小样）",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -1958,32 +1958,20 @@
                 "label": "样子"
             },
             {
-                "key": "season",
+                "key": "layout",
                 "type": "select",
-                "label": "季节配色",
-                "default": "summer",
-                "note": "春偏粉、秋偏红、冬偏蓝。选了春 / 秋 / 冬时，酒馆「UI 主题」里改纸色不生效，换回夏就好",
+                "label": "角色消息排版",
+                "default": "full",
+                "note": "铺满：头像和名牌挂在纸的右上角，字绕着走；木板分栏：右边一栏木板挂头像（之前的样子）。手机上两种只差头像那一条有没有木板",
                 "choices": [
-                    [
-                        "summer",
-                        "夏（原色）"
-                    ],
-                    [
-                        "spring",
-                        "春"
-                    ],
-                    [
-                        "fall",
-                        "秋"
-                    ],
-                    [
-                        "winter",
-                        "冬"
-                    ],
-                    [
-                        "auto",
-                        "跟着日历换"
-                    ]
+                    {
+                        "value": "full",
+                        "label": "铺满"
+                    },
+                    {
+                        "value": "board",
+                        "label": "木板分栏"
+                    }
                 ]
             },
             {
@@ -2011,6 +1999,16 @@
                 "default": true,
                 "on": "1",
                 "off": "0"
+            },
+            {
+                "type": "number",
+                "var": "--sv-lpanel",
+                "label": "左边面板至少多宽（电脑，像素）",
+                "default": 420,
+                "min": 0,
+                "step": 10,
+                "unit": "px",
+                "note": "预设、AI 设置那块面板。比聊天区两边的空白宽时会盖住聊天区一点，顶栏那一排按钮照样点得到。填 0 = 酒馆原来的宽度"
             },
             {
                 "type": "head",
@@ -2105,7 +2103,7 @@
             }
         ],
         "draft": true,
-        "blurb": "像素农场对话框：纸板写字、木板挂大头像和卷轴名牌，右上角日历时钟",
+        "blurb": "像素农场对话框：纸板写字、大头像挂在纸角，卷轴名牌，右上角日历时钟",
         "module": "modules/farm.js"
     }
 ]
