@@ -1949,8 +1949,8 @@
         "module": "modules/xuyu.js"
     },
     {
-        "family": "农场对话框（小样）",
-        "version": "0.6.1",
+        "family": "16-Bit Valley",
+        "version": "1.0.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2149,13 +2149,20 @@
         ],
         "themes": [
             {
-                "name": "农场对话框（小样）",
-                "file": "农场对话框（小样）.json",
-                "label": "农场对话框（小样）"
+                "name": "16-Bit Valley",
+                "file": "16-Bit Valley.json",
+                "label": "16-Bit Valley"
             }
         ],
-        "draft": true,
-        "blurb": "像素农场对话框：纸板写字、大头像挂在纸角，卷轴名牌，右上角日历时钟",
-        "module": "modules/farm.js"
+        "blurb": "像素农场游戏风：木框纸板、大头像和卷轴名牌，日历时钟、好感心心、体力条",
+        "thumb": "assets/thumbs/farm.webp",
+        "preview": "assets/thumbs/farm-big.webp",
+        "module": "modules/farm.js",
+        "retired": [
+            {
+                "name": "农场对话框（小样）",
+                "formerFamily": "农场对话框（小样）"
+            }
+        ]
     }
 ]

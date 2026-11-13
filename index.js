@@ -180,9 +180,12 @@ async function themeText(t) {
 }
 
 // 直接存进酒馆的主题文件夹（和「另存主题」同一个接口，不弹窗）；酒馆只在启动时读主题列表，所以要刷新才出现
+// 这次加载里新存进去的主题：酒馆的主题列表要刷新页面才有它们，现在选它也套不上
+const savedNow = new Set();
 async function saveTheme(t) {
     try {
         const r = await fetch('/api/themes/save', { method: 'POST', headers: ctx().getRequestHeaders(), body: await themeText(t) });
+        if (r.ok) savedNow.add(t.name);
         return r.ok;
     } catch (e) {
         console.warn('[主题伴侣] 保存主题失败', t.name, e);
@@ -303,6 +306,8 @@ async function updateFamily(fam, ask = true) {
 
 async function useTheme(name) {
     if (document.getElementById('themes')) {
+        // 刚装上、还没刷新页面的主题不在下拉框里：先补一项，不然 val() 选不中，酒馆会把主题记成 "undefined"
+        if (![...$('#themes option')].some(o => o.value === name)) $('#themes').append(new Option(name, name));
         $('#themes').val(name).trigger('change');
         return;
     }
@@ -342,7 +347,9 @@ async function checkThemes() {
     const firstRun = !s.welcomed && !Object.keys(s.themes).length;
     for (const fam of families) {
         if (hidden(fam)) continue;
-        const famHere = fam.themes.some(t => have.has(t.name));
+        // 改过名的系列：装着旧名字那份（由本扩展装的）也算「已经装了」，新名字照常补上，旧的由 retireThemes 删掉
+        const famHere = fam.themes.some(t => have.has(t.name))
+            || (fam.retired || []).some(r => r.formerFamily && have.has(r.name) && isVersion(s.themes[r.name]));
         let staleHere = false;
         for (const t of fam.themes) {
             const rec = s.themes[t.name];
@@ -445,7 +452,9 @@ async function reapplyActive(updatedNow) {
     const ver = s.themes[name];
     if (!isVersion(ver) || (s.applied ||= {})[name] === ver) return;
     const mine = (await serverThemes()).find(x => x.name === name);
-    if (mine && mine.custom_css !== ctx().powerUserSettings?.custom_css) await useTheme(name);
+    // 刚装上的（这次加载里才存进去，酒馆还不认识）：先不记，刷新页面后再比对、套一次
+    if (!mine || savedNow.has(name)) return;
+    if (mine.custom_css !== ctx().powerUserSettings?.custom_css) await useTheme(name);
     s.applied[name] = ver;
 }
 
