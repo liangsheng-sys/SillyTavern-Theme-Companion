@@ -327,6 +327,36 @@ let lastTheme;
 function onThemeChange() {
     lastTheme = currentTheme();
     syncUi(); syncThemes(); renderAllOptions(); applyOptions();
+    clearLeftoverCss().catch(e => console.warn('[主题伴侣] 清理残留 CSS 失败', e));
+}
+
+// 酒馆换主题时，新主题文件里没有 custom_css 这一项（很多只调颜色的主题）就整项跳过，
+// 上一套的「自订 CSS」会原样留在设置里，删主题、卸扩展都去不掉，每次启动都又套上。
+// 换到别的主题后，自订 CSS 还是我们的（作者署名在 CSS 开头），而新主题本身没带 CSS：清空。
+const OUR_CSS_MARK = 'mangosagocreamwithpomelo';
+async function clearLeftoverCss() {
+    const name = currentTheme();
+    if (!name || !families.length || families.some(f => f.themes.some(t => t.name === name) || (f.retired || []).some(r => r.name === name))) return;
+    const pu = ctx().powerUserSettings;
+    if (!String(pu?.custom_css || '').includes(OUR_CSS_MARK)) return;
+    let theme = (await serverThemes()).find(x => x.name === name);
+    if (!theme) {   // 这次加载后才导入的主题：重新读一次
+        savedThemes = null;
+        theme = (await serverThemes()).find(x => x.name === name);
+    }
+    if (!theme || currentTheme() !== name) return;
+    if (typeof theme.custom_css === 'string') {
+        // 主题自己存着我们的 CSS（多半是用着我们的主题时「另存为」的）：不替用户改，提醒一次
+        if (theme.custom_css.includes(OUR_CSS_MARK) && !(settings().cssHint ||= {})[name]) {
+            settings().cssHint[name] = true; save();
+            toastr.info(`「${name}」里存着主题伴侣附带主题的 CSS（可能是用着那套主题时另存的）。不想要的话，到「用户设置 → 自订 CSS」清空后再保存这个主题。`, '主题伴侣', { timeOut: 15000 });
+        }
+        return;
+    }
+    const box = $('#customCSS');
+    if (box.length) box.val('').trigger('input');
+    else { pu.custom_css = ''; document.getElementById('custom-style')?.replaceChildren(); save(); }
+    toastr.info(`「${name}」没有自带 CSS，已清掉上一套主题留下的自订 CSS。`, '主题伴侣');
 }
 function checkThemeChange() {
     if (currentTheme() !== lastTheme) onThemeChange();
@@ -1386,7 +1416,8 @@ jQuery(() => {
         watchBackground();
         lastTheme = currentTheme();
         if (currentFamily()?.bgVar) applyOptions();
-        checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e));
+        checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e))
+            .then(() => clearLeftoverCss()).catch(e => console.warn('[主题伴侣] 清理残留 CSS 失败', e));
         dailyExtCheck();
     });
     // 按时间自动：每分钟看一次
