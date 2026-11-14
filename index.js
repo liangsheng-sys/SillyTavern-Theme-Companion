@@ -35,7 +35,9 @@ const root = document.documentElement;
 try {
     const last = JSON.parse(localStorage.getItem(CACHE) || 'null');
     if (last) paint(last.day, last.paper, false);
-    if (last?.css) setOptionCss(last.css);
+    // 只在上次记下的主题还是当前主题时才先套（换了主题、删了主题、在别的设备上换过，缓存都可能还是旧的）
+    const now = (() => { try { return SillyTavern.getContext().powerUserSettings?.theme; } catch { return undefined; } })();
+    if (last?.css && last.theme && (now === undefined || now === last.theme)) setOptionCss(last.css);
 } catch { /* 无痕模式等读不到也没关系 */ }
 
 function ctx() {
@@ -761,7 +763,7 @@ function applyOptions() {
     const fam = currentFamily();
     const css = fam ? optionCss(fam) : '';
     setOptionCss(css);
-    remember({ css });
+    remember({ css, theme: currentTheme() });
     formatDates();
     syncModule(fam);
 }
@@ -1415,7 +1417,8 @@ jQuery(() => {
     eventSource.on(eventTypes.APP_READY, () => {
         watchBackground();
         lastTheme = currentTheme();
-        if (currentFamily()?.bgVar) applyOptions();
+        // 每次都按当前主题重算一遍：开头先套的缓存如果是别的主题的（如 XP 的配色选项，整整一套 CSS），在这里清掉
+        applyOptions();
         checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e))
             .then(() => clearLeftoverCss()).catch(e => console.warn('[主题伴侣] 清理残留 CSS 失败', e));
         dailyExtCheck();
