@@ -1,7 +1,7 @@
 [
     {
         "family": "纸上访谈",
-        "version": "1.0.7",
+        "version": "1.0.8",
         "variantLabel": "变体",
         "options": [
             {
@@ -74,6 +74,23 @@
                         "italic",
                         "倾斜"
                     ]
+                ]
+            },
+            {
+                "key": "mlayout",
+                "type": "select",
+                "label": "手机版式",
+                "note": "只影响手机。小说式：正文左右顶格；访谈式：头像单独占一栏",
+                "choices": [
+                    {
+                        "value": "novel",
+                        "label": "小说式（左右顶格）"
+                    },
+                    {
+                        "value": "interview",
+                        "label": "访谈式（头像一栏）",
+                        "css": "@media screen and (max-width: 1000px) { html:root:root { --mz-m-novel: 0; --mz-plate-size: 34px; --mz-pad-left: 4px; --mz-pad-right: 18px; } }"
+                    }
                 ]
             },
             {
