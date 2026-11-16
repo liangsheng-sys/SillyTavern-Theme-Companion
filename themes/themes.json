@@ -94,6 +94,18 @@
                 ]
             },
             {
+                "key": "mside",
+                "var": "--mz-m-side",
+                "type": "number",
+                "unit": "px",
+                "label": "手机正文两边留白（像素）",
+                "note": "只对手机的小说式生效。0 = 贴着屏幕边",
+                "default": 16,
+                "min": 0,
+                "max": 48,
+                "step": 1
+            },
+            {
                 "key": "quote",
                 "type": "select",
                 "label": "对白颜色",
