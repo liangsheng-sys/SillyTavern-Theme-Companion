@@ -2193,5 +2193,80 @@
                 "formerFamily": "农场对话框（小样）"
             }
         ]
+    },
+    {
+        "family": "402 宿舍",
+        "version": "0.1.0",
+        "variantLabel": "变体",
+        "options": [
+            {
+                "type": "head",
+                "label": "样子"
+            },
+            {
+                "key": "paper",
+                "type": "select",
+                "label": "聊天用的纸",
+                "default": "jian",
+                "note": "学生用笺：红色校名抬头、红横线；作业纸：蓝横线、左边一道红竖线、两角贴着胶带；白页：什么都不印",
+                "choices": [
+                    {
+                        "value": "jian",
+                        "label": "学生用笺"
+                    },
+                    {
+                        "value": "hw",
+                        "label": "作业纸",
+                        "css": "html:root:root { --dm-rule: var(--dm-rule-blue); --dm-head-display: none; --dm-glue: 0px; --dm-margin-bg: var(--dm-margin-red); --dm-tape-display: block; --dm-foot-display: none; }"
+                    },
+                    {
+                        "value": "plain",
+                        "label": "白页",
+                        "css": "html:root:root { --dm-rule: transparent; --dm-head-display: none; --dm-glue: 0px; --dm-foot-display: none; }"
+                    }
+                ]
+            },
+            {
+                "key": "room",
+                "type": "select",
+                "label": "宿舍",
+                "default": "girl",
+                "choices": [
+                    {
+                        "value": "girl",
+                        "label": "女生宿舍"
+                    },
+                    {
+                        "value": "boy",
+                        "label": "男生宿舍",
+                        "css": "html:root:root { --dm-room: url(\"{EXT}assets/dorm-room-boy.png\"); }"
+                    }
+                ]
+            },
+            {
+                "key": "school",
+                "type": "text",
+                "var": "--dm-school",
+                "label": "信笺抬头的校名",
+                "default": "江城大学"
+            },
+            {
+                "key": "address",
+                "type": "text",
+                "var": "--dm-address",
+                "label": "信笺底下的地址",
+                "default": "桂园 7 栋 402"
+            }
+        ],
+        "themes": [
+            {
+                "name": "402 宿舍",
+                "file": "402 宿舍.json",
+                "label": "402 宿舍"
+            }
+        ],
+        "draft": true,
+        "blurb": "Unpacking 风的像素宿舍：房间里的东西就是菜单，聊天写在盖上来的学生用笺上",
+        "module": "modules/dorm.js"
     }
 ]
