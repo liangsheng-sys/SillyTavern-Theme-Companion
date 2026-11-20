@@ -2196,7 +2196,7 @@
     },
     {
         "family": "402 宿舍",
-        "version": "0.1.1",
+        "version": "0.2.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2240,6 +2240,75 @@
                         "value": "boy",
                         "label": "男生宿舍",
                         "css": "html:root:root { --dm-room: url(\"{EXT}modules/dorm-room-boy.png\"); }"
+                    }
+                ]
+            },
+            {
+                "key": "bear",
+                "type": "select",
+                "label": "床上的小熊",
+                "default": "0",
+                "note": "只有女生宿舍有。在房间里点小熊，也会换下一只",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "缝过的旧熊（原来那只）"
+                    },
+                    {
+                        "value": "v3",
+                        "label": "深棕色，胸口一颗红心"
+                    },
+                    {
+                        "value": "v5",
+                        "label": "围着红绿围巾"
+                    },
+                    {
+                        "value": "v7",
+                        "label": "纽扣眼睛，打满补丁"
+                    },
+                    {
+                        "value": "v8",
+                        "label": "浅浅的蜂蜜色"
+                    },
+                    {
+                        "value": "v10",
+                        "label": "系着蓝领巾"
+                    },
+                    {
+                        "value": "v15",
+                        "label": "戴绿项圈的小个子"
+                    }
+                ]
+            },
+            {
+                "key": "thermos",
+                "type": "select",
+                "label": "地上的暖水瓶",
+                "default": "0",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "红底白点（原来那只）"
+                    },
+                    {
+                        "value": "v2",
+                        "label": "白色十字绣花纹"
+                    },
+                    {
+                        "value": "v7",
+                        "label": "红底黄碎花"
+                    },
+                    {
+                        "value": "v10",
+                        "label": "棕红色金回纹"
+                    },
+                    {
+                        "value": "v11",
+                        "label": "红底团花"
+                    },
+                    {
+                        "value": "v15",
+                        "label": "银顶，一束花"
                     }
                 ]
             },
