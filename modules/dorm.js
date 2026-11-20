@@ -42,6 +42,7 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 #dm-room svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 #dm-room polygon { fill: transparent; stroke: transparent; stroke-width: 2; stroke-linejoin: miter; shape-rendering: crispEdges; cursor: pointer; pointer-events: all; }
 #dm-room polygon:is(:hover, :focus-visible, .on) { stroke: #fff4c8; outline: none; }
+#dm-room.dm-no-outline polygon { stroke: transparent !important; }
 #dm-room .dm-tag { position: absolute; z-index: 2; transform: translate(-50%, calc(-100% - 12px)); background: var(--dm-paper); color: var(--dm-ink); border: 2px solid var(--dm-line); padding: 2px 12px 3px; font-size: 16px; white-space: nowrap; pointer-events: none; box-shadow: 3px 3px 0 rgb(0 0 0 / .25); }
 #dm-room .dm-tag small { color: var(--dm-ink2); margin-left: 6px; font-size: 13px; }
 #dm-room .dm-tag[hidden] { display: none; }
@@ -94,6 +95,11 @@ export default function dorm(api = {}) {
         tag.style.left = `${((minX + maxX) / 2 / W) * 100}%`;
         tag.style.top = `${(minY / H) * 100}%`;
         tag.hidden = false;
+        // 别出屏幕：靠边的东西，标签往里挪
+        tag.style.marginLeft = '0px';
+        const r = tag.getBoundingClientRect();
+        if (r.right > innerWidth - 8) tag.style.marginLeft = `${innerWidth - 8 - r.right}px`;
+        else if (r.left < 8) tag.style.marginLeft = `${8 - r.left}px`;
     };
     let builtFor = null;
     function buildSpots() {
@@ -110,7 +116,7 @@ export default function dorm(api = {}) {
         p.setAttribute('aria-label', `${name}：${what}`);
         p.addEventListener('pointerenter', () => showTag(p, name, what));
         p.addEventListener('focus', () => showTag(p, name, what));
-        p.addEventListener('pointerleave', () => { tag.hidden = true; });
+        p.addEventListener('pointerleave', () => { if (!p.classList.contains('on')) tag.hidden = true; });
         p.addEventListener('blur', () => { tag.hidden = true; });
         const go = () => {
             if (act === 'back') return leave();
@@ -118,7 +124,18 @@ export default function dorm(api = {}) {
             const toggle = el?.closest('.drawer-toggle') || el;
             toggle?.click();
         };
-        p.addEventListener('click', go);
+        // 手机（没有鼠标悬停）选了「先亮再开」：第一下只亮出名字
+        p.addEventListener('click', e => {
+            const touch = !matchMedia('(hover: hover)').matches;
+            if (touch && api.get?.('tap') === 'twice' && !p.classList.contains('on')) {
+                svg.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+                p.classList.add('on');
+                showTag(p, name, what);
+                return;
+            }
+            p.classList.remove('on');
+            go();
+        });
         p.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
         svg.append(p);
     }
@@ -151,6 +168,8 @@ export default function dorm(api = {}) {
     }
     function enter() {
         buildSpots();
+        room.classList.toggle('dm-no-outline', api.get?.('outline') === 'name');
+        svg.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
         fillPeek();
         const c = ctx();
         cap.textContent = c?.name2 && hasChat() ? `402 · ${c.name2}` : '402';

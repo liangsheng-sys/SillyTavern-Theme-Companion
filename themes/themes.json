@@ -2244,6 +2244,47 @@
                 ]
             },
             {
+                "type": "head",
+                "label": "房间"
+            },
+            {
+                "key": "tap",
+                "type": "select",
+                "label": "手机上点房间里的东西",
+                "default": "open",
+                "note": "直接打开：一点就打开对应的面板；先亮再开：第一下只亮出名字，再点一下才打开，不容易误点",
+                "choices": [
+                    {
+                        "value": "open",
+                        "label": "直接打开"
+                    },
+                    {
+                        "value": "twice",
+                        "label": "先亮再开"
+                    }
+                ]
+            },
+            {
+                "key": "outline",
+                "type": "select",
+                "label": "鼠标移到东西上",
+                "default": "both",
+                "choices": [
+                    {
+                        "value": "both",
+                        "label": "冒一圈描边，出名字"
+                    },
+                    {
+                        "value": "name",
+                        "label": "只出名字"
+                    }
+                ]
+            },
+            {
+                "type": "head",
+                "label": "信笺"
+            },
+            {
                 "key": "school",
                 "type": "text",
                 "var": "--dm-school",
