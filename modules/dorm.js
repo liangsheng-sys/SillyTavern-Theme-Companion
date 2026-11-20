@@ -14,7 +14,7 @@ const W = 730, H = 712;
 // [名字, 打开什么, 点了做什么（顶栏按钮的选择器，或 'back'）, 多边形]（外框，room.py 打印出来的）
 const rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 const SPOTS = [
-    ['床帘', '回到聊天', 'back', rect(68, 129, 407, 320)],
+    ['床帘', '回到聊天', 'back', rect(56, 63, 411, 344)],
     ['衣柜', '角色列表', '#rightNavDrawerIcon', rect(551, 247, 698, 561)],
     ['柜顶的纸箱', '扩展', '#extensions-settings-button .drawer-icon', rect(569, 198, 688, 287)],
     ['窗户', '背景', '#backgrounds-button .drawer-icon', rect(440, 103, 618, 354)],
@@ -24,7 +24,7 @@ const SPOTS = [
     ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(236, 301, 262, 318)],
     ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(141, 331, 166, 374)],
     ['插线板', '预设', '#leftNavDrawerIcon', rect(213, 429, 258, 454)],
-    ['小熊', '换一只', 'bear', rect(271, 163, 301, 205)],
+    ['小熊', '换一只', 'bear', rect(314, 168, 342, 207)],
 ];
 // 男生宿舍：桌上没有镜子，人设换成挂在梯子上的书包；床沿上夹的是课程表
 const BOY = {
@@ -34,9 +34,9 @@ const BOY = {
 
 // 能换样子的东西：图集 dorm-things.png 一行 = 一样东西在一间房里，一格 35×45 = 一个样子（含背景，整块盖上去）；
 // dorm-things-spots.png 同样排列的热区。at = 在房间图里的左上角（room.py things 生成 art/things2.json，照抄）
-const CELL = [35, 45];
+const CELL = [30, 44];
 const THINGS = {
-    bear: { spot: 11, size: [35, 45], rooms: {girl: {at: [267, 162], row: 0}}, styles: ['0', 'v3', 'v5', 'v7', 'v8', 'v15'] },
+    bear: { spot: 11, size: [30, 43], rooms: {girl: {at: [313, 165], row: 0}}, styles: ['0', 'v3', 'v5', 'v7', 'v8', 'v15'] },
     thermos: { spot: 5, size: [26, 44], rooms: {girl: {at: [262, 534], row: 1}, boy: {at: [262, 534], row: 2}}, styles: ['0', 'v2', 'v7', 'v10', 'v11', 'v15'] },
 };
 const OUTLINE = [255, 244, 200];
