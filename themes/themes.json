@@ -2239,7 +2239,7 @@
                     {
                         "value": "boy",
                         "label": "男生宿舍",
-                        "css": "html:root:root { --dm-room: url(\"{EXT}assets/dorm-room-boy.png\"); }"
+                        "css": "html:root:root { --dm-room: url(\"{EXT}modules/dorm-room-boy.png\"); }"
                     }
                 ]
             },
