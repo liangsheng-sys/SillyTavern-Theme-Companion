@@ -2196,7 +2196,7 @@
     },
     {
         "family": "402 宿舍",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2252,7 +2252,7 @@
                 "choices": [
                     {
                         "value": "0",
-                        "label": "缝过的旧熊（原来那只）"
+                        "label": "系着蓝领巾"
                     },
                     {
                         "value": "v3",
@@ -2269,10 +2269,6 @@
                     {
                         "value": "v8",
                         "label": "浅浅的蜂蜜色"
-                    },
-                    {
-                        "value": "v10",
-                        "label": "系着蓝领巾"
                     },
                     {
                         "value": "v15",

@@ -5,37 +5,39 @@
 // 3. 房间右下角露出一张信笺：上次聊到哪，点它回到聊天。
 // 4. 小熊、暖水瓶可以换样子（主题设置里选；房间里点小熊也换下一只）：在浏览器里把房间图和图集 dorm-things.png 拼起来，
 //    写到 html 的 --dm-room 上（聊天时的背景也跟着变）。
-// 房间图用主题 CSS 里的 --dm-room（主题设置里换男生 / 女生宿舍时跟着变），坐标都按原图 448×336 的 1 倍像素写。
+// 房间图用主题 CSS 里的 --dm-room（主题设置里换男生 / 女生宿舍时跟着变），坐标都按原图 730×712 的 1 倍像素写（tools/dorm/whitebox/room.py 程序画的白板房间 + 物件）。
 // 热区：dorm-spots-<房>.png 每个像素记着它属于第几样东西（tools/dorm/spots.py 生成，顺序和 SPOTS 一样），
 //    鼠标指哪个像素就是哪样东西，描边也照它画；多边形只留给键盘（Tab 选中）和热区图没载入时用。
 // 没装扩展就没有这些（只有聊天时压暗的房间背景）。
 
-const W = 448, H = 336;
-// [名字, 打开什么, 点了做什么（顶栏按钮的选择器，或 'back'）, 多边形]
+const W = 730, H = 712;
+// [名字, 打开什么, 点了做什么（顶栏按钮的选择器，或 'back'）, 多边形]（外框，room.py 打印出来的）
 const rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 const SPOTS = [
-    ['床帘', '回到聊天', 'back', [[68, 62], [193, 10], [240, 32], [245, 107], [157, 133], [72, 112]]],
-    ['衣柜', '角色列表', '#rightNavDrawerIcon', [[309, 118], [330, 108], [388, 123], [391, 128], [391, 241], [363, 255], [309, 226]]],
-    ['柜顶的纸箱', '扩展', '#extensions-settings-button .drawer-icon', [[315, 99], [328, 91], [341, 91], [366, 101], [388, 113], [386, 128], [360, 137], [318, 122]]],
-    ['窗户', '背景', '#backgrounds-button .drawer-icon', [[262, 45], [318, 73], [318, 160], [262, 132]]],
-    ['暖水瓶', '高级格式', '#advanced-formatting-button .drawer-icon', rect(284, 240, 309, 282)],
-    ['照片和便签', '世界书', '#WIDrawerIcon', rect(174, 128, 210, 168)],
-    ['显示器', 'API 连接', '#sys-settings-button .drawer-icon', rect(147, 154, 181, 184)],
-    ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(90, 160, 110, 212)],
-    ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(123, 160, 139, 190)],
-    ['插线板', '预设', '#leftNavDrawerIcon', [[150, 222], [162, 215], [178, 222], [178, 229], [166, 235], [150, 228]]],
-    ['小熊', '换一只', 'bear', rect(165, 60, 198, 100)],
+    ['床帘', '回到聊天', 'back', rect(68, 129, 407, 320)],
+    ['衣柜', '角色列表', '#rightNavDrawerIcon', rect(551, 247, 698, 561)],
+    ['柜顶的纸箱', '扩展', '#extensions-settings-button .drawer-icon', rect(569, 198, 688, 287)],
+    ['窗户', '背景', '#backgrounds-button .drawer-icon', rect(440, 103, 618, 354)],
+    ['暖水瓶', '高级格式', '#advanced-formatting-button .drawer-icon', rect(263, 535, 287, 577)],
+    ['照片和彩灯', '世界书', '#WIDrawerIcon', rect(210, 262, 347, 351)],
+    ['笔记本电脑', 'API 连接', '#sys-settings-button .drawer-icon', rect(189, 315, 256, 370)],
+    ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(236, 301, 262, 318)],
+    ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(141, 331, 166, 374)],
+    ['插线板', '预设', '#leftNavDrawerIcon', rect(213, 429, 258, 454)],
+    ['小熊', '换一只', 'bear', rect(271, 163, 301, 205)],
 ];
-// 男生宿舍：桌上没有镜子，人设换成挂在梯子上的书包；墙上是海报
+// 男生宿舍：桌上没有镜子，人设换成挂在梯子上的书包；床沿上夹的是课程表
 const BOY = {
-    镜子: ['书包', '用户人设', '#persona-management-button .drawer-icon', rect(234, 170, 266, 210)],
-    照片和便签: ['海报', '世界书', '#WIDrawerIcon', rect(176, 128, 198, 168)],
+    镜子: ['书包', '用户人设', '#persona-management-button .drawer-icon', rect(380, 278, 424, 335)],
+    照片和彩灯: ['课程表', '世界书', '#WIDrawerIcon', rect(242, 276, 312, 326)],
 };
 
-// 能换样子的东西：图集里的位置（每格 64）、在房间图里的原点、热区号
+// 能换样子的东西：图集 dorm-things.png 一行 = 一样东西在一间房里，一格 35×45 = 一个样子（含背景，整块盖上去）；
+// dorm-things-spots.png 同样排列的热区。at = 在房间图里的左上角（room.py things 生成 art/things2.json，照抄）
+const CELL = [35, 45];
 const THINGS = {
-    bear: { at: [149, 48], spot: 11, rooms: { girl: 0 }, row: 1, styles: ['0', 'v3', 'v5', 'v7', 'v8', 'v10', 'v15'] },
-    thermos: { at: [265, 228], spot: 5, rooms: { girl: 1, boy: 2 }, row: 2, styles: ['0', 'v2', 'v7', 'v10', 'v11', 'v15'] },
+    bear: { spot: 11, size: [35, 45], rooms: {girl: {at: [267, 162], row: 0}}, styles: ['0', 'v3', 'v5', 'v7', 'v8', 'v15'] },
+    thermos: { spot: 5, size: [26, 44], rooms: {girl: {at: [262, 534], row: 1}, boy: {at: [262, 534], row: 2}}, styles: ['0', 'v2', 'v7', 'v10', 'v11', 'v15'] },
 };
 const OUTLINE = [255, 244, 200];
 
@@ -75,7 +77,7 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 #dm-room .dm-peek small { color: var(--dm-ink2); font-size: 13px; }
 #dm-room .dm-peek[hidden] { display: none; }
 #dm-room-btn .drawer-icon.openIcon { color: var(--dm-hud-hi); filter: drop-shadow(0 3px 0 var(--dm-red)); }
-#dm-room { --dm-k: 2; }
+#dm-room { --dm-k: 1; }
 @media screen and (max-width: 1000px) {
   #dm-room .dm-scroll { display: block; padding-top: 70px; }
   #dm-room .dm-box { margin: 0; }
@@ -164,7 +166,7 @@ export default function dorm(api = {}) {
         state = key;
         buildSpots(which);
         try {
-            const [spotsImg, thingsImg] = await Promise.all([asset(`spots-${which}`), asset('things')]);
+            const [spotsImg, thingsImg, thingsSpotsImg] = await Promise.all([asset(`spots-${which}`), asset('things'), asset('things-spots')]);
             if (state !== key) return;
             const sp = pixels(spotsImg).data, m = new Uint8Array(W * H);
             for (let i = 0; i < W * H; i++) m[i] = sp[i * 4];
@@ -173,16 +175,13 @@ export default function dorm(api = {}) {
                 const roomImg = await asset(`room-${which}`);
                 const c = document.createElement('canvas'); c.width = W; c.height = H;
                 const g = c.getContext('2d'); g.drawImage(roomImg, 0, 0);
-                const tp = pixels(thingsImg);
+                const tp = pixels(thingsSpotsImg);
                 for (const [k, t] of active) {
-                    const [ox, oy] = t.at, col = t.styles.indexOf(pick[k]) - 1;
-                    g.drawImage(thingsImg, t.rooms[which] * 64, 0, 64, 64, ox, oy, 64, 64);   // 抹掉原来那只的底
-                    g.drawImage(thingsImg, col * 64, t.row * 64, 64, 64, ox, oy, 64, 64);     // 新的样子
-                    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {               // 热区跟着新样子
-                        const i = (oy + y) * W + ox + x;
-                        if (m[i] === t.spot) m[i] = 0;
-                        if (tp.data[((t.row * 64 + y) * tp.width + col * 64 + x) * 4 + 3] > 127) m[i] = t.spot;
-                    }
+                    const { at: [ox, oy], row } = t.rooms[which], col = t.styles.indexOf(pick[k]), [w, h] = t.size;
+                    g.clearRect(ox, oy, w, h);
+                    g.drawImage(thingsImg, col * CELL[0], row * CELL[1], w, h, ox, oy, w, h);   // 整块换成这个样子
+                    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)                      // 热区也整块换
+                        m[(oy + y) * W + ox + x] = tp.data[((row * CELL[1] + y) * tp.width + col * CELL[0] + x) * 4];
                 }
                 const blob = await new Promise(ok => c.toBlob(ok));
                 if (state !== key) return;
