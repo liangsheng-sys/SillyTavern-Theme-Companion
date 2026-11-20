@@ -21,6 +21,11 @@ const SPOTS = [
     ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(123, 160, 139, 190)],
     ['插线板', '预设', '#leftNavDrawerIcon', [[150, 222], [162, 215], [178, 222], [178, 229], [166, 235], [150, 228]]],
 ];
+// 男生宿舍：桌上没有镜子，人设换成挂在梯子上的书包；墙上是海报
+const BOY = {
+    镜子: ['书包', '用户人设', '#persona-management-button .drawer-icon', rect(234, 170, 266, 210)],
+    照片和便签: ['海报', '世界书', '#WIDrawerIcon', rect(176, 128, 198, 168)],
+};
 
 const CSS = `
 html.dm-room #sheld { transform: translateY(calc(100% + 60px)); }
@@ -62,7 +67,7 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 @media (prefers-reduced-motion: reduce) { #sheld, html.dm-room #dm-room, html.dm-room #dm-room .dm-box { transition: none; animation: none; } }
 `;
 
-export default function dorm() {
+export default function dorm(api = {}) {
     const root = document.documentElement;
     const ctx = () => window.SillyTavern?.getContext?.();
     const style = document.createElement('style');
@@ -90,7 +95,14 @@ export default function dorm() {
         tag.style.top = `${(minY / H) * 100}%`;
         tag.hidden = false;
     };
-    for (const [name, what, act, poly] of SPOTS) {
+    let builtFor = null;
+    function buildSpots() {
+    const which = api.get?.('room') || 'girl';
+    if (builtFor === which) return;
+    builtFor = which;
+    svg.replaceChildren();
+    for (const spot of SPOTS) {
+        const [name, what, act, poly] = which === 'boy' && BOY[spot[0]] ? BOY[spot[0]] : spot;
         const p = document.createElementNS(svgNS, 'polygon');
         p.setAttribute('points', poly.map(q => q.join(',')).join(' '));
         p.setAttribute('tabindex', '0');
@@ -109,6 +121,7 @@ export default function dorm() {
         p.addEventListener('click', go);
         p.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
         svg.append(p);
+    }
     }
 
     // ---- 「房间」按钮：顶栏最前面
@@ -137,6 +150,7 @@ export default function dorm() {
         peek.hidden = false;
     }
     function enter() {
+        buildSpots();
         fillPeek();
         const c = ctx();
         cap.textContent = c?.name2 && hasChat() ? `402 · ${c.name2}` : '402';
