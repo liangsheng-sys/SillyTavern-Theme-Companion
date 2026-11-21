@@ -2196,7 +2196,7 @@
     },
     {
         "family": "402 宿舍",
-        "version": "0.4.1",
+        "version": "0.5.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2240,6 +2240,59 @@
                         "value": "boy",
                         "label": "男生宿舍",
                         "css": "html:root:root { --dm-room: url(\"{EXT}modules/dorm-room-boy.png\"); }"
+                    }
+                ]
+            },
+            {
+                "key": "ground",
+                "type": "select",
+                "label": "房间后面的底色",
+                "default": "night",
+                "note": "房间背后那层深色方格的颜色。进房间后，左边的竖排标签里也能换",
+                "choices": [
+                    {
+                        "value": "night",
+                        "label": "夜蓝（默认）"
+                    },
+                    {
+                        "value": "moss",
+                        "label": "苔绿",
+                        "css": "html:root:root { --dm-void: #213b2c; --dm-void2: #274534; }"
+                    },
+                    {
+                        "value": "wine",
+                        "label": "酒红",
+                        "css": "html:root:root { --dm-void: #3b2030; --dm-void2: #46273a; }"
+                    },
+                    {
+                        "value": "slate",
+                        "label": "墨灰",
+                        "css": "html:root:root { --dm-void: #2a2d33; --dm-void2: #33373e; }"
+                    },
+                    {
+                        "value": "coffee",
+                        "label": "咖啡",
+                        "css": "html:root:root { --dm-void: #3a2b22; --dm-void2: #45342a; }"
+                    },
+                    {
+                        "value": "sea",
+                        "label": "海青",
+                        "css": "html:root:root { --dm-void: #1d3b44; --dm-void2: #234752; }"
+                    },
+                    {
+                        "value": "dusk",
+                        "label": "暮紫",
+                        "css": "html:root:root { --dm-void: #35274c; --dm-void2: #3f2f5a; }"
+                    },
+                    {
+                        "value": "olive",
+                        "label": "橄榄",
+                        "css": "html:root:root { --dm-void: #3a3a1e; --dm-void2: #454526; }"
+                    },
+                    {
+                        "value": "ink",
+                        "label": "靛黑",
+                        "css": "html:root:root { --dm-void: #151a2e; --dm-void2: #1c2238; }"
                     }
                 ]
             },
@@ -2305,6 +2358,27 @@
                     {
                         "value": "v15",
                         "label": "银顶，一束花"
+                    }
+                ]
+            },
+            {
+                "type": "head",
+                "label": "菜单"
+            },
+            {
+                "key": "hidebar",
+                "type": "select",
+                "label": "酒馆顶栏",
+                "default": "off",
+                "note": "「收起」：顶上那一排图标藏起来，换成左上角一本小本子，点开是目录，每一项就是原来的一个按钮（连别的扩展加的按钮也在里面）。按 Esc 或点旁边关上",
+                "choices": [
+                    {
+                        "value": "off",
+                        "label": "照常显示"
+                    },
+                    {
+                        "value": "on",
+                        "label": "收起成左上角的小本子"
                     }
                 ]
             },

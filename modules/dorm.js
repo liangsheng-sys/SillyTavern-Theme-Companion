@@ -15,30 +15,30 @@ const W = 730, H = 712;
 // [名字, 打开什么, 点了做什么（顶栏按钮的选择器，或 'back'）, 多边形]（外框，room.py 打印出来的）
 const rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 const SPOTS = [
-    ['床帘', '回到聊天', 'back', rect(56, 63, 411, 346)],
-    ['衣柜', '角色列表', '#rightNavDrawerIcon', rect(551, 247, 698, 561)],
-    ['柜顶的纸箱', '扩展', '#extensions-settings-button .drawer-icon', rect(569, 198, 688, 287)],
-    ['窗户', '背景', '#backgrounds-button .drawer-icon', rect(440, 103, 618, 354)],
-    ['暖水瓶', '高级格式', '#advanced-formatting-button .drawer-icon', rect(263, 535, 287, 577)],
-    ['照片', '世界书', '#WIDrawerIcon', rect(330, 272, 356, 330)],
-    ['笔记本电脑', 'API 连接', '#sys-settings-button .drawer-icon', rect(195, 323, 251, 370)],
-    ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(280, 289, 306, 340)],
-    ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(178, 335, 205, 377)],
-    ['插线板', '预设', '#leftNavDrawerIcon', rect(213, 429, 258, 454)],
-    ['小熊', '换一只', 'bear', rect(314, 168, 342, 207)],
+    ['床帘', '回到聊天', 'back', rect(81, 57, 436, 340)],
+    ['衣柜', '角色列表', '#rightNavDrawerIcon', rect(553, 230, 706, 547)],
+    ['柜顶的纸箱', '扩展', '#extensions-settings-button .drawer-icon', rect(572, 180, 690, 270)],
+    ['窗户', '背景', '#backgrounds-button .drawer-icon', rect(441, 85, 619, 334)],
+    ['暖水瓶', '高级格式', '#advanced-formatting-button .drawer-icon', rect(288, 519, 312, 571)],
+    ['照片', '世界书', '#WIDrawerIcon', rect(355, 266, 381, 324)],
+    ['笔记本电脑', 'API 连接', '#sys-settings-button .drawer-icon', rect(210, 317, 276, 364)],
+    ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(305, 283, 331, 334)],
+    ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(203, 329, 230, 371)],
+    ['插线板', '预设', '#leftNavDrawerIcon', rect(238, 423, 283, 448)],
+    ['小熊', '换一只', 'bear', rect(339, 162, 367, 201)],
 ];
 // 男生宿舍：桌上没有镜子，人设换成挂在梯子上的书包；高柜门上贴的是课程表
 const BOY = {
-    镜子: ['书包', '用户人设', '#persona-management-button .drawer-icon', rect(380, 278, 424, 335)],
-    照片: ['课程表', '世界书', '#WIDrawerIcon', rect(324, 260, 357, 326)],
+    镜子: ['书包', '用户人设', '#persona-management-button .drawer-icon', rect(405, 272, 449, 329)],
+    照片: ['课程表', '世界书', '#WIDrawerIcon', rect(349, 254, 382, 320)],
 };
 
-// 能换样子的东西：图集 dorm-things.png 一行 = 一样东西在一间房里，一格 35×45 = 一个样子（含背景，整块盖上去）；
+// 能换样子的东西：图集 dorm-things.png 一行 = 一样东西在一间房里，一格 30×54 = 一个样子（含背景，整块盖上去）；
 // dorm-things-spots.png 同样排列的热区。at = 在房间图里的左上角（room.py things 生成 art/things2.json，照抄）
-const CELL = [30, 44];
+const CELL = [30, 54];
 const THINGS = {
-    bear: { spot: 11, size: [30, 43], rooms: {girl: {at: [313, 165], row: 0}}, styles: ['0', 'v3', 'v5', 'v7', 'v8', 'v15'] },
-    thermos: { spot: 5, size: [26, 44], rooms: {girl: {at: [262, 534], row: 1}, boy: {at: [262, 534], row: 2}}, styles: ['0', 'v2', 'v7', 'v10', 'v11', 'v15'] },
+    bear: { spot: 11, size: [30, 43], rooms: {girl: {at: [338, 159], row: 0}}, styles: ['0', 'v3', 'v5', 'v7', 'v8', 'v15'] },
+    thermos: { spot: 5, size: [26, 54], rooms: {girl: {at: [287, 518], row: 1}, boy: {at: [287, 518], row: 2}}, styles: ['0', 'v2', 'v7', 'v10', 'v11', 'v15'] },
 };
 const OUTLINE = [255, 244, 200];
 
@@ -88,6 +88,69 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 }
 @media screen and (min-width: 1001px) { #dm-room .dm-hint { display: none; } }
 @media (prefers-reduced-motion: reduce) { #sheld, html.dm-room #dm-room, html.dm-room #dm-room .dm-box { transition: none; animation: none; } }
+
+/* ---- 收起酒馆顶栏：左上角一本小本子，点开是目录（装了主题伴侣、设置里选「收起」才有）---- */
+html.dm-nobar { --topBarBlockSize: 0px; }
+html.dm-nobar #top-bar { display: none !important; }
+html.dm-nobar #top-settings-holder { height: 0; pointer-events: none; }
+html.dm-nobar #top-settings-holder > .drawer > :is(.drawer-toggle, .drawer-icon) { display: none !important; }
+html.dm-nobar #top-settings-holder .drawer-content { pointer-events: auto; }
+html.dm-nobar :is(.drawer-content, #left-nav-panel, #right-nav-panel) { padding-top: 58px !important; }
+#dm-menu-btn { display: none; position: fixed; z-index: 3100; top: 8px; left: 8px; width: 46px; height: 46px; padding: 0; place-items: center; cursor: pointer; color: var(--dm-ink);
+  background: var(--dm-paper); border: 2px solid var(--dm-line); border-top: 8px solid var(--dm-glue-color); box-shadow: 3px 3px 0 rgb(0 0 0 / .3); font: inherit; }
+html.dm-nobar #dm-menu-btn { display: grid; }
+#dm-menu-btn::before { content: ""; width: 32px; height: 32px; margin-top: -4px; background: currentColor; -webkit-mask: var(--ico-menu) center / 32px 32px no-repeat; mask: var(--ico-menu) center / 32px 32px no-repeat; }
+#dm-menu-btn.on::before { -webkit-mask-image: var(--ico-cross); mask-image: var(--ico-cross); color: var(--dm-red); }
+#dm-menu-btn:hover, #dm-menu-btn:focus-visible { background: var(--dm-paper-low); outline: none; }
+#dm-menu-btn:focus-visible { box-shadow: 0 0 0 3px var(--dm-red); }
+#dm-menu { position: fixed; z-index: 3100; left: 10px; top: 62px; width: min(320px, calc(100vw - 20px)); max-height: calc(100dvh - 76px); overflow-y: auto; box-sizing: border-box;
+  padding: 6px 18px 18px 40px; color: var(--dm-ink); font-family: var(--dm-font);
+  background: radial-gradient(circle at 7px 14px, var(--dm-void) 0 4px, var(--dm-line) 4.5px 6.5px, transparent 7px) 9px 0 / 14px 30px repeat-y local, var(--dm-paper);
+  border: 2px solid var(--dm-line); border-top: 22px solid var(--dm-glue-color);
+  box-shadow: 0 4px 0 var(--dm-paper-edge), 0 6px 0 var(--dm-line), 8px 12px 0 rgb(0 0 0 / .3); transform-origin: 20px 0; }
+#dm-menu[hidden] { display: none; }
+#dm-menu:not([hidden]) { animation: dm-drop .2s steps(5) both; }
+@keyframes dm-drop { from { opacity: 0; transform: translateY(-10px) scaleY(.92); } to { opacity: 1; transform: none; } }
+#dm-menu h4 { margin: 4px 0 2px; text-align: center; color: var(--dm-red); font-size: 13px; letter-spacing: .5em; text-indent: .5em; line-height: 22px; font-weight: 400; }
+#dm-menu .dm-mi { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; margin: 0; padding: 5px 6px 3px; cursor: pointer; text-align: left;
+  background: transparent; color: var(--dm-ink); font: inherit; font-size: 18px; line-height: 30px; border: 0; border-bottom: 2px solid color-mix(in srgb, var(--dm-line), transparent 55%); }
+#dm-menu .dm-mi:hover, #dm-menu .dm-mi:focus-visible { outline: none; background: color-mix(in srgb, var(--dm-note), var(--dm-paper) 30%); border-bottom-color: var(--dm-red); }
+#dm-menu .dm-mi .drawer-icon { flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; font-size: 22px; color: var(--dm-ink2); opacity: 1; }
+#dm-menu .dm-mi .drawer-icon::before { width: 28px !important; height: 28px !important; -webkit-mask-size: 28px 28px !important; mask-size: 28px 28px !important; }
+#dm-menu .dm-mi:hover .drawer-icon, #dm-menu .dm-mi:focus-visible .drawer-icon { color: var(--dm-red); }
+#dm-menu .dm-mi.here .dm-mi-t::after { content: "·在这里"; color: var(--dm-red); font-size: 13px; margin-left: 6px; }
+@media screen and (max-width: 1000px) {
+  #dm-menu-btn { top: 6px; left: 6px; width: 42px; height: 42px; }
+  #dm-menu { top: 54px; left: 6px; width: min(310px, calc(100vw - 12px)); }
+  #dm-menu .dm-mi { font-size: 17px; }
+}
+
+/* ---- 房间里的「拍照模式」：左边竖排标签，点开一块调色板（换底色、换小物件）---- */
+#dm-room .dm-pal { --w: 252px; position: absolute; z-index: 5; left: 0; top: 96px; display: flex; align-items: flex-start; transform: translateX(calc(-1 * var(--w))); transition: transform .25s cubic-bezier(.3,.7,.3,1); }
+#dm-room .dm-pal.open { transform: none; }
+#dm-room .dm-pal[hidden] { display: none; }
+#dm-room .dm-pal-panel { width: var(--w); box-sizing: border-box; max-height: calc(100dvh - 130px); overflow-y: auto; color: var(--dm-ink); font-family: var(--dm-font);
+  background: var(--dm-paper); border: 2px solid var(--dm-line); border-left: 0; border-top: 18px solid var(--dm-glue-color); box-shadow: 6px 8px 0 rgb(0 0 0 / .3); padding: 8px 14px 12px; }
+#dm-room .dm-pal-panel h5 { margin: 6px 0 6px; font-size: 14px; font-weight: 400; color: var(--dm-ink2); letter-spacing: .2em; }
+#dm-room .dm-pal-grid { display: grid; grid-template-columns: repeat(3, 68px); gap: 8px; margin-bottom: 8px; }
+#dm-room .dm-sw { position: relative; box-sizing: border-box; width: 68px; height: 68px; padding: 0; cursor: pointer; border: 2px solid var(--dm-line); background-color: var(--dm-paper-low); image-rendering: pixelated; box-shadow: 2px 2px 0 rgb(0 0 0 / .2); }
+#dm-room .dm-sw.thing { height: 96px; }
+#dm-room .dm-sw.ground { background-image: conic-gradient(var(--a) 25%, var(--b) 0 50%, var(--a) 0 75%, var(--b) 0); background-size: 24px 24px; }
+#dm-room .dm-sw.ground::after { content: ""; position: absolute; inset: 14px; background: color-mix(in srgb, var(--a), #e6e4ff 62%); -webkit-mask: var(--ico-room) center / contain no-repeat; mask: var(--ico-room) center / contain no-repeat; image-rendering: pixelated; }
+#dm-room .dm-sw:hover { transform: translateY(-2px); }
+#dm-room .dm-sw:focus-visible { outline: 3px solid var(--dm-ink); outline-offset: 1px; }
+#dm-room .dm-sw.sel { outline: 3px solid var(--dm-red); outline-offset: 1px; }
+#dm-room .dm-sw.sel::before { content: ""; position: absolute; right: -2px; top: -2px; width: 14px; height: 14px; background: var(--dm-red); z-index: 1; }
+#dm-room .dm-pal-name { margin-top: 2px; padding-top: 6px; border-top: 2px solid var(--dm-rule); font-size: 15px; line-height: 22px; min-height: 22px; }
+#dm-room .dm-pal-tabs { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+#dm-room .dm-tab { width: 46px; height: 50px; padding: 0; display: grid; place-items: center; cursor: pointer; color: var(--dm-ink); background: var(--dm-paper-low); border: 2px solid var(--dm-line); border-left: 0; box-shadow: 3px 3px 0 rgb(0 0 0 / .25); }
+#dm-room .dm-tab::before { content: ""; width: 28px; height: 28px; background: currentColor; -webkit-mask: var(--i) center / 28px 28px no-repeat; mask: var(--i) center / 28px 28px no-repeat; }
+#dm-room .dm-tab[data-tab="ground"] { --i: var(--ico-tiles); }
+#dm-room .dm-tab[data-tab="things"] { --i: var(--ico-bear); }
+#dm-room .dm-tab:hover, #dm-room .dm-tab:focus-visible { outline: none; background: var(--dm-paper); }
+#dm-room .dm-tab.on { background: var(--dm-note); width: 52px; }
+@media screen and (max-width: 1000px) { #dm-room .dm-pal { top: 84px; } }
+@media (prefers-reduced-motion: reduce) { #dm-room .dm-pal, #dm-menu { transition: none; animation: none !important; } }
 `;
 
 export default function dorm(api = {}) {
@@ -104,7 +167,8 @@ export default function dorm(api = {}) {
     const svgNS = 'http://www.w3.org/2000/svg';
     room.innerHTML = `<div class="dm-scroll"><div class="dm-box"><svg viewBox="0 0 ${W} ${H}" aria-label="宿舍"></svg><div class="dm-tag" hidden></div><div class="dm-cap"></div></div></div>
 <div class="dm-hint">← 左右滑动看看 · 点房间里的东西 →</div>
-<button class="dm-peek" type="button" hidden><b></b><small></small><span></span></button>`;
+<button class="dm-peek" type="button" hidden><b></b><small></small><span></span></button>
+<div class="dm-pal"><div class="dm-pal-panel"><div class="dm-pal-body"></div><div class="dm-pal-name"></div></div><div class="dm-pal-tabs"><button class="dm-tab" type="button" data-tab="ground" title="房间底色" aria-label="房间底色"></button><button class="dm-tab" type="button" data-tab="things" title="换小物件" aria-label="换小物件"></button></div></div>`;
     document.body.append(room);
     const svg = room.querySelector('svg'), tag = room.querySelector('.dm-tag'), box = room.querySelector('.dm-box');
     const peek = room.querySelector('.dm-peek'), cap = room.querySelector('.dm-cap'), scroller = room.querySelector('.dm-scroll');
@@ -159,6 +223,76 @@ export default function dorm(api = {}) {
         });
     }
 
+    // ---- 调色板（房间里的拍照模式）：左边两个标签，点开一块板，色块 / 小图一点就换，写回主题设置
+    const pal = room.querySelector('.dm-pal'), palBody = pal.querySelector('.dm-pal-body'), palName = pal.querySelector('.dm-pal-name');
+    let palTab = 'ground', palSel = [], palLast = '';   // palLast = 最近点的是哪一样（底下那行字只说它）
+    const choicesOf = key => (api.option?.(key)?.choices || []).map(c => Array.isArray(c) ? { value: c[0], label: c[1] } : c);
+    const optVal = key => String(api.get?.(key) ?? api.option?.(key)?.default ?? '');
+    const grid = () => { const g = document.createElement('div'); g.className = 'dm-pal-grid'; return g; };
+    function swatch(key, c, cls) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = `dm-sw ${cls}`; b.title = c.label; b.setAttribute('aria-label', c.label);
+        b.addEventListener('click', () => { palLast = key; api.set?.(key, c.value); refresh(); syncPal(); });
+        palSel.push({ b, key, value: String(c.value), label: c.label });
+        return b;
+    }
+    async function buildPal() {
+        palSel = []; palBody.replaceChildren();
+        if (palTab === 'ground') {
+            const g = grid();
+            for (const c of choicesOf('ground')) {
+                const m = /--dm-void:\s*([^;]+);\s*--dm-void2:\s*([^;]+);/.exec(c.css || '');
+                const b = swatch('ground', c, 'ground');
+                // 没写颜色的那个是默认：跟着「聊天背景色」走
+                b.style.setProperty('--a', m ? m[1].trim() : 'var(--SmartThemeChatTintColor)');
+                b.style.setProperty('--b', m ? m[2].trim() : 'color-mix(in srgb, var(--SmartThemeChatTintColor), white 5%)');
+                g.append(b);
+            }
+            palBody.append(g);
+        } else {
+            const which = optVal('room') === 'boy' ? 'boy' : 'girl', n = root.classList.contains('dn-night') ? '-night' : '';
+            let img = null;
+            try { img = await asset(`things${n}`); } catch { /* 图集没载入：只剩文字名 */ }
+            if (palTab !== 'things') return;
+            for (const [k, t] of Object.entries(THINGS)) {
+                const r = t.rooms[which]; if (!r) continue;
+                const h = document.createElement('h5'); h.textContent = api.option?.(k)?.label || k;
+                const g = grid();
+                const K = 2, byV = Object.fromEntries(choicesOf(k).map(c => [String(c.value), c]));
+                t.styles.forEach((v, col) => {
+                    const b = swatch(k, byV[v] || { value: v, label: v }, 'thing');
+                    if (img) {   // 图集里的一格，放大 2 倍，居中
+                        b.style.backgroundImage = `url("${base}dorm-things${n}.png")`;
+                        b.style.backgroundSize = `${img.width * K}px ${img.height * K}px`;
+                        b.style.backgroundPosition = `${(64 - CELL[0] * K) / 2 - col * CELL[0] * K}px ${(92 - CELL[1] * K) / 2 - r.row * CELL[1] * K}px`;
+                        b.style.backgroundRepeat = 'no-repeat';
+                    }
+                    g.append(b);
+                });
+                palBody.append(h, g);
+            }
+        }
+        syncPal();
+    }
+    function syncPal() {
+        let name = '';
+        for (const s of palSel) {
+            const on = optVal(s.key) === s.value;
+            s.b.classList.toggle('sel', on);
+            if (on && (palTab === 'ground' || !name || s.key === palLast)) name = palTab === 'things' ? `${api.option?.(s.key)?.label || ''}：${s.label}` : s.label;
+        }
+        palName.textContent = name;
+        pal.querySelectorAll('.dm-tab').forEach(t => t.classList.toggle('on', pal.classList.contains('open') && t.dataset.tab === palTab));
+    }
+    pal.querySelectorAll('.dm-tab').forEach(t => t.addEventListener('click', () => {
+        const same = pal.classList.contains('open') && palTab === t.dataset.tab;
+        palTab = t.dataset.tab;
+        if (same) pal.classList.remove('open');
+        else { pal.classList.add('open'); buildPal(); }
+        syncPal();
+    }));
+    pal.hidden = !(api.option?.('ground') || api.option?.('bear') || api.option?.('thermos'));   // 主题设置里没有这些选项就整块藏起来
+
     async function refresh() {
         const which = api.get?.('room') === 'boy' ? 'boy' : 'girl';
         const pick = Object.fromEntries(Object.keys(THINGS).map(k => [k, String(api.get?.(k) ?? '0')]));
@@ -167,6 +301,7 @@ export default function dorm(api = {}) {
         if (key === state) return;
         state = key;
         buildSpots(which);
+        if (pal.classList.contains('open') && palTab === 'things') buildPal();
         try {
             const [spotsImg, thingsImg, thingsSpotsImg] = await Promise.all([asset(`spots-${which}`), asset(`things${n}`), asset('things-spots')]);
             if (state !== key) return;
@@ -291,6 +426,54 @@ export default function dorm(api = {}) {
     const onBtn = e => { e.stopPropagation(); root.classList.contains('dm-room') ? leave() : enter(); };
     icon.addEventListener('click', onBtn);
 
+    // ---- 收起顶栏后的目录：左上角一个小本子按钮，点开列出原顶栏的每个按钮（扫描 #top-settings-holder 里的 .drawer，别的扩展加的也在）
+    const NAMES = { leftNavDrawerIcon: '预设', 'sys-settings-button': 'API 连接', 'advanced-formatting-button': '高级格式', WIDrawerIcon: '世界书', 'user-settings-button': '用户设置', 'backgrounds-button': '背景', 'extensions-settings-button': '扩展', 'persona-management-button': '用户人设', rightNavDrawerIcon: '角色列表' };
+    const mbtn = document.createElement('button');
+    mbtn.id = 'dm-menu-btn'; mbtn.type = 'button'; mbtn.title = '目录'; mbtn.setAttribute('aria-label', '目录'); mbtn.setAttribute('aria-haspopup', 'true'); mbtn.setAttribute('aria-expanded', 'false');
+    const menu = document.createElement('div');
+    menu.id = 'dm-menu'; menu.hidden = true; menu.setAttribute('role', 'menu');
+    document.body.append(mbtn, menu);
+    const openDrawers = () => [...document.querySelectorAll('#top-settings-holder .drawer-icon.openIcon')].filter(i => i.closest('.drawer')?.id !== 'dm-room-btn' && !i.closest('.drawer')?.querySelector('.drawer-content.pinnedOpen'));   // 钉住的面板（挂锁）是用户要它一直开着的，不算
+    const menuOpen = () => !menu.hidden;
+    function syncMenuBtn() { mbtn.classList.toggle('on', menuOpen() || openDrawers().length > 0); }
+    function closeMenu() { menu.hidden = true; mbtn.setAttribute('aria-expanded', 'false'); syncMenuBtn(); }
+    function closeDrawers() { openDrawers().forEach(i => (i.closest('.drawer-toggle') || i).click()); }
+    function buildMenu() {
+        menu.replaceChildren();
+        const h = document.createElement('h4'); h.textContent = '目 录'; menu.append(h);
+        const drawers = [...document.querySelectorAll('#top-settings-holder > .drawer')].filter(d => d.id !== 'dm-room-btn' && d.querySelector('.drawer-icon'));
+        const items = drawers.map(d => {
+            const ic = d.querySelector('.drawer-icon');
+            const id = ic.id || d.id;
+            const name = NAMES[id] || ic.getAttribute('title') || ic.getAttribute('aria-label') || id || '按钮';
+            return { name, classes: [...ic.classList].filter(c => !/^(closedIcon|openIcon|interactable|drawer-icon)$/.test(c)), open: ic.classList.contains('openIcon'), go: () => (ic.closest('.drawer-toggle') || ic).click() };
+        });
+        items.push({ name: '房间', classes: ['fa-solid', 'fa-cube', 'fa-fw'], open: root.classList.contains('dm-room'), go: () => (root.classList.contains('dm-room') ? leave() : enter()) });
+        for (const it of items) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'dm-mi' + (it.open ? ' here' : ''); b.setAttribute('role', 'menuitem');
+            const i = document.createElement('span'); i.className = ['drawer-icon', ...it.classes].join(' ');
+            const t = document.createElement('span'); t.className = 'dm-mi-t'; t.textContent = it.name;
+            b.append(i, t);
+            b.addEventListener('click', () => { closeMenu(); it.go(); });
+            menu.append(b);
+        }
+    }
+    function openMenu() {
+        buildMenu();
+        menu.hidden = false; mbtn.setAttribute('aria-expanded', 'true'); syncMenuBtn();
+    }
+    mbtn.addEventListener('click', () => {
+        if (menuOpen()) closeMenu();
+        else if (openDrawers().length) closeDrawers();   // 有面板开着：这个键就是「关上」
+        else openMenu();
+    });
+    const onDown = e => { if (menuOpen() && !menu.contains(e.target) && !mbtn.contains(e.target)) closeMenu(); };
+    document.addEventListener('pointerdown', onDown, true);
+    const holder0 = document.getElementById('top-settings-holder');
+    const mo = new MutationObserver(syncMenuBtn);   // 面板开合：按钮的样子（本子 / 叉）跟着变
+    if (holder0) mo.observe(holder0, { subtree: true, attributes: true, attributeFilter: ['class'] });
+
     const hasChat = () => {
         const c = ctx();
         return !!(c && (c.groupId || (c.characterId !== undefined && c.characterId !== null)));
@@ -339,16 +522,33 @@ export default function dorm(api = {}) {
 
     // 主题设置改了（换宿舍、换小熊……）：伴侣不会重新载入脚本，每秒看一眼
     refresh();
-    const poll = setInterval(refresh, 1000);
+    const applyBar = () => {
+        const on = api.get?.('hidebar') === 'on';
+        root.classList.toggle('dm-nobar', on);
+        if (!on && menuOpen()) closeMenu();
+    };
+    applyBar();
+    const poll = setInterval(() => { refresh(); applyBar(); syncPal(); }, 1000);
     const dn = new MutationObserver(() => refresh());   // 切昼夜（html 上的 dn-day / dn-night）马上换房间图
     dn.observe(root, { attributes: true, attributeFilter: ['class'] });
 
-    const onKey = e => { if (e.key === 'Escape' && root.classList.contains('dm-room') && hasChat() && !document.querySelector('.openDrawer')) leave(); };
+    const onKey = e => {
+        if (e.key !== 'Escape') return;
+        if (menuOpen()) { closeMenu(); mbtn.focus(); return; }
+        if (root.classList.contains('dm-nobar') && openDrawers().length) { closeDrawers(); return; }   // 顶栏收起时没有别的办法关面板
+        if (pal.classList.contains('open')) { pal.classList.remove('open'); syncPal(); return; }
+        if (root.classList.contains('dm-room') && hasChat() && !document.querySelector('.openDrawer')) leave();
+    };
     document.addEventListener('keydown', onKey);
 
     return () => {
         if (es && ev?.CHAT_CHANGED) es.removeListener?.(ev.CHAT_CHANGED, onChat);
         document.removeEventListener('keydown', onKey);
+        document.removeEventListener('pointerdown', onDown, true);
+        mo.disconnect();
+        root.classList.remove('dm-nobar');
+        mbtn.remove();
+        menu.remove();
         clearInterval(poll);
         dn.disconnect();
         root.style.removeProperty('--dm-room');
