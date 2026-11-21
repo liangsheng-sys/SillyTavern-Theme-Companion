@@ -3,8 +3,9 @@
 //    鼠标移到东西上冒一圈描边和小标签，点一下打开酒馆对应的面板（衣柜 = 角色列表，插线板 = 预设……见 SPOTS）。
 // 2. 没打开任何聊天时（欢迎页）自动进房间。
 // 3. 房间右下角露出一张信笺：上次聊到哪，点它回到聊天。
-// 4. 小熊、暖水瓶可以换样子（主题设置里选；房间里点小熊也换下一只）：在浏览器里把房间图和图集 dorm-things.png 拼起来，
-//    写到 html 的 --dm-room 上（聊天时的背景也跟着变）。
+// 4. 小物件（小熊、暖水瓶、台灯、镜子、书包、球鞋、脸盆、垃圾桶、拖鞋）可以换样子（主题设置里选，或房间左边「换小物件」面板；
+//    房间里点小熊也换下一只）：在浏览器里把房间图和图集 dorm-things.png 拼起来，新图载入、解码完才写到 html 的 --dm-room 上
+//    （聊天时的背景也跟着变；先解码再换，不会闪一下）。
 // 房间图用主题 CSS 里的 --dm-room（主题设置里换男生 / 女生宿舍时跟着变），坐标都按原图 730×712 的 1 倍像素写（tools/dorm/whitebox/room.py 程序画的白板房间 + 物件）。
 // 热区：dorm-spots-<房>.png 每个像素记着它属于第几样东西（tools/dorm/spots.py 生成，顺序和 SPOTS 一样），
 //    鼠标指哪个像素就是哪样东西，描边也照它画；多边形只留给键盘（Tab 选中）和热区图没载入时用。
@@ -33,12 +34,20 @@ const BOY = {
     照片: ['课程表', '世界书', '#WIDrawerIcon', rect(349, 254, 382, 320)],
 };
 
-// 能换样子的东西：图集 dorm-things.png 一行 = 一样东西在一间房里，一格 30×54 = 一个样子（含背景，整块盖上去）；
-// dorm-things-spots.png 同样排列的热区。at = 在房间图里的左上角（room.py things 生成 art/things2.json，照抄）
-const CELL = [30, 54];
+// 能换样子的东西：图集 dorm-things.png 一行 = 一样东西在一间房里，一格 = 一个样子（含背景）；每行的格子大小 size 各不相同，
+// 行的左上角在 src，第 i 个样子在 src.x + i × size.w。第 0 格 = 默认样子（和房间图那一块一样）：换样子时只把和第 0 格不一样的像素盖上去，
+// 几样东西外框叠在一起也不互相抹掉。dorm-things-spots.png 同样排列的热区。at = 在房间图里的左上角
+// （room.py things 生成 art/things2.json 并打印这一段，照抄）。中文名在主题设置的选项里（键名一样）
 const THINGS = {
-    bear: { spot: 11, size: [30, 43], rooms: {girl: {at: [338, 159], row: 0}}, styles: ['0', 'v3', 'v5', 'v7', 'v8', 'v15'] },
-    thermos: { spot: 5, size: [26, 54], rooms: {girl: {at: [287, 518], row: 1}, boy: {at: [287, 518], row: 2}}, styles: ['0', 'v2', 'v7', 'v10', 'v11', 'v15'] },
+    bear: {"spot": 11, "styles": ["0", "v3", "v5", "v7", "v8", "v15"], "rooms": {"girl": {"at": [338, 159], "src": [0, 0], "size": [30, 43]}}},
+    thermos: {"spot": 5, "styles": ["0", "v2", "v7", "v10", "v11", "v15"], "rooms": {"girl": {"at": [287, 518], "src": [0, 43], "size": [26, 54]}, "boy": {"at": [287, 518], "src": [0, 97], "size": [26, 54]}}},
+    lamp: {"spot": 8, "styles": ["0", "v2", "v4", "v6", "v10", "v11"], "rooms": {"girl": {"at": [296, 279], "src": [0, 151], "size": [37, 61]}, "boy": {"at": [296, 279], "src": [0, 212], "size": [37, 61]}}},
+    mirror: {"spot": 9, "styles": ["0", "v1", "v3", "v7", "v9", "v15"], "rooms": {"girl": {"at": [202, 327], "src": [0, 273], "size": [33, 50]}}},
+    bag: {"spot": 9, "styles": ["0", "v0", "v5", "v6", "v12", "v13"], "rooms": {"boy": {"at": [403, 271], "src": [0, 323], "size": [48, 59]}}},
+    sneakers: {"spot": 0, "styles": ["0", "v1", "v4", "v7", "v14"], "rooms": {"boy": {"at": [223, 532], "src": [0, 382], "size": [49, 51]}}},
+    basin: {"spot": 0, "styles": ["0", "v3", "v6", "v8", "v9"], "rooms": {"girl": {"at": [501, 416], "src": [0, 433], "size": [55, 52]}, "boy": {"at": [501, 416], "src": [0, 485], "size": [55, 52]}}},
+    trash: {"spot": 0, "styles": ["0", "v0", "v2", "v3", "v7", "v12"], "rooms": {"girl": {"at": [207, 511], "src": [0, 537], "size": [42, 58]}, "boy": {"at": [435, 402], "src": [0, 595], "size": [42, 58]}}},
+    slippers: {"spot": 0, "styles": ["0", "v0", "v6", "v16", "v20", "v33"], "rooms": {"girl": {"at": [439, 431], "src": [0, 653], "size": [34, 26]}}},
 };
 const OUTLINE = [255, 244, 200];
 
@@ -126,8 +135,8 @@ html.dm-nobar #dm-menu-btn { display: grid; }
 }
 
 /* ---- 房间里的「拍照模式」：左边竖排标签，点开一块调色板（换底色、换小物件）---- */
-#dm-room .dm-pal { --w: 252px; position: absolute; z-index: 5; left: 0; top: 96px; display: flex; align-items: flex-start; transform: translateX(calc(-1 * var(--w))); transition: transform .25s cubic-bezier(.3,.7,.3,1); }
-#dm-room .dm-pal.open { transform: none; }
+#dm-room .dm-pal { --w: 252px; position: absolute; z-index: 5; left: 0; top: 50%; display: flex; align-items: flex-start; transform: translate(calc(-1 * var(--w)), -50%); transition: transform .25s cubic-bezier(.3,.7,.3,1); }
+#dm-room .dm-pal.open { transform: translate(0, -50%); }
 #dm-room .dm-pal[hidden] { display: none; }
 #dm-room .dm-pal-panel { width: var(--w); box-sizing: border-box; max-height: calc(100dvh - 130px); overflow-y: auto; color: var(--dm-ink); font-family: var(--dm-font);
   background: var(--dm-paper); border: 2px solid var(--dm-line); border-left: 0; border-top: 18px solid var(--dm-glue-color); box-shadow: 6px 8px 0 rgb(0 0 0 / .3); padding: 8px 14px 12px; }
@@ -135,6 +144,8 @@ html.dm-nobar #dm-menu-btn { display: grid; }
 #dm-room .dm-pal-grid { display: grid; grid-template-columns: repeat(3, 68px); gap: 8px; margin-bottom: 8px; }
 #dm-room .dm-sw { position: relative; box-sizing: border-box; width: 68px; height: 68px; padding: 0; cursor: pointer; border: 2px solid var(--dm-line); background-color: var(--dm-paper-low); image-rendering: pixelated; box-shadow: 2px 2px 0 rgb(0 0 0 / .2); }
 #dm-room .dm-sw.thing { height: 96px; }
+#dm-room .dm-sw.thing { display: grid; place-items: center; overflow: hidden; }
+#dm-room .dm-sw-img { display: block; image-rendering: pixelated; pointer-events: none; }
 #dm-room .dm-sw.ground { background-image: conic-gradient(var(--a) 25%, var(--b) 0 50%, var(--a) 0 75%, var(--b) 0); background-size: 24px 24px; }
 #dm-room .dm-sw.ground::after { content: ""; position: absolute; inset: 14px; background: color-mix(in srgb, var(--a), #e6e4ff 62%); -webkit-mask: var(--ico-room) center / contain no-repeat; mask: var(--ico-room) center / contain no-repeat; image-rendering: pixelated; }
 #dm-room .dm-sw:hover { transform: translateY(-2px); }
@@ -142,14 +153,14 @@ html.dm-nobar #dm-menu-btn { display: grid; }
 #dm-room .dm-sw.sel { outline: 3px solid var(--dm-red); outline-offset: 1px; }
 #dm-room .dm-sw.sel::before { content: ""; position: absolute; right: -2px; top: -2px; width: 14px; height: 14px; background: var(--dm-red); z-index: 1; }
 #dm-room .dm-pal-name { margin-top: 2px; padding-top: 6px; border-top: 2px solid var(--dm-rule); font-size: 15px; line-height: 22px; min-height: 22px; }
-#dm-room .dm-pal-tabs { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+#dm-room .dm-pal-tabs { display: flex; flex-direction: column; gap: 6px; align-self: center; transform: translateY(12dvh); }
 #dm-room .dm-tab { width: 46px; height: 50px; padding: 0; display: grid; place-items: center; cursor: pointer; color: var(--dm-ink); background: var(--dm-paper-low); border: 2px solid var(--dm-line); border-left: 0; box-shadow: 3px 3px 0 rgb(0 0 0 / .25); }
 #dm-room .dm-tab::before { content: ""; width: 28px; height: 28px; background: currentColor; -webkit-mask: var(--i) center / 28px 28px no-repeat; mask: var(--i) center / 28px 28px no-repeat; }
 #dm-room .dm-tab[data-tab="ground"] { --i: var(--ico-tiles); }
 #dm-room .dm-tab[data-tab="things"] { --i: var(--ico-bear); }
 #dm-room .dm-tab:hover, #dm-room .dm-tab:focus-visible { outline: none; background: var(--dm-paper); }
 #dm-room .dm-tab.on { background: var(--dm-note); width: 52px; }
-@media screen and (max-width: 1000px) { #dm-room .dm-pal { top: 84px; } }
+
 @media (prefers-reduced-motion: reduce) { #dm-room .dm-pal, #dm-menu { transition: none; animation: none !important; } }
 `;
 
@@ -196,7 +207,8 @@ export default function dorm(api = {}) {
     };
     const assets = {};
     const asset = name => (assets[name] ||= loadImg(`${base}dorm-${name}.png`));
-    let map = null, lines = [], bboxes = [], roomURL = null, state = '', builtFor = null;
+    let map = null, lines = [], bboxes = [], roomURL = null, shown = null, state = '', builtFor = null;
+    const pixCache = new WeakMap(), pixelsOf = img => pixCache.get(img) || (pixCache.set(img, pixels(img)), pixCache.get(img));
     let spots = [];   // 下标 = 热区号：{ el, name, what, act, poly }
 
     function drawLines() {
@@ -255,17 +267,20 @@ export default function dorm(api = {}) {
             try { img = await asset(`things${n}`); } catch { /* 图集没载入：只剩文字名 */ }
             if (palTab !== 'things') return;
             for (const [k, t] of Object.entries(THINGS)) {
-                const r = t.rooms[which]; if (!r) continue;
-                const h = document.createElement('h5'); h.textContent = api.option?.(k)?.label || k;
+                const r = t.rooms[which]; if (!r || !api.option?.(k)) continue;
+                const h = document.createElement('h5'); h.textContent = api.option?.(k)?.label || k; h.dataset.k = k;
                 const g = grid();
-                const K = 2, byV = Object.fromEntries(choicesOf(k).map(c => [String(c.value), c]));
+                const [cw, ch] = r.size, K = cw * 2 <= 72 && ch * 2 <= 100 ? 2 : 1;   // 小东西放大 2 倍，大的 1 倍（只用整数倍）
+                const sw = Math.min(cw * K, 64), sh = Math.min(ch * K, 92);                 // 只露这一格（裁掉旁边的格子），居中
+                const byV = Object.fromEntries(choicesOf(k).map(c => [String(c.value), c]));
                 t.styles.forEach((v, col) => {
                     const b = swatch(k, byV[v] || { value: v, label: v }, 'thing');
-                    if (img) {   // 图集里的一格，放大 2 倍，居中
-                        b.style.backgroundImage = `url("${base}dorm-things${n}.png")`;
-                        b.style.backgroundSize = `${img.width * K}px ${img.height * K}px`;
-                        b.style.backgroundPosition = `${(64 - CELL[0] * K) / 2 - col * CELL[0] * K}px ${(92 - CELL[1] * K) / 2 - r.row * CELL[1] * K}px`;
-                        b.style.backgroundRepeat = 'no-repeat';
+                    if (img) {
+                        const s = document.createElement('span'); s.className = 'dm-sw-img';
+                        Object.assign(s.style, { width: `${sw}px`, height: `${sh}px`, backgroundImage: `url("${base}dorm-things${n}.png")`,
+                            backgroundSize: `${img.width * K}px ${img.height * K}px`, backgroundRepeat: 'no-repeat',
+                            backgroundPosition: `${-(r.src[0] + col * cw) * K - Math.floor((cw * K - sw) / 2)}px ${-r.src[1] * K - Math.floor((ch * K - sh) / 2)}px` });
+                        b.append(s);
                     }
                     g.append(b);
                 });
@@ -291,7 +306,7 @@ export default function dorm(api = {}) {
         else { pal.classList.add('open'); buildPal(); }
         syncPal();
     }));
-    pal.hidden = !(api.option?.('ground') || api.option?.('bear') || api.option?.('thermos'));   // 主题设置里没有这些选项就整块藏起来
+    pal.hidden = !(api.option?.('ground') || Object.keys(THINGS).some(k => api.option?.(k)));   // 主题设置里没有这些选项就整块藏起来
 
     async function refresh() {
         const which = api.get?.('room') === 'boy' ? 'boy' : 'girl';
@@ -308,27 +323,33 @@ export default function dorm(api = {}) {
             const sp = pixels(spotsImg).data, m = new Uint8Array(W * H);
             for (let i = 0; i < W * H; i++) m[i] = sp[i * 4];
             const active = Object.entries(THINGS).filter(([k, t]) => pick[k] !== '0' && t.rooms[which] !== undefined && t.styles.includes(pick[k]));
+            let url;
             if (active.length) {
                 const roomImg = await asset(`room-${which}${n}`);
                 const c = document.createElement('canvas'); c.width = W; c.height = H;
-                const g = c.getContext('2d'); g.drawImage(roomImg, 0, 0);
-                const tp = pixels(thingsSpotsImg);
+                const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(roomImg, 0, 0);
+                const rp = g.getImageData(0, 0, W, H), tc = pixelsOf(thingsImg), tp = pixelsOf(thingsSpotsImg).data, d = tc.data, tw = tc.width;
                 for (const [k, t] of active) {
-                    const { at: [ox, oy], row } = t.rooms[which], col = t.styles.indexOf(pick[k]), [w, h] = t.size;
-                    g.clearRect(ox, oy, w, h);
-                    g.drawImage(thingsImg, col * CELL[0], row * CELL[1], w, h, ox, oy, w, h);   // 整块换成这个样子
-                    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)                      // 热区也整块换
-                        m[(oy + y) * W + ox + x] = tp.data[((row * CELL[1] + y) * tp.width + col * CELL[0] + x) * 4];
+                    const { at: [ox, oy], src: [sx, sy], size: [w, h] } = t.rooms[which], col = t.styles.indexOf(pick[k]);
+                    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+                        const a = ((sy + y) * tw + sx + x) * 4, b = a + col * w * 4, i = (oy + y) * W + ox + x;   // a = 默认那格，b = 选中的样子
+                        if (d[a] !== d[b] || d[a + 1] !== d[b + 1] || d[a + 2] !== d[b + 2] || d[a + 3] !== d[b + 3]) rp.data.set(d.subarray(b, b + 4), i * 4);
+                        if (tp[a] !== tp[b]) m[i] = tp[b];   // 热区也只换变了的地方
+                    }
                 }
+                g.putImageData(rp, 0, 0);
                 const blob = await new Promise(ok => c.toBlob(ok));
                 if (state !== key) return;
-                if (roomURL) URL.revokeObjectURL(roomURL);
-                roomURL = URL.createObjectURL(blob);
-                root.style.setProperty('--dm-room', `url("${roomURL}")`);
-            } else {
-                if (roomURL) { URL.revokeObjectURL(roomURL); roomURL = null; }
-                root.style.setProperty('--dm-room', `url("${base}dorm-room-${which}${n}.png")`);   // 扩展里的原图（主题 CSS 里嵌的是压成 256 色的小图）
-            }
+                url = URL.createObjectURL(blob);
+            } else url = `${base}dorm-room-${which}${n}.png`;   // 扩展里的原图（主题 CSS 里嵌的是压成 256 色的小图）
+            // 不闪：新图先载入、解码完再换到 --dm-room 上（直接换成还没载入的图，房间会空一帧）；旧的 blob 过几秒再收回
+            const im = new Image(); im.src = url;
+            try { await im.decode(); } catch { /* 解码失败也照样换上，至少不卡住 */ }
+            if (state !== key) { if (url.startsWith('blob:')) URL.revokeObjectURL(url); return; }
+            const old = roomURL;
+            roomURL = url.startsWith('blob:') ? url : null; shown = im;   // 留着解码好的图，别被回收
+            root.style.setProperty('--dm-room', `url("${url}")`);
+            if (old) setTimeout(() => URL.revokeObjectURL(old), 3000);
             map = m; drawLines(); room.classList.add('dm-map');
         } catch (e) {
             console.warn('[402 宿舍] 热区图没载入，改用多边形', e);

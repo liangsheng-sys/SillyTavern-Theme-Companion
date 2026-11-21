@@ -2196,7 +2196,7 @@
     },
     {
         "family": "402 宿舍",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2358,6 +2358,227 @@
                     {
                         "value": "v15",
                         "label": "银顶，一束花"
+                    }
+                ]
+            },
+            {
+                "key": "lamp",
+                "type": "select",
+                "label": "桌上的台灯",
+                "default": "0",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "白色，圆底座"
+                    },
+                    {
+                        "value": "v2",
+                        "label": "两节折臂"
+                    },
+                    {
+                        "value": "v4",
+                        "label": "奶油色"
+                    },
+                    {
+                        "value": "v6",
+                        "label": "奶油色，方底座"
+                    },
+                    {
+                        "value": "v10",
+                        "label": "白色，方底座"
+                    },
+                    {
+                        "value": "v11",
+                        "label": "灯头往上翘"
+                    }
+                ]
+            },
+            {
+                "key": "mirror",
+                "type": "select",
+                "label": "桌上的镜子",
+                "default": "0",
+                "note": "只有女生宿舍有",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "粉色圆镜"
+                    },
+                    {
+                        "value": "v1",
+                        "label": "鹅黄底座"
+                    },
+                    {
+                        "value": "v3",
+                        "label": "淡紫色，兔耳朵"
+                    },
+                    {
+                        "value": "v7",
+                        "label": "玫红爱心底座"
+                    },
+                    {
+                        "value": "v9",
+                        "label": "杏色，镜框能转"
+                    },
+                    {
+                        "value": "v15",
+                        "label": "底座画着小爱心"
+                    }
+                ]
+            },
+            {
+                "key": "bag",
+                "type": "select",
+                "label": "梯子上的书包",
+                "default": "0",
+                "note": "只有男生宿舍有",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "藏青，挂红色小挂件"
+                    },
+                    {
+                        "value": "v0",
+                        "label": "军绿，别着徽章"
+                    },
+                    {
+                        "value": "v5",
+                        "label": "蓝色，插着一支笔"
+                    },
+                    {
+                        "value": "v6",
+                        "label": "黑色，挂红心"
+                    },
+                    {
+                        "value": "v12",
+                        "label": "灰绿，贴满贴纸"
+                    },
+                    {
+                        "value": "v13",
+                        "label": "黑色，挂骷髅头牌"
+                    }
+                ]
+            },
+            {
+                "key": "sneakers",
+                "type": "select",
+                "label": "床边的球鞋",
+                "default": "0",
+                "note": "只有男生宿舍有",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "白球鞋，摆得整齐"
+                    },
+                    {
+                        "value": "v1",
+                        "label": "一前一后"
+                    },
+                    {
+                        "value": "v4",
+                        "label": "灰扑扑的"
+                    },
+                    {
+                        "value": "v7",
+                        "label": "鞋带散开"
+                    },
+                    {
+                        "value": "v14",
+                        "label": "鞋底沾了泥"
+                    }
+                ]
+            },
+            {
+                "key": "basin",
+                "type": "select",
+                "label": "窗下的脸盆",
+                "default": "0",
+                "note": "女生宿舍是粉色的，男生宿舍是蓝色的",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "毛巾搭在左边"
+                    },
+                    {
+                        "value": "v3",
+                        "label": "毛巾搭在右边"
+                    },
+                    {
+                        "value": "v6",
+                        "label": "盆里有刻度"
+                    },
+                    {
+                        "value": "v8",
+                        "label": "没搭毛巾"
+                    },
+                    {
+                        "value": "v9",
+                        "label": "两边有把手"
+                    }
+                ]
+            },
+            {
+                "key": "trash",
+                "type": "select",
+                "label": "垃圾桶",
+                "default": "0",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "脚踏式，顶着纸团"
+                    },
+                    {
+                        "value": "v0",
+                        "label": "竖条纹"
+                    },
+                    {
+                        "value": "v2",
+                        "label": "摇盖式"
+                    },
+                    {
+                        "value": "v3",
+                        "label": "带两个提手"
+                    },
+                    {
+                        "value": "v7",
+                        "label": "浅灰绿"
+                    },
+                    {
+                        "value": "v12",
+                        "label": "深青色"
+                    }
+                ]
+            },
+            {
+                "key": "slippers",
+                "type": "select",
+                "label": "地上的拖鞋",
+                "default": "0",
+                "note": "只有女生宿舍有",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "玫红色"
+                    },
+                    {
+                        "value": "v0",
+                        "label": "粉色，印小黄花"
+                    },
+                    {
+                        "value": "v6",
+                        "label": "深红，白条纹"
+                    },
+                    {
+                        "value": "v16",
+                        "label": "粉色，印小红心"
+                    },
+                    {
+                        "value": "v20",
+                        "label": "粉色，印黄点点"
+                    },
+                    {
+                        "value": "v33",
+                        "label": "杏色"
                     }
                 ]
             },
