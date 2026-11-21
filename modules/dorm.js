@@ -8,28 +8,29 @@
 // 房间图用主题 CSS 里的 --dm-room（主题设置里换男生 / 女生宿舍时跟着变），坐标都按原图 730×712 的 1 倍像素写（tools/dorm/whitebox/room.py 程序画的白板房间 + 物件）。
 // 热区：dorm-spots-<房>.png 每个像素记着它属于第几样东西（tools/dorm/spots.py 生成，顺序和 SPOTS 一样），
 //    鼠标指哪个像素就是哪样东西，描边也照它画；多边形只留给键盘（Tab 选中）和热区图没载入时用。
-// 没装扩展就没有这些（只有聊天时压暗的房间背景）。
+// 5. 昼夜：主题伴侣的昼夜开关切到夜 = 熄灯，房间图换成 dorm-room-<房>-night.png（台灯、小彩灯亮着），图集换 dorm-things-night.png。
+// 没装扩展就没有这些（只有聊天时压暗的房间背景，白天那张）。
 
 const W = 730, H = 712;
 // [名字, 打开什么, 点了做什么（顶栏按钮的选择器，或 'back'）, 多边形]（外框，room.py 打印出来的）
 const rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 const SPOTS = [
-    ['床帘', '回到聊天', 'back', rect(56, 63, 411, 344)],
+    ['床帘', '回到聊天', 'back', rect(56, 63, 411, 346)],
     ['衣柜', '角色列表', '#rightNavDrawerIcon', rect(551, 247, 698, 561)],
     ['柜顶的纸箱', '扩展', '#extensions-settings-button .drawer-icon', rect(569, 198, 688, 287)],
     ['窗户', '背景', '#backgrounds-button .drawer-icon', rect(440, 103, 618, 354)],
     ['暖水瓶', '高级格式', '#advanced-formatting-button .drawer-icon', rect(263, 535, 287, 577)],
-    ['照片和彩灯', '世界书', '#WIDrawerIcon', rect(210, 262, 347, 351)],
-    ['笔记本电脑', 'API 连接', '#sys-settings-button .drawer-icon', rect(189, 315, 256, 370)],
-    ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(236, 301, 262, 318)],
-    ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(141, 331, 166, 374)],
+    ['照片', '世界书', '#WIDrawerIcon', rect(330, 272, 356, 330)],
+    ['笔记本电脑', 'API 连接', '#sys-settings-button .drawer-icon', rect(195, 323, 251, 370)],
+    ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(280, 289, 306, 340)],
+    ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(178, 335, 205, 377)],
     ['插线板', '预设', '#leftNavDrawerIcon', rect(213, 429, 258, 454)],
     ['小熊', '换一只', 'bear', rect(314, 168, 342, 207)],
 ];
-// 男生宿舍：桌上没有镜子，人设换成挂在梯子上的书包；床沿上夹的是课程表
+// 男生宿舍：桌上没有镜子，人设换成挂在梯子上的书包；高柜门上贴的是课程表
 const BOY = {
     镜子: ['书包', '用户人设', '#persona-management-button .drawer-icon', rect(380, 278, 424, 335)],
-    照片和彩灯: ['课程表', '世界书', '#WIDrawerIcon', rect(242, 276, 312, 326)],
+    照片: ['课程表', '世界书', '#WIDrawerIcon', rect(324, 260, 357, 326)],
 };
 
 // 能换样子的东西：图集 dorm-things.png 一行 = 一样东西在一间房里，一格 35×45 = 一个样子（含背景，整块盖上去）；
@@ -161,18 +162,19 @@ export default function dorm(api = {}) {
     async function refresh() {
         const which = api.get?.('room') === 'boy' ? 'boy' : 'girl';
         const pick = Object.fromEntries(Object.keys(THINGS).map(k => [k, String(api.get?.(k) ?? '0')]));
-        const key = which + JSON.stringify(pick);
+        const n = root.classList.contains('dn-night') ? '-night' : '';   // 伴侣的昼夜开关：夜 = 熄灯，换夜里那套图
+        const key = which + n + JSON.stringify(pick);
         if (key === state) return;
         state = key;
         buildSpots(which);
         try {
-            const [spotsImg, thingsImg, thingsSpotsImg] = await Promise.all([asset(`spots-${which}`), asset('things'), asset('things-spots')]);
+            const [spotsImg, thingsImg, thingsSpotsImg] = await Promise.all([asset(`spots-${which}`), asset(`things${n}`), asset('things-spots')]);
             if (state !== key) return;
             const sp = pixels(spotsImg).data, m = new Uint8Array(W * H);
             for (let i = 0; i < W * H; i++) m[i] = sp[i * 4];
             const active = Object.entries(THINGS).filter(([k, t]) => pick[k] !== '0' && t.rooms[which] !== undefined && t.styles.includes(pick[k]));
             if (active.length) {
-                const roomImg = await asset(`room-${which}`);
+                const roomImg = await asset(`room-${which}${n}`);
                 const c = document.createElement('canvas'); c.width = W; c.height = H;
                 const g = c.getContext('2d'); g.drawImage(roomImg, 0, 0);
                 const tp = pixels(thingsSpotsImg);
@@ -189,8 +191,8 @@ export default function dorm(api = {}) {
                 roomURL = URL.createObjectURL(blob);
                 root.style.setProperty('--dm-room', `url("${roomURL}")`);
             } else {
-                root.style.removeProperty('--dm-room');
                 if (roomURL) { URL.revokeObjectURL(roomURL); roomURL = null; }
+                root.style.setProperty('--dm-room', `url("${base}dorm-room-${which}${n}.png")`);   // 扩展里的原图（主题 CSS 里嵌的是压成 256 色的小图）
             }
             map = m; drawLines(); room.classList.add('dm-map');
         } catch (e) {
@@ -338,6 +340,8 @@ export default function dorm(api = {}) {
     // 主题设置改了（换宿舍、换小熊……）：伴侣不会重新载入脚本，每秒看一眼
     refresh();
     const poll = setInterval(refresh, 1000);
+    const dn = new MutationObserver(() => refresh());   // 切昼夜（html 上的 dn-day / dn-night）马上换房间图
+    dn.observe(root, { attributes: true, attributeFilter: ['class'] });
 
     const onKey = e => { if (e.key === 'Escape' && root.classList.contains('dm-room') && hasChat() && !document.querySelector('.openDrawer')) leave(); };
     document.addEventListener('keydown', onKey);
@@ -346,6 +350,7 @@ export default function dorm(api = {}) {
         if (es && ev?.CHAT_CHANGED) es.removeListener?.(ev.CHAT_CHANGED, onChat);
         document.removeEventListener('keydown', onKey);
         clearInterval(poll);
+        dn.disconnect();
         root.style.removeProperty('--dm-room');
         if (roomURL) URL.revokeObjectURL(roomURL);
         root.classList.remove('dm-room');
