@@ -2196,7 +2196,7 @@
     },
     {
         "family": "402 宿舍",
-        "version": "0.6.0",
+        "version": "0.7.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2248,7 +2248,7 @@
                 "type": "select",
                 "label": "房间后面的底色",
                 "default": "night",
-                "note": "房间背后那层深色方格的颜色。进房间后，左边的竖排标签里也能换",
+                "note": "房间背后那层深色方格的颜色。选「透明」就不画方格，露出你在酒馆「背景」里选的图。进房间后，左边的竖排标签里也能换",
                 "choices": [
                     {
                         "value": "night",
@@ -2293,6 +2293,10 @@
                         "value": "ink",
                         "label": "靛黑",
                         "css": "html:root:root { --dm-void: #151a2e; --dm-void2: #1c2238; }"
+                    },
+                    {
+                        "value": "clear",
+                        "label": "透明（露出酒馆的聊天背景）"
                     }
                 ]
             },
@@ -2485,6 +2489,35 @@
                     {
                         "value": "v14",
                         "label": "鞋底沾了泥"
+                    }
+                ]
+            },
+            {
+                "key": "ball",
+                "type": "select",
+                "label": "地上的篮球",
+                "default": "0",
+                "note": "只有男生宿舍有",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "竖缝，崭新"
+                    },
+                    {
+                        "value": "v2",
+                        "label": "弧缝，有点旧"
+                    },
+                    {
+                        "value": "v9",
+                        "label": "竖缝，擦出高光"
+                    },
+                    {
+                        "value": "v10",
+                        "label": "斜放，亮面"
+                    },
+                    {
+                        "value": "v17",
+                        "label": "斜缝，打了很久"
                     }
                 ]
             },

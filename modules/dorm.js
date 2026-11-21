@@ -48,6 +48,7 @@ const THINGS = {
     basin: {"spot": 0, "styles": ["0", "v3", "v6", "v8", "v9"], "rooms": {"girl": {"at": [501, 416], "src": [0, 433], "size": [55, 52]}, "boy": {"at": [501, 416], "src": [0, 485], "size": [55, 52]}}},
     trash: {"spot": 0, "styles": ["0", "v0", "v2", "v3", "v7", "v12"], "rooms": {"girl": {"at": [207, 511], "src": [0, 537], "size": [42, 58]}, "boy": {"at": [435, 402], "src": [0, 595], "size": [42, 58]}}},
     slippers: {"spot": 0, "styles": ["0", "v0", "v6", "v16", "v20", "v33"], "rooms": {"girl": {"at": [439, 431], "src": [0, 653], "size": [34, 26]}}},
+    ball: {"spot": 0, "styles": ["0", "v2", "v9", "v10", "v17"], "rooms": {"boy": {"at": [383, 504], "src": [0, 679], "size": [48, 48]}}},
 };
 const OUTLINE = [255, 244, 200];
 
@@ -57,6 +58,7 @@ html.dm-room #sheld { transform: translateY(calc(100% + 60px)); }
 html.dm-room body::before, html.dm-room body::after { display: none; }
 #dm-room { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 2900; background: var(--dm-tiles), var(--dm-void); display: none; overflow: hidden; }
 html.dm-room #dm-room { display: block; animation: dm-in .35s ease both; }
+html.dm-clear #dm-room { background: none; }
 @keyframes dm-in { from { opacity: 0; } to { opacity: 1; } }
 #dm-room .dm-scroll { position: absolute; inset: 0; overflow: auto hidden; scrollbar-width: none; display: grid; place-items: center; }
 #dm-room .dm-scroll::-webkit-scrollbar { display: none; }
@@ -148,6 +150,8 @@ html.dm-nobar #dm-menu-btn { display: grid; }
 #dm-room .dm-sw-img { display: block; image-rendering: pixelated; pointer-events: none; }
 #dm-room .dm-sw.ground { background-image: conic-gradient(var(--a) 25%, var(--b) 0 50%, var(--a) 0 75%, var(--b) 0); background-size: 24px 24px; }
 #dm-room .dm-sw.ground::after { content: ""; position: absolute; inset: 14px; background: color-mix(in srgb, var(--a), #e6e4ff 62%); -webkit-mask: var(--ico-room) center / contain no-repeat; mask: var(--ico-room) center / contain no-repeat; image-rendering: pixelated; }
+#dm-room .dm-sw.ground.clear { background-image: conic-gradient(color-mix(in srgb, var(--dm-paper), var(--dm-ink) 16%) 25%, var(--dm-paper) 0 50%, color-mix(in srgb, var(--dm-paper), var(--dm-ink) 16%) 0 75%, var(--dm-paper) 0); background-size: 16px 16px; }
+#dm-room .dm-sw.ground.clear::after { background: var(--dm-ink2); }
 #dm-room .dm-sw:hover { transform: translateY(-2px); }
 #dm-room .dm-sw:focus-visible { outline: 3px solid var(--dm-ink); outline-offset: 1px; }
 #dm-room .dm-sw.sel { outline: 3px solid var(--dm-red); outline-offset: 1px; }
@@ -176,7 +180,7 @@ export default function dorm(api = {}) {
     const room = document.createElement('div');
     room.id = 'dm-room';
     const svgNS = 'http://www.w3.org/2000/svg';
-    room.innerHTML = `<div class="dm-scroll"><div class="dm-box"><svg viewBox="0 0 ${W} ${H}" aria-label="宿舍"></svg><div class="dm-tag" hidden></div><div class="dm-cap"></div></div></div>
+    room.innerHTML = `<div class="dm-scroll"><div class="dm-box"><svg viewBox="0 0 ${W} ${H}" aria-label="宿舍"></svg><div class="dm-tag" hidden><span></span><small></small></div><div class="dm-cap"></div></div></div>
 <div class="dm-hint">← 左右滑动看看 · 点房间里的东西 →</div>
 <button class="dm-peek" type="button" hidden><b></b><small></small><span></span></button>
 <div class="dm-pal"><div class="dm-pal-panel"><div class="dm-pal-body"></div><div class="dm-pal-name"></div></div><div class="dm-pal-tabs"><button class="dm-tab" type="button" data-tab="ground" title="房间底色" aria-label="房间底色"></button><button class="dm-tab" type="button" data-tab="things" title="换小物件" aria-label="换小物件"></button></div></div>`;
@@ -186,7 +190,7 @@ export default function dorm(api = {}) {
 
     // 标签：放在东西的正上方（bb 是 1 倍像素的 [左, 上, 右]）
     const showTag = (bb, name, what) => {
-        tag.innerHTML = `${name}<small>${what}</small>`;
+        tag.firstChild.textContent = name; tag.lastChild.textContent = what;   // 改文字不增删节点（长聊天里每次增删节点都要重算样式）
         tag.style.left = `${((bb[0] + bb[2]) / 2 / W) * 100}%`;
         tag.style.top = `${(bb[1] / H) * 100}%`;
         tag.hidden = false;
@@ -207,6 +211,7 @@ export default function dorm(api = {}) {
     };
     const assets = {};
     const asset = name => (assets[name] ||= loadImg(`${base}dorm-${name}.png`));
+    const roomVarEls = () => [document.getElementById('bg1'), room];
     let map = null, lines = [], bboxes = [], roomURL = null, shown = null, state = '', builtFor = null;
     const pixCache = new WeakMap(), pixelsOf = img => pixCache.get(img) || (pixCache.set(img, pixels(img)), pixCache.get(img));
     let spots = [];   // 下标 = 热区号：{ el, name, what, act, poly }
@@ -244,7 +249,7 @@ export default function dorm(api = {}) {
     function swatch(key, c, cls) {
         const b = document.createElement('button');
         b.type = 'button'; b.className = `dm-sw ${cls}`; b.title = c.label; b.setAttribute('aria-label', c.label);
-        b.addEventListener('click', () => { palLast = key; api.set?.(key, c.value); refresh(); syncPal(); });
+        b.addEventListener('click', () => { palLast = key; api.set?.(key, c.value); applyGround(); refresh(); syncPal(); });
         palSel.push({ b, key, value: String(c.value), label: c.label });
         return b;
     }
@@ -258,6 +263,7 @@ export default function dorm(api = {}) {
                 // 没写颜色的那个是默认：跟着「聊天背景色」走
                 b.style.setProperty('--a', m ? m[1].trim() : 'var(--SmartThemeChatTintColor)');
                 b.style.setProperty('--b', m ? m[2].trim() : 'color-mix(in srgb, var(--SmartThemeChatTintColor), white 5%)');
+                if (c.value === 'clear') b.classList.add('clear');   // 透明：棋盘格（没有底色可画）
                 g.append(b);
             }
             palBody.append(g);
@@ -320,7 +326,7 @@ export default function dorm(api = {}) {
         try {
             const [spotsImg, thingsImg, thingsSpotsImg] = await Promise.all([asset(`spots-${which}`), asset(`things${n}`), asset('things-spots')]);
             if (state !== key) return;
-            const sp = pixels(spotsImg).data, m = new Uint8Array(W * H);
+            const sp = pixelsOf(spotsImg).data, m = new Uint8Array(W * H);
             for (let i = 0; i < W * H; i++) m[i] = sp[i * 4];
             const active = Object.entries(THINGS).filter(([k, t]) => pick[k] !== '0' && t.rooms[which] !== undefined && t.styles.includes(pick[k]));
             let url;
@@ -348,7 +354,8 @@ export default function dorm(api = {}) {
             if (state !== key) { if (url.startsWith('blob:')) URL.revokeObjectURL(url); return; }
             const old = roomURL;
             roomURL = url.startsWith('blob:') ? url : null; shown = im;   // 留着解码好的图，别被回收
-            root.style.setProperty('--dm-room', `url("${url}")`);
+            // 写在用到它的两个元素上（聊天背景 #bg1 和房间 #dm-room），不写在 html 上：改 html 上的自定义属性会让整页（长聊天几千个元素）样式重算一遍
+            for (const el of roomVarEls()) el?.style.setProperty('--dm-room', `url("${url}")`);
             if (old) setTimeout(() => URL.revokeObjectURL(old), 3000);
             map = m; drawLines(); room.classList.add('dm-map');
         } catch (e) {
@@ -492,7 +499,7 @@ export default function dorm(api = {}) {
     const onDown = e => { if (menuOpen() && !menu.contains(e.target) && !mbtn.contains(e.target)) closeMenu(); };
     document.addEventListener('pointerdown', onDown, true);
     const holder0 = document.getElementById('top-settings-holder');
-    const mo = new MutationObserver(syncMenuBtn);   // 面板开合：按钮的样子（本子 / 叉）跟着变
+    const mo = new MutationObserver(() => { if (root.classList.contains('dm-nobar')) syncMenuBtn(); });   // 面板开合：按钮的样子（本子 / 叉）跟着变（只有收起顶栏时才看得见，没收起就不干活：顶栏里的面板内容多，class 变动频繁）
     if (holder0) mo.observe(holder0, { subtree: true, attributes: true, attributeFilter: ['class'] });
 
     const hasChat = () => {
@@ -543,14 +550,18 @@ export default function dorm(api = {}) {
 
     // 主题设置改了（换宿舍、换小熊……）：伴侣不会重新载入脚本，每秒看一眼
     refresh();
+    const applyGround = () => root.classList.toggle('dm-clear', api.get?.('ground') === 'clear');   // 底色「透明」：不画方格，露出酒馆的聊天背景（CSS 见 base.css）
     const applyBar = () => {
+        applyGround();
         const on = api.get?.('hidebar') === 'on';
         root.classList.toggle('dm-nobar', on);
+        if (on) syncMenuBtn();
         if (!on && menuOpen()) closeMenu();
     };
     applyBar();
-    const poll = setInterval(() => { refresh(); applyBar(); syncPal(); }, 1000);
-    const dn = new MutationObserver(() => refresh());   // 切昼夜（html 上的 dn-day / dn-night）马上换房间图
+    const poll = setInterval(() => { if (!document.hidden) { refresh(); applyBar(); syncPal(); } }, 1000);   // 页面在后台（切走标签页）就不看
+    let wasNight = root.classList.contains('dn-night');
+    const dn = new MutationObserver(() => { const n = root.classList.contains('dn-night'); if (n !== wasNight) { wasNight = n; refresh(); } });   // 切昼夜（html 上的 dn-day / dn-night）马上换房间图；html 上别的 class（dm-room 等）变了不用管
     dn.observe(root, { attributes: true, attributeFilter: ['class'] });
 
     const onKey = e => {
@@ -567,12 +578,12 @@ export default function dorm(api = {}) {
         document.removeEventListener('keydown', onKey);
         document.removeEventListener('pointerdown', onDown, true);
         mo.disconnect();
-        root.classList.remove('dm-nobar');
+        root.classList.remove('dm-nobar', 'dm-clear');
         mbtn.remove();
         menu.remove();
         clearInterval(poll);
         dn.disconnect();
-        root.style.removeProperty('--dm-room');
+        for (const el of roomVarEls()) el?.style.removeProperty('--dm-room');
         if (roomURL) URL.revokeObjectURL(roomURL);
         root.classList.remove('dm-room');
         room.remove();
