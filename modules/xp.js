@@ -3,13 +3,53 @@
  * 样子全在主题 CSS 里（themes/xp/mine.css 等），这里只管时间和游戏逻辑
  *
  * 1. 托盘时钟：每分钟把当前时间（「15:45」）写进 --xp-clock，并给 html 加 .xp-has-clock
+ * 0. 状态标记（代替 CSS 里的 :has()，那种写法让手机整页反复重算样式、很卡）：html 加 .xp-js；
+ *    最新那条角色消息加 .xp-lastchar；有角色消息时 html 加 .xp-has-char；没连上 API 时 html 加 .xp-nc；
+ *    顶栏里别的扩展按钮个数写进 --xp-ext-n
  * 2. 扫雷：电脑桌面上多一个「扫雷」图标；开始菜单「所有程序(P)」里也能打开（手机从这里进）
  *    左键翻开，右键插旗（手机长按），点已翻开的数字 = 周围旗子数对上时翻开一圈；笑脸 = 重开
  *    逻辑参考 Minesweeper-XP（MIT，Akshay Kalose），画全是重画的
  */
 export default function xp() {
-    const off = [clock(), minesweeper()];
+    const off = [marks(), clock(), minesweeper()];
     return () => off.forEach(f => f?.());
+}
+
+const BUILTIN = ['user-settings-button', 'WI-SP-button', 'sys-settings-button', 'extensions-settings-button', 'persona-management-button', 'backgrounds-button', 'ai-config-button', 'advanced-formatting-button', 'rightNavHolder'];
+
+function marks() {
+    const root = document.documentElement;
+    const chat = document.getElementById('chat');
+    const holder = document.getElementById('top-settings-holder');
+    const form = document.getElementById('send_form');
+    let last = null, queued = false;
+    const update = () => {
+        queued = false;
+        const all = chat ? chat.querySelectorAll('.mes[is_user="false"][is_system="false"]') : [];
+        const cur = all[all.length - 1] || null;
+        if (cur !== last) { last?.classList.remove('xp-lastchar'); cur?.classList.add('xp-lastchar'); last = cur; }
+        root.classList.toggle('xp-has-char', !!cur);
+        root.classList.toggle('xp-nc', !!form?.classList.contains('no-connection'));
+        const n = holder ? [...holder.children].filter(e => e.classList.contains('drawer') && !BUILTIN.includes(e.id)).length : 0;
+        root.style.setProperty('--xp-ext-n', String(Math.min(n, 6)));
+    };
+    const later = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
+    const obs = new MutationObserver(later), obsAttr = new MutationObserver(later);   // 同一个观察者对同一节点再 observe 会覆盖前一次的选项，所以分两个
+    // 只看聊天的直接子元素（加删楼层）和 is_system（隐藏楼层），流式加字不会触发
+    if (chat) {
+        obs.observe(chat, { childList: true });
+        obsAttr.observe(chat, { subtree: true, attributeFilter: ['is_system', 'is_user'] });
+    }
+    if (holder) obs.observe(holder, { childList: true });
+    if (form) obs.observe(form, { attributeFilter: ['class'] });
+    root.classList.add('xp-js');
+    update();
+    return () => {
+        obs.disconnect(); obsAttr.disconnect();
+        last?.classList.remove('xp-lastchar');
+        root.classList.remove('xp-js', 'xp-has-char', 'xp-nc');
+        root.style.removeProperty('--xp-ext-n');
+    };
 }
 
 function clock() {
