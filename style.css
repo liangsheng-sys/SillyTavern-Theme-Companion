@@ -145,9 +145,17 @@
     border-radius: 8px;
 }
 
-/* 有整张海报时：铺满弹窗宽度（弹窗是 wide），长海报在弹窗里往下滚着看 */
+/* 有整张海报时：铺满弹窗宽度（弹窗是 wide）。长海报只让图片这一块往下滚，名字和链接始终露在下面 */
 .dn-thumb-big img[src*='-big.webp'] {
     max-width: 100%;
+    display: block;
+}
+
+.dn-thumb-big .dn-thumb-scroll {
+    max-height: 62dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 8px;
 }
 
 /* 发布帖链接：小字、淡一点，不抢风头 */
@@ -163,7 +171,7 @@
     text-underline-offset: 2px;
 }
 
-.dn-thumb-big > div {
+.dn-thumb-big > .dn-thumb-info {
     display: flex;
     flex-direction: column;
     gap: 2px;

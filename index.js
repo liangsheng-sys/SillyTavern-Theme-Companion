@@ -458,7 +458,7 @@ function openThemeList() {
 function showThumb(fam) {
     const { callGenericPopup, POPUP_TYPE } = ctx();
     const src = new URL(fam.preview || fam.thumb, HERE).href;
-    const el = $(`<div class="dn-thumb-big"><img src="${src}" alt=""><div><b></b><small class="dn-thumb-blurb"></small></div></div>`);
+    const el = $(`<div class="dn-thumb-big"><div class="dn-thumb-scroll"><img src="${src}" alt=""></div><div class="dn-thumb-info"><b></b><small class="dn-thumb-blurb"></small></div></div>`);
     el.find('b').text(fam.family);
     el.find('.dn-thumb-blurb').text(fam.blurb || '');
     if (fam.links?.length) {
@@ -469,7 +469,7 @@ function showThumb(fam) {
             if (i) foot.append(document.createTextNode(' · '));
             foot.append($('<a target="_blank" rel="noopener"></a>').attr('href', url).text(label));
         });
-        el.find('> div').append(foot);
+        el.find('.dn-thumb-info').append(foot);
     }
     callGenericPopup(el, POPUP_TYPE.TEXT, '', { wide: !!fam.preview, okButton: '关闭' });
 }
