@@ -2196,7 +2196,7 @@
     },
     {
         "family": "402 宿舍",
-        "version": "0.8.0",
+        "version": "1.0.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2750,8 +2750,8 @@
                 "label": "402 宿舍"
             }
         ],
-        "draft": true,
         "blurb": "Unpacking 风的像素宿舍：房间里的东西就是菜单，聊天写在盖上来的学生用笺上",
+        "thumb": "assets/thumbs/dorm.webp",
         "module": "modules/dorm.js"
     }
 ]
