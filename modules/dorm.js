@@ -10,9 +10,12 @@
 // 热区：dorm-spots-<房>.png 每个像素记着它属于第几样东西（tools/dorm/spots.py 生成，顺序和 SPOTS 一样），
 //    鼠标指哪个像素就是哪样东西，描边也照它画；多边形只留给键盘（Tab 选中）和热区图没载入时用。
 // 5. 昼夜：主题伴侣的昼夜开关切到夜 = 熄灯，房间图换成 dorm-room-<房>-night.png（台灯、小彩灯亮着），图集换 dorm-things-night.png。
+// 6. 房间画风（主题设置「房间画风」）：程序画（默认，上面说的这些）/ 草图（最早 PixelLab 一口气画的整间房，448×336，见 SKETCH）。
+//    草图版用自己的房间图、热区图、外框表和小熊 / 暖水瓶图集；昼夜不换图（草图只有开灯的夜里这一张）。
 // 没装扩展就没有这些（只有聊天时压暗的房间背景，白天那张）。
 
-const W = 730, H = 712;
+const W0 = 730, H0 = 712;
+let W = W0, H = H0;   // 当前画风的房间图大小（草图版换成 SKETCH.W × SKETCH.H）
 // [名字, 打开什么, 点了做什么（顶栏按钮的选择器，或 'back'）, 多边形]（外框，room.py 打印出来的）
 const rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
 const SPOTS = [
@@ -49,8 +52,39 @@ const THINGS = {
     trash: {"spot": 0, "styles": ["0", "v0", "v2", "v3", "v7", "v12"], "rooms": {"girl": {"at": [207, 511], "src": [0, 537], "size": [42, 58]}, "boy": {"at": [435, 402], "src": [0, 595], "size": [42, 58]}}},
     slippers: {"spot": 0, "styles": ["0", "v0", "v6", "v16", "v20", "v33"], "rooms": {"girl": {"at": [439, 431], "src": [0, 653], "size": [34, 26]}}},
     ball: {"spot": 0, "styles": ["0", "v2", "v9", "v10", "v17"], "rooms": {"boy": {"at": [383, 504], "src": [0, 679], "size": [48, 48]}}},
+    chair: {"spot": 0, "styles": ["0", "v12", "v8", "v5", "v13", "v14"], "rooms": {"girl": {"at": [266, 357], "src": [0, 727], "size": [107, 159]}, "boy": {"at": [266, 354], "src": [0, 886], "size": [116, 162]}}},
 };
 const OUTLINE = [255, 244, 200];
+
+// 草图版（「房间画风」选草图）：archive/v0.2 的房间（art/room-<房>.png、spots-<房>.png，扩展里叫 dorm-sketch-*.png），448×336，房间视图放大 2 倍。
+// 外框和热区号顺序都和上面 SPOTS 一样（热区图 spots-*.png 的值 1~11 对应 SPOTS 第 1~11 样），点了做的事也一样，只是名字照草图里画的东西。
+// things：旧图集 dorm-sketch-things.png 每格 64×64；第 0 行是抹掉了原物件的底（rooms 里写第几格），row 行是各样子（cells 顺序），at = 格子在房间图里的左上角。
+// alias：选项里的「0」在草图里换成哪一格（默认小熊的名字是「系着蓝领巾」，草图原来那只不是，换成图集里系蓝领巾的 v10）。
+const SKETCH = {
+    W: 448, H: 336, k: 2, deskX: 50, roomW: '448px', roomK: '1.5',   // roomW / roomK 和主题设置里草图那一项的 CSS 一样（聊天背景：电脑 2×1.5 = 3 倍，手机 2 倍）
+    spots: [
+        ['床帘', '回到聊天', 'back', [[68, 62], [193, 10], [240, 32], [245, 107], [157, 133], [72, 112]]],
+        ['衣柜', '角色列表', '#rightNavDrawerIcon', [[309, 118], [330, 108], [388, 123], [391, 128], [391, 241], [363, 255], [309, 226]]],
+        ['柜顶的纸箱', '扩展', '#extensions-settings-button .drawer-icon', [[315, 99], [328, 91], [341, 91], [366, 101], [388, 113], [386, 128], [360, 137], [318, 122]]],
+        ['窗户', '背景', '#backgrounds-button .drawer-icon', [[262, 45], [318, 73], [318, 160], [262, 132]]],
+        ['暖水瓶', '高级格式', '#advanced-formatting-button .drawer-icon', rect(284, 240, 309, 282)],
+        ['照片和便签', '世界书', '#WIDrawerIcon', rect(174, 128, 210, 168)],
+        ['电脑', 'API 连接', '#sys-settings-button .drawer-icon', rect(147, 154, 181, 184)],
+        ['台灯', '用户设置', '#user-settings-button .drawer-icon', rect(90, 160, 110, 212)],
+        ['镜子', '用户人设', '#persona-management-button .drawer-icon', rect(123, 160, 139, 190)],
+        ['插线板', '预设', '#leftNavDrawerIcon', [[150, 222], [162, 215], [178, 222], [178, 229], [166, 235], [150, 228]]],
+        ['小熊', '换一只', 'bear', rect(165, 60, 198, 100)],
+    ],
+    boy: {   // 男生草图：没有镜子，人设是挂在梯子上的书包；墙上是海报；没有小熊
+        镜子: ['书包', '用户人设', '#persona-management-button .drawer-icon', rect(234, 170, 266, 210)],
+        照片和便签: ['海报', '世界书', '#WIDrawerIcon', rect(176, 128, 198, 168)],
+    },
+    things: {
+        bear: { spot: 11, at: [149, 48], rooms: { girl: 0 }, row: 1, cells: ['v3', 'v5', 'v7', 'v8', 'v10', 'v15'], alias: { 0: 'v10' } },
+        thermos: { spot: 5, at: [265, 228], rooms: { girl: 1, boy: 2 }, row: 2, cells: ['v2', 'v7', 'v10', 'v11', 'v15'] },
+    },
+};
+const sketchCell = (t, v) => t.alias?.[v] ?? v;   // 选项值 → 草图图集里的样子（'0' = 房间图里原来那只）
 
 const CSS = `
 html.dm-room #sheld { transform: translateY(calc(100% + 60px)); }
@@ -62,7 +96,7 @@ html.dm-clear #dm-room { background: none; }
 @keyframes dm-in { from { opacity: 0; } to { opacity: 1; } }
 #dm-room .dm-scroll { position: absolute; inset: 0; overflow: auto hidden; scrollbar-width: none; display: grid; place-items: center; }
 #dm-room .dm-scroll::-webkit-scrollbar { display: none; }
-#dm-room .dm-box { position: relative; width: calc(${W}px * var(--dm-k)); height: calc(${H}px * var(--dm-k)); background: var(--dm-room) 0 0 / 100% 100% no-repeat; image-rendering: pixelated; flex: none; margin-top: 24px; }
+#dm-room .dm-box { position: relative; width: calc(var(--dm-w) * var(--dm-k)); height: calc(var(--dm-h) * var(--dm-k)); background: var(--dm-room) 0 0 / 100% 100% no-repeat; image-rendering: pixelated; flex: none; margin-top: 24px; }
 html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1) both; }
 @keyframes dm-zoom { from { transform: scale(1.5); } to { transform: none; } }
 #dm-room svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -89,9 +123,9 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 #dm-room .dm-peek small { color: var(--dm-ink2); font-size: 13px; }
 #dm-room .dm-peek[hidden] { display: none; }
 #dm-room-btn .drawer-icon.openIcon { color: var(--dm-hud-hi); filter: drop-shadow(0 3px 0 var(--dm-red)); }
-#dm-room { --dm-k: 1; }
+#dm-room { --dm-k: 1; --dm-w: ${W0}px; --dm-h: ${H0}px; }   /* 草图版 dorm.js 在元素上改成 448 × 336、2 倍 */
 @media screen and (max-width: 1000px) {
-  #dm-room .dm-scroll { display: block; padding-top: 70px; }
+  #dm-room .dm-scroll { display: block; padding-top: 70px; place-items: normal; }   /* 别让 place-items: center 在块布局里也居中（新版 Chrome 会）：房间比屏幕宽时左边会滑不到 */
   #dm-room .dm-box { margin: 0; }
   #dm-room .dm-peek { left: auto; right: -20px; bottom: 18px; width: 230px; }
   #dm-room .dm-cap { bottom: -30px; left: 20px; font-size: 15px; }
@@ -268,28 +302,42 @@ export default function dorm(api = {}) {
             }
             palBody.append(g);
         } else {
-            const which = optVal('room') === 'boy' ? 'boy' : 'girl', n = root.classList.contains('dn-night') ? '-night' : '';
+            const which = optVal('room') === 'boy' ? 'boy' : 'girl', sk = optVal('style') === 'sketch';
+            const n = !sk && root.classList.contains('dn-night') ? '-night' : '';   // 草图只有一张，不分昼夜
+            const atlas = sk ? 'sketch-things' : `things${n}`;
             let img = null;
-            try { img = await asset(`things${n}`); } catch { /* 图集没载入：只剩文字名 */ }
+            try { img = await asset(atlas); } catch { /* 图集没载入：只剩文字名 */ }
             if (palTab !== 'things') return;
-            for (const [k, t] of Object.entries(THINGS)) {
-                const r = t.rooms[which]; if (!r || !api.option?.(k)) continue;
+            for (const [k, t] of Object.entries(sk ? SKETCH.things : THINGS)) {
+                const r = t.rooms[which]; if (r === undefined || !api.option?.(k)) continue;
                 const h = document.createElement('h5'); h.textContent = api.option?.(k)?.label || k; h.dataset.k = k;
                 const g = grid();
-                const [cw, ch] = r.size, K = cw * 2 <= 72 && ch * 2 <= 100 ? 2 : 1;   // 小东西放大 2 倍，大的 1 倍（只用整数倍）
-                const sw = Math.min(cw * K, 64), sh = Math.min(ch * K, 92);                 // 只露这一格（裁掉旁边的格子），居中
                 const byV = Object.fromEntries(choicesOf(k).map(c => [String(c.value), c]));
-                t.styles.forEach((v, col) => {
+                // 每个样子在哪张图的哪一格：[值, 图名, 图宽, 图高, 格左, 格上]
+                let cw, ch, K, cells;
+                if (sk) {   // 草图：64 格，东西在格子中间约 32×46，放大 2 倍只露中间那块；「0」= 房间图里原来那只
+                    cw = ch = 64; K = 2;
+                    cells = choicesOf(k).map(c => String(c.value)).filter(v => v === '0' || t.cells.includes(sketchCell(t, v))).map(v => {
+                        const c = sketchCell(t, v);
+                        return c === '0' ? [v, `sketch-room-${which}`, SKETCH.W, SKETCH.H, t.at[0], t.at[1]]
+                            : [v, atlas, img?.width, img?.height, t.cells.indexOf(c) * 64, t.row * 64];
+                    });
+                } else {
+                    [cw, ch] = r.size; K = cw * 2 <= 72 && ch * 2 <= 100 ? 2 : 1;   // 小东西放大 2 倍，大的 1 倍（只用整数倍）
+                    cells = t.styles.map((v, col) => [v, atlas, img?.width, img?.height, r.src[0] + col * cw, r.src[1]]);
+                }
+                const sw = Math.min(cw * K, 64), sh = Math.min(ch * K, 92);                 // 只露这一格（裁掉旁边的格子），居中
+                for (const [v, name, iw, ih, x, y] of cells) {
                     const b = swatch(k, byV[v] || { value: v, label: v }, 'thing');
                     if (img) {
                         const s = document.createElement('span'); s.className = 'dm-sw-img';
-                        Object.assign(s.style, { width: `${sw}px`, height: `${sh}px`, backgroundImage: `url("${base}dorm-things${n}.png")`,
-                            backgroundSize: `${img.width * K}px ${img.height * K}px`, backgroundRepeat: 'no-repeat',
-                            backgroundPosition: `${-(r.src[0] + col * cw) * K - Math.floor((cw * K - sw) / 2)}px ${-r.src[1] * K - Math.floor((ch * K - sh) / 2)}px` });
+                        Object.assign(s.style, { width: `${sw}px`, height: `${sh}px`, backgroundImage: `url("${base}dorm-${name}.png")`,
+                            backgroundSize: `${iw * K}px ${ih * K}px`, backgroundRepeat: 'no-repeat',
+                            backgroundPosition: `${-x * K - Math.floor((cw * K - sw) / 2)}px ${-y * K - Math.floor((ch * K - sh) / 2)}px` });
                         b.append(s);
                     }
                     g.append(b);
-                });
+                }
                 palBody.append(h, g);
             }
         }
@@ -314,22 +362,42 @@ export default function dorm(api = {}) {
     }));
     pal.hidden = !(api.option?.('ground') || Object.keys(THINGS).some(k => api.option?.(k)));   // 主题设置里没有这些选项就整块藏起来
 
+    // 画风的大小：房间视图的格子（--dm-w/--dm-h/--dm-k）、svg 坐标、外框。和新房间图在同一刻换上，不会有一帧旧图套新尺寸
+    let geomSk = false;
+    const aimDesk = () => { if (scroller.scrollWidth > scroller.clientWidth) scroller.scrollLeft = box.offsetWidth * ((geomSk ? SKETCH.deskX : 40) / W); };   // 手机：房间比屏幕宽，对准书桌（1 倍像素的横坐标）
+    function setGeom(sk, which) {
+        geomSk = sk;
+        W = sk ? SKETCH.W : W0; H = sk ? SKETCH.H : H0;
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        for (const [p, v] of [['--dm-w', `${W}px`], ['--dm-h', `${H}px`], ['--dm-k', SKETCH.k]]) sk ? room.style.setProperty(p, v) : room.style.removeProperty(p);
+        buildSpots(which, sk);
+        if (root.classList.contains('dm-room')) aimDesk();   // 在房间里换了画风：重新对准书桌
+    }
+
     async function refresh() {
         const which = api.get?.('room') === 'boy' ? 'boy' : 'girl';
-        const pick = Object.fromEntries(Object.keys(THINGS).map(k => [k, String(api.get?.(k) ?? '0')]));
-        const n = root.classList.contains('dn-night') ? '-night' : '';   // 伴侣的昼夜开关：夜 = 熄灯，换夜里那套图
-        const key = which + n + JSON.stringify(pick);
+        const sk = api.get?.('style') === 'sketch';
+        const TH = sk ? SKETCH.things : THINGS;
+        const pick = Object.fromEntries(Object.keys(TH).map(k => [k, String(api.get?.(k) ?? '0')]));
+        // 伴侣的昼夜开关：夜 = 熄灯，换夜里那套图。草图只有一张（本来就是开着台灯的夜里），不分昼夜
+        const n = !sk && root.classList.contains('dn-night') ? '-night' : '';
+        const key = (sk ? 'sketch/' : '') + which + n + JSON.stringify(pick);
         if (key === state) return;
         state = key;
-        buildSpots(which);
+        if (sk === geomSk) buildSpots(which, sk);   // 换了画风的话等新图到了再一起换
         if (pal.classList.contains('open') && palTab === 'things') buildPal();
+        const W1 = sk ? SKETCH.W : W0, H1 = sk ? SKETCH.H : H0;
         try {
+            let url, m;
+            if (sk) [url, m] = await sketchRoom(which, pick, key);
+            else {
             const [spotsImg, thingsImg, thingsSpotsImg] = await Promise.all([asset(`spots-${which}`), asset(`things${n}`), asset('things-spots')]);
             if (state !== key) return;
-            const sp = pixelsOf(spotsImg).data, m = new Uint8Array(W * H);
+            const W = W1, H = H1;
+            const sp = pixelsOf(spotsImg).data;
+            m = new Uint8Array(W * H);
             for (let i = 0; i < W * H; i++) m[i] = sp[i * 4];
             const active = Object.entries(THINGS).filter(([k, t]) => pick[k] !== '0' && t.rooms[which] !== undefined && t.styles.includes(pick[k]));
-            let url;
             if (active.length) {
                 const roomImg = await asset(`room-${which}${n}`);
                 const c = document.createElement('canvas'); c.width = W; c.height = H;
@@ -348,20 +416,58 @@ export default function dorm(api = {}) {
                 if (state !== key) return;
                 url = URL.createObjectURL(blob);
             } else url = `${base}dorm-room-${which}${n}.png`;   // 扩展里的原图（主题 CSS 里嵌的是压成 256 色的小图）
+            }
+            if (!url) return;   // 半路又换了设置
             // 不闪：新图先载入、解码完再换到 --dm-room 上（直接换成还没载入的图，房间会空一帧）；旧的 blob 过几秒再收回
             const im = new Image(); im.src = url;
             try { await im.decode(); } catch { /* 解码失败也照样换上，至少不卡住 */ }
             if (state !== key) { if (url.startsWith('blob:')) URL.revokeObjectURL(url); return; }
             const old = roomURL;
             roomURL = url.startsWith('blob:') ? url : null; shown = im;   // 留着解码好的图，别被回收
+            light(0);
+            if (sk !== geomSk || W !== W1) setGeom(sk, which);
             // 写在用到它的两个元素上（聊天背景 #bg1 和房间 #dm-room），不写在 html 上：改 html 上的自定义属性会让整页（长聊天几千个元素）样式重算一遍
-            for (const el of roomVarEls()) el?.style.setProperty('--dm-room', `url("${url}")`);
+            // 图的原大（--dm-room-w / -k）一起写：主题设置的 CSS 先一步换了画风时，这里还是旧图配旧尺寸，到这一刻新图新尺寸一起换
+            for (const el of roomVarEls()) {
+                el?.style.setProperty('--dm-room', `url("${url}")`);
+                el?.style.setProperty('--dm-room-w', sk ? SKETCH.roomW : `${W0}px`);
+                el?.style.setProperty('--dm-room-k', sk ? SKETCH.roomK : '1');
+            }
             if (old) setTimeout(() => URL.revokeObjectURL(old), 3000);
             map = m; drawLines(); room.classList.add('dm-map');
         } catch (e) {
             console.warn('[402 宿舍] 热区图没载入，改用多边形', e);
-            map = null; room.classList.remove('dm-map');
+            if (state === key && sk !== geomSk) setGeom(sk, which);
+            map = null; lines.forEach(l => l?.remove()); lines = []; room.classList.remove('dm-map');
         }
+    }
+
+    // 草图版的房间：房间图 + 旧图集里换了样子的小熊 / 暖水瓶（先铺那格抹掉原物件的底，再盖新样子，热区跟着新样子的轮廓）
+    async function sketchRoom(which, pick, key) {
+        const [spotsImg, thingsImg] = await Promise.all([asset(`sketch-spots-${which}`), asset('sketch-things')]);
+        if (state !== key) return [];
+        const { W, H } = SKETCH;
+        const sp = pixelsOf(spotsImg).data, m = new Uint8Array(W * H);
+        for (let i = 0; i < W * H; i++) m[i] = sp[i * 4];
+        const active = Object.entries(SKETCH.things).filter(([k, t]) => t.rooms[which] !== undefined && t.cells.includes(sketchCell(t, pick[k])));
+        if (!active.length) return [`${base}dorm-sketch-room-${which}.png`, m];
+        const roomImg = await asset(`sketch-room-${which}`);
+        const c = document.createElement('canvas'); c.width = W; c.height = H;
+        const g = c.getContext('2d'); g.drawImage(roomImg, 0, 0);
+        const tp = pixelsOf(thingsImg), tw = tp.width;
+        for (const [k, t] of active) {
+            const [ox, oy] = t.at, col = t.cells.indexOf(sketchCell(t, pick[k]));
+            g.drawImage(thingsImg, t.rooms[which] * 64, 0, 64, 64, ox, oy, 64, 64);   // 抹掉原来那只
+            g.drawImage(thingsImg, col * 64, t.row * 64, 64, 64, ox, oy, 64, 64);     // 新的样子
+            for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+                const i = (oy + y) * W + ox + x;
+                if (m[i] === t.spot) m[i] = 0;
+                if (tp.data[((t.row * 64 + y) * tw + col * 64 + x) * 4 + 3] > 127) m[i] = t.spot;
+            }
+        }
+        const blob = await new Promise(ok => c.toBlob(ok));
+        if (state !== key) return [];
+        return [URL.createObjectURL(blob), m];
     }
 
     let cur = 0;
@@ -418,14 +524,15 @@ export default function dorm(api = {}) {
         return { x: r.left + ((i % W) + 0.5) / W * r.width, y: r.top + (Math.floor(i / W) + 0.5) / H * r.height };
     };
 
-    function buildSpots(which) {
-        if (builtFor === which) return;
-        builtFor = which;
+    function buildSpots(which, sk = false) {
+        if (builtFor === (sk ? 'sketch/' : '') + which) return;
+        builtFor = (sk ? 'sketch/' : '') + which;
         svg.replaceChildren(); spots = [];
-        SPOTS.forEach((spot, i) => {
+        const list = sk ? SKETCH.spots : SPOTS, boy = sk ? SKETCH.boy : BOY, TH = sk ? SKETCH.things : THINGS;
+        list.forEach((spot, i) => {
             const id = i + 1;
-            const [name, what, act, poly] = which === 'boy' && BOY[spot[0]] ? BOY[spot[0]] : spot;
-            if (act === 'bear' && THINGS.bear.rooms[which] === undefined) return;
+            const [name, what, act, poly] = which === 'boy' && boy[spot[0]] ? boy[spot[0]] : spot;
+            if (act === 'bear' && TH.bear.rooms[which] === undefined) return;
             const p = document.createElementNS(svgNS, 'polygon');
             p.setAttribute('points', poly.map(q => q.join(',')).join(' '));
             p.setAttribute('tabindex', '0');
@@ -527,7 +634,7 @@ export default function dorm(api = {}) {
         root.classList.add('dm-room');
         icon.classList.replace('closedIcon', 'openIcon');
         // 手机：房间比屏幕宽，先对准书桌
-        setTimeout(() => { if (scroller.scrollWidth > scroller.clientWidth) scroller.scrollLeft = box.offsetWidth * (40 / W); }, 500);
+        setTimeout(aimDesk, 500);
     }
     function leave() {
         if (!hasChat()) {   // 没有聊天可回：打开角色列表
@@ -583,7 +690,7 @@ export default function dorm(api = {}) {
         menu.remove();
         clearInterval(poll);
         dn.disconnect();
-        for (const el of roomVarEls()) el?.style.removeProperty('--dm-room');
+        for (const el of roomVarEls()) for (const p of ['--dm-room', '--dm-room-w', '--dm-room-k']) el?.style.removeProperty(p);
         if (roomURL) URL.revokeObjectURL(roomURL);
         root.classList.remove('dm-room');
         room.remove();

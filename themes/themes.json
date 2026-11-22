@@ -2196,7 +2196,7 @@
     },
     {
         "family": "402 宿舍",
-        "version": "0.7.0",
+        "version": "0.8.0",
         "variantLabel": "变体",
         "options": [
             {
@@ -2239,7 +2239,25 @@
                     {
                         "value": "boy",
                         "label": "男生宿舍",
-                        "css": "html:root:root { --dm-room: url(\"{EXT}modules/dorm-room-boy.png\"); }"
+                        "css": "html:root:root { --dm-room: url(\"{EXT}modules/dorm-room-boy.png\"); --dm-sketch-room: url(\"{EXT}modules/dorm-sketch-room-boy.png\"); }"
+                    }
+                ]
+            },
+            {
+                "key": "style",
+                "type": "select",
+                "label": "房间画风",
+                "default": "code",
+                "note": "草图是最早 PixelLab 一口气画出的整间房：开着台灯的夜里，暖一些、软一些，细节少。草图只有一种光线（昼夜开关不换图），小物件只能换小熊和暖水瓶",
+                "choices": [
+                    {
+                        "value": "code",
+                        "label": "程序画（默认）"
+                    },
+                    {
+                        "value": "sketch",
+                        "label": "草图（温馨）",
+                        "css": "html:root:root:root { --dm-room: var(--dm-sketch-room, url(\"{EXT}modules/dorm-sketch-room-girl.png\")); --dm-room-w: 448px; --dm-room-k: 1.5; }"
                     }
                 ]
             },
@@ -2489,6 +2507,39 @@
                     {
                         "value": "v14",
                         "label": "鞋底沾了泥"
+                    }
+                ]
+            },
+            {
+                "key": "chair",
+                "type": "select",
+                "label": "书桌前的椅子",
+                "default": "0",
+                "note": "换成塑料椅后，女生椅上的坐垫、男生椅背上的连帽衫就不画了",
+                "choices": [
+                    {
+                        "value": "0",
+                        "label": "铁腿方椅，女生有坐垫、男生搭连帽衫"
+                    },
+                    {
+                        "value": "v12",
+                        "label": "塑料椅，靠背有把手孔"
+                    },
+                    {
+                        "value": "v8",
+                        "label": "塑料椅，贴着贴纸"
+                    },
+                    {
+                        "value": "v5",
+                        "label": "塑料椅，红坐垫"
+                    },
+                    {
+                        "value": "v13",
+                        "label": "塑料椅，蓝圆坐垫"
+                    },
+                    {
+                        "value": "v14",
+                        "label": "塑料椅，用旧了"
                     }
                 ]
             },
