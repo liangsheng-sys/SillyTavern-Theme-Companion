@@ -1,4 +1,4 @@
-// 402 宿舍 · 主题伴侣附带的脚本（用这套主题时载入，换走时清理）
+// Roomlet（方寸小屋）· 主题伴侣附带的脚本（用这套主题时载入，换走时清理）
 // 1. 顶栏最前面多一个「房间」按钮：点了以后信笺收下去，整间宿舍浮在深色方格底上（放大 2 倍），房间里的东西就是菜单：
 //    鼠标移到东西上冒一圈描边和小标签，点一下打开酒馆对应的面板（衣柜 = 角色列表，插线板 = 预设……见 SPOTS）。
 // 2. 没打开任何聊天时（欢迎页）自动进房间。
@@ -436,7 +436,7 @@ export default function dorm(api = {}) {
             if (old) setTimeout(() => URL.revokeObjectURL(old), 3000);
             map = m; drawLines(); room.classList.add('dm-map');
         } catch (e) {
-            console.warn('[402 宿舍] 热区图没载入，改用多边形', e);
+            console.warn('[Roomlet] 热区图没载入，改用多边形', e);
             if (state === key && sk !== geomSk) setGeom(sk, which);
             map = null; lines.forEach(l => l?.remove()); lines = []; room.classList.remove('dm-map');
         }
@@ -630,7 +630,7 @@ export default function dorm(api = {}) {
         light(0);
         fillPeek();
         const c = ctx();
-        cap.textContent = c?.name2 && hasChat() ? `402 · ${c.name2}` : '402';
+        cap.textContent = c?.name2 && hasChat() ? `302 · ${c.name2}` : '302';
         root.classList.add('dm-room');
         icon.classList.replace('closedIcon', 'openIcon');
         // 手机：房间比屏幕宽，先对准书桌
