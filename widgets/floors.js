@@ -96,7 +96,7 @@ const CSS = `
     transform: translateY(calc(var(--xy-fl-start, 0) * var(--xy-fl-row) * -1));
     transition: transform 0.45s var(--xy-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
-#xy-floors li {
+#xy-floors .xy-fl-row {
     display: flex;
     flex-direction: row-reverse;
     align-items: center;
@@ -108,24 +108,24 @@ const CSS = `
     cursor: pointer;
     transition: color 0.3s;
 }
-#xy-floors.xy-fl-rl li { flex-direction: row; }
-#xy-floors li b {
+#xy-floors.xy-fl-rl .xy-fl-row { flex-direction: row; }
+#xy-floors .xy-fl-no {
     flex: none;
     font-weight: 700;
     letter-spacing: 0.04em;
 }
-#xy-floors li span {
+#xy-floors .xy-fl-name {
     overflow: hidden;
     text-overflow: ellipsis;
     font-family: var(--xy-fl-font-n, system-ui, 'Microsoft YaHei', sans-serif);
     font-size: 12px;
     font-weight: 500;
 }
-#xy-floors li:hover,
-#xy-floors li.on { color: var(--xy-fl-text); }
-#xy-floors li.on b { color: var(--xy-fl-label, var(--xy-fl-text)); }
+#xy-floors .xy-fl-row:hover,
+#xy-floors .xy-fl-row.on { color: var(--xy-fl-text); }
+#xy-floors .xy-fl-row.on .xy-fl-no { color: var(--xy-fl-label, var(--xy-fl-text)); }
 /* 隐藏的楼层：行末一个划掉的眼睛（细线，和面板小图标同一套线宽） */
-#xy-floors li.xy-fl-hid::after {
+#xy-floors .xy-fl-row.xy-fl-hid::after {
     content: '';
     flex: none;
     width: 13px;
@@ -134,7 +134,7 @@ const CSS = `
     -webkit-mask: var(--xy-fl-eye) center / 13px 13px no-repeat;
     mask: var(--xy-fl-eye) center / 13px 13px no-repeat;
 }
-#xy-floors.xy-fl-noeye li.xy-fl-hid::after { display: none; }
+#xy-floors.xy-fl-noeye .xy-fl-row.xy-fl-hid::after { display: none; }
 @media (prefers-reduced-motion: reduce) {
     #xy-floors .xy-fl-pill,
     #xy-floors .xy-fl-list { transition: none; }
@@ -227,11 +227,14 @@ export default function mountFloors(api = {}) {
         const frag = document.createDocumentFragment();
         floors.forEach((m, i) => {
             const li = document.createElement('li');
+            li.className = 'xy-fl-row';
             li.dataset.i = i;
-            if (m.getAttribute('is_system') === 'true') li.className = 'xy-fl-hid';
+            if (m.getAttribute('is_system') === 'true') li.classList.add('xy-fl-hid');
             const b = document.createElement('b');
+            b.className = 'xy-fl-no';
             b.textContent = `#${m.getAttribute('mesid')}`;
             const s = document.createElement('span');
+            s.className = 'xy-fl-name';
             s.textContent = m.getAttribute('ch_name') || '';
             li.append(b, s);
             frag.append(li);

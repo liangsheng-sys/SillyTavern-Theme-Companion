@@ -13,8 +13,8 @@ import { skinCss, useFont } from './dorm-skin.js';
 const NB_CSS = `
 html.dm-nobar #top-bar { display: none !important; }
 html.dm-nobar #top-settings-holder { height: 0; pointer-events: none; }
-html.dm-nobar #top-settings-holder > :is(.drawer-toggle, .drawer-icon),
-html.dm-nobar #top-settings-holder > .drawer > :is(.drawer-toggle, .drawer-icon) { display: none !important; }
+html.dm-nobar #top-settings-holder > .drawer-toggle, html.dm-nobar #top-settings-holder > .drawer-icon,
+html.dm-nobar #top-settings-holder > .drawer > .drawer-toggle, html.dm-nobar #top-settings-holder > .drawer > .drawer-icon { display: none !important; }
 html.dm-nobar #top-settings-holder .drawer-content { pointer-events: auto; }
 #dm-menu-btn { display: none; position: fixed; z-index: 3100; top: 8px; left: 8px; width: 46px; height: 46px; padding: 0; place-items: center; cursor: pointer; color: var(--dm-ink);
   background: var(--dm-paper); border: 2px solid var(--dm-line); border-top: 8px solid var(--dm-glue-color); box-shadow: 3px 3px 0 rgb(0 0 0 / .3); font: inherit; }
@@ -49,16 +49,17 @@ html.dm-nobar #dm-menu-btn { display: grid; }
 // Roomlet 主题里：顶栏整条收掉（信笺从最上面开始），面板顶上让出小本子的位置
 const THEME_CSS = `
 html.dm-nobar { --topBarBlockSize: 0px; }
-html.dm-nobar :is(.drawer-content, #left-nav-panel, #right-nav-panel) { padding-top: 58px !important; }
+html.dm-nobar .drawer-content, html.dm-nobar #left-nav-panel, html.dm-nobar #right-nav-panel { padding-top: 58px !important; }
 `;
 // 客串：电脑上和 Roomlet 一样（聊天栏在中间，左上角本来就空着）；手机上聊天占满整宽，顶上留一条 50px 放小本子，别压住第一条消息
-const GUEST_CSS = skinCss(':is(#dm-menu, #dm-menu-btn).dmw') + `
+// 不写 :is(#dm-menu, #dm-menu-btn).dmw：skinCss 里有「sel *」，祖先是 :is() 时浏览器不能快速排除，整页每个元素都要往上查一遍（流式生成时明显变卡）
+const GUEST_CSS = skinCss('#dm-menu.dmw') + skinCss('#dm-menu-btn.dmw') + `
 /* 有的主题把顶栏按钮画在 .drawer::after 上（如 XP 的桌面图标），按钮收进小本子后画也要藏起来，不然留下点不动的图标 */
 html.dm-nobar #top-settings-holder::before, html.dm-nobar #top-settings-holder > .drawer::after { display: none !important; }
 #dm-menu.dmw .dm-mi .drawer-icon { background: none; border: 0; box-shadow: none; filter: none; margin: 0; }
 @media screen and (min-width: 1001px) {
   html.dm-nobar { --topBarBlockSize: 0px; }
-  html.dm-nobar :is(.drawer-content, #left-nav-panel, #right-nav-panel) { padding-top: 58px !important; }
+  html.dm-nobar .drawer-content, html.dm-nobar #left-nav-panel, html.dm-nobar #right-nav-panel { padding-top: 58px !important; }
 }
 @media screen and (max-width: 1000px) {
   html.dm-nobar { --topBarBlockSize: 50px; }
