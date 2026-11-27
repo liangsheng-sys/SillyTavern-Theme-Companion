@@ -4,11 +4,12 @@
 //   返回停止函数：卸下小部件、停掉轮询。
 // 和主题伴侣同时装着时不抢：伴侣里勾了同一个小部件、或当前主题就是它的来源主题（伴侣会载主题自带的那份）就不载入；
 // 当前主题在 themes.json 里声明了 widgetsOff 也不载入。每 2 秒看一次（页面可见时），换主题后自动载入 / 卸下。
+// 选项：魔杖菜单「小部件设置」弹窗（酒馆原生 Popup，跟着主题变），改了马上存进脚本变量；小部件本来就是每次用时读选项，不用重载。
 
 const ROOT = new URL('../', import.meta.url);
 const json = u => fetch(u, { cache: 'no-cache' }).then(r => { if (!r.ok) throw Error(`${r.status} ${u}`); return r.json(); });
-let defsP = null, famsP = null;
-const defs = () => (defsP ||= json(new URL('widgets/widgets.json', ROOT)));
+let defsP = null, famsP = null, defsList = null;
+const defs = () => (defsP ||= json(new URL('widgets/widgets.json', ROOT)).then(l => (defsList = l)));
 const fams = () => (famsP ||= json(new URL('themes/themes.json', ROOT)).catch(() => []));
 
 const optKey = o => o.key ?? o.var;
@@ -22,6 +23,120 @@ function optionValue(o, saved) {   // 和伴侣 index.js 的 optionValue 一样
 }
 
 const ctx = () => window.SillyTavern?.getContext?.();
+
+// ---- 设置小窗：魔杖菜单一项「小部件设置」，单独装的小部件共用（本模块在主页面里只有一份，几个脚本都登记到这里）
+const reg = new Map();   // 小部件 id → { def, opts, api, why() }
+let menuItem = null;
+const CSS = `
+.dnw-set { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.dnw-set h3 { margin: 14px 0 2px; font-size: 1.1em; }
+.dnw-set h3:first-child { margin-top: 0; }
+.dnw-set .dnw-why { font-size: .9em; font-style: italic; }
+.dnw-set .dnw-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 4px 0; }
+.dnw-set .dnw-row > span { flex: 1 1 12em; }
+.dnw-set .dnw-row select { flex: 0 1 auto; width: auto; max-width: 100%; margin: 0; }
+.dnw-set .dnw-row input[type=color] { width: 3em; height: 1.8em; padding: 0; border: none; background: none; }
+.dnw-set .dnw-note { flex-basis: 100%; font-size: .85em; line-height: 1.4; }
+.dnw-set .dnw-foot { margin-top: 12px; font-size: .85em; }`;
+
+function optionRow(o, api) {
+    const row = document.createElement('label');
+    row.className = 'dnw-row';
+    const name = document.createElement('span');
+    name.textContent = o.label || o.key;
+    let input;
+    if (o.type === 'toggle') {
+        row.classList.add('checkbox_label');
+        input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = !!api.get(o.key);
+        input.onchange = () => api.set(o.key, input.checked);
+        row.append(input, name);
+    } else if (o.type === 'select') {
+        input = document.createElement('select');
+        input.className = 'text_pole';
+        for (const c of choicesOf(o)) input.add(new Option(c.label, c.value));
+        input.value = String(api.get(o.key));
+        input.onchange = () => api.set(o.key, input.value);
+        row.append(name, input);
+    } else if (o.type === 'color') {
+        input = document.createElement('input');
+        input.type = 'color';
+        input.value = String(api.get(o.key) || '#000000');
+        input.oninput = () => api.set(o.key, input.value);
+        row.append(name, input);
+    } else return null;
+    if (o.note) {
+        const n = document.createElement('small');
+        n.className = 'dnw-note';
+        n.textContent = o.note;
+        row.append(n);
+    }
+    return row;
+}
+
+function openSettings() {
+    const c = ctx();
+    const box = document.createElement('div');
+    box.className = 'dnw-set';
+    const style = document.createElement('style');
+    style.textContent = CSS;
+    box.append(style);
+    const order = id => (defsList || []).findIndex(d => d.id === id);
+    for (const { def, opts, api, why } of [...reg.values()].sort((a, b) => order(a.def.id) - order(b.def.id))) {
+        const h = document.createElement('h3');
+        h.textContent = def.label;
+        box.append(h);
+        const reason = why();
+        if (reason) {
+            const p = document.createElement('div');
+            p.className = 'dnw-why';
+            p.textContent = `现在没在用：${reason}`;
+            box.append(p);
+        }
+        const rows = opts.map(o => optionRow(o, api)).filter(Boolean);
+        if (!rows.length) {
+            const p = document.createElement('div');
+            p.className = 'dnw-note';
+            p.textContent = '没有可以调的选项。';
+            box.append(p);
+        }
+        box.append(...rows);
+    }
+    const foot = document.createElement('div');
+    foot.className = 'dnw-foot';
+    foot.textContent = '改了马上存。要关掉某个小部件：在「酒馆助手 → 脚本库」里关掉它的脚本。';
+    box.append(foot);
+    if (c?.callGenericPopup) c.callGenericPopup(box, c.POPUP_TYPE.TEXT, '', { okButton: '好了', allowVerticalScrolling: true });
+}
+
+function addMenu() {
+    if (menuItem) return;
+    menuItem = document.createElement('div');
+    menuItem.id = 'dnw_settings_menu';
+    menuItem.className = 'list-group-item flex-container flexGap5 interactable';
+    menuItem.tabIndex = 0;
+    menuItem.title = '小部件设置';
+    menuItem.innerHTML = '<div class="fa-solid fa-sliders extensionsMenuExtensionButton"></div><span>小部件设置</span>';
+    menuItem.addEventListener('click', openSettings);
+    menuItem.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSettings(); } });
+    document.getElementById('extensionsMenu')?.append(menuItem);
+}
+
+// 第一次装上时提示一次设置在哪（每个小部件各一次，记在 localStorage；同时装了几个只弹一条）
+const helloQ = [];
+let helloT = 0;
+function hello(def) {
+    const k = `dnw_hello_${def.id}`;
+    try { if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); } catch { return; }
+    helloQ.push(def.label);
+    clearTimeout(helloT);
+    helloT = setTimeout(() => {
+        const names = helloQ.splice(0).map(n => `「${n}」`).join('');
+        window.toastr?.info('调选项：点输入框左边的魔杖 →「小部件设置」', `${names}装好了`, { timeOut: 8000 });
+    }, 1500);
+}
+
 // 伴侣装着且在跑：它的设置面板在页面上
 const companion = () => document.getElementById('daynight_settings') ? ctx()?.extensionSettings?.daynight : null;
 
@@ -84,10 +199,18 @@ export default async function start({ id, store }) {
             console.info(tag, '已载入');
         }).catch(e => {
             console.error(tag, '载入失败', e);
+            why = `载入失败（${e.message || e}）`;
             window.toastr?.error(`「${def.label}」载入失败：${e.message || e}`);
             stopped = true;
         }).finally(() => { loading = null; });
     }
+    // 设置小窗里列的：自己的选项 + 共用主题的 shareKeys（藏起来的不列）
+    const shown = [...(def.options || []), ...(def.shareKeys || []).map(k => shareOpts.find(o => optKey(o) === k))]
+        .filter(o => o && o.key && !o.hidden);
+    reg.set(id, { def, opts: shown, api, why: () => (cleanup ? '' : why || blocked()) });
+    addMenu();
+    hello(def);
+
     await sync();
     await loading;
     const timer = setInterval(() => { if (!document.hidden) sync(); }, 2000);
@@ -95,6 +218,8 @@ export default async function start({ id, store }) {
     return () => {
         stopped = true;
         clearInterval(timer);
+        reg.delete(id);
+        if (!reg.size) { menuItem?.remove(); menuItem = null; }
         const c = cleanup; cleanup = null;
         try { c?.(); } catch (e) { console.warn(tag, '卸载失败', e); }
     };
