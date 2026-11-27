@@ -20,5 +20,32 @@
         "ownNote": "在上面「主题设置 → 酒馆顶栏」里开关",
         "module": "widgets/notebook.js",
         "note": "顶上那一排图标藏起来，换成左上角一本小本子，点开是目录，每一项就是原来的一个按钮（别的扩展加的也在）。按 Esc 或点旁边关上。"
+    },
+    {
+        "id": "floors",
+        "label": "楼层导航",
+        "from": "絮语",
+        "ownNote": "在上面「主题设置 → 楼层导航」里开关",
+        "module": "widgets/floors.js",
+        "note": "电脑上聊天区旁边一根细竖轨，药丸停在正在看的那一楼，点一下跳到那一楼；被隐藏的楼层带一个划掉的小眼睛。手机上没有。",
+        "options": [
+            { "key": "side", "type": "select", "label": "整个导航放在聊天区的", "default": "left", "choices": [["left", "左边"], ["right", "右边"]] },
+            { "key": "rail", "type": "select", "label": "竖条在文字的", "default": "auto", "choices": [["auto", "靠着聊天区那边"], ["left", "左边"], ["right", "右边"]] },
+            { "key": "accent", "type": "select", "label": "药丸的颜色", "default": "orange", "choices": [["orange", "橙色"], ["theme", "跟随主题（主题的「底线文字」色）"], ["custom", "自选颜色"]] },
+            { "key": "accentColor", "type": "color", "label": "自选的药丸颜色", "default": "#FF6C4C", "note": "上面选「自选颜色」才用得上" },
+            { "key": "eye", "type": "toggle", "label": "隐藏的楼层显示小眼睛", "default": true },
+            { "key": "tone", "type": "select", "label": "文字配色", "default": "auto", "choices": [["auto", "自动（用主题的字色和底色）"], ["light", "浅色字"], ["dark", "深色字"]], "note": "文字下面垫了一层很淡的底，压在你自己的背景图上也读得出。自动不合适时手动选一档" }
+        ]
+    },
+    {
+        "id": "minesweeper",
+        "label": "扫雷",
+        "from": "XP Messenger",
+        "ownNote": "桌面上的「扫雷」图标，或开始菜单的「所有程序」",
+        "module": "widgets/minesweeper.js",
+        "note": "魔杖菜单多一项「扫雷」（也能打字 /minesweeper）。点开是一个小窗：电脑上可以拖标题栏，手机上贴在屏幕底部。左键翻开，右键（手机长按）插旗，点数字翻一圈，初级 / 中级 / 高级都有。窗口的颜色跟着当前主题走。",
+        "options": [
+            { "key": "level", "type": "select", "label": "难度", "default": "beginner", "hidden": true, "choices": [["beginner", "初级"], ["intermediate", "中级"], ["expert", "高级"]], "note": "小窗里点难度按钮就会记住" }
+        ]
     }
 ]

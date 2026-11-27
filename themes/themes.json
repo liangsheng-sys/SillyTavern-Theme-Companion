@@ -1628,6 +1628,9 @@
         ],
         "bgVar": "--xp-st-bg",
         "blurb": "2005 年的 MSN 聊天窗：蓝色窗框、开始菜单、表情和昵称",
+        "widgetsOff": {
+            "notebook": "XP 的顶栏是任务栏，收起会连开始按钮一起藏掉"
+        },
         "links": [
             [
                 "类脑",
@@ -1760,12 +1763,12 @@
                 "default": true,
                 "on": "1",
                 "off": "0",
-                "note": "电脑上聊天区旁边一根竖轨，橘红药丸停在正在看的那一楼，点一下跳过去（手机上没有）"
+                "note": "电脑上聊天区旁边一根竖轨，药丸停在正在看的那一楼，点一下跳过去；被隐藏的楼层带一个划掉的小眼睛（手机上没有）"
             },
             {
                 "type": "select",
                 "var": "--xy-floors-side",
-                "label": "楼层导航放在",
+                "label": "整个导航放在聊天区的",
                 "default": "left",
                 "choices": [
                     [
@@ -1777,6 +1780,61 @@
                         "右边"
                     ]
                 ]
+            },
+            {
+                "type": "select",
+                "var": "--xy-floors-rail",
+                "label": "竖条在文字的",
+                "default": "auto",
+                "choices": [
+                    [
+                        "auto",
+                        "靠着聊天区那边"
+                    ],
+                    [
+                        "left",
+                        "左边"
+                    ],
+                    [
+                        "right",
+                        "右边"
+                    ]
+                ]
+            },
+            {
+                "type": "select",
+                "var": "--xy-floors-accent",
+                "label": "药丸的颜色",
+                "default": "orange",
+                "choices": [
+                    [
+                        "orange",
+                        "橙色（橘红）"
+                    ],
+                    [
+                        "theme",
+                        "跟随主题（底线文字色）"
+                    ],
+                    [
+                        "custom",
+                        "自选颜色"
+                    ]
+                ]
+            },
+            {
+                "type": "color",
+                "var": "--xy-floors-accent-c",
+                "label": "自选的药丸颜色",
+                "default": "#FF6C4C",
+                "note": "上面选「自选颜色」才用得上"
+            },
+            {
+                "type": "toggle",
+                "var": "--xy-floors-eye",
+                "label": "隐藏的楼层显示小眼睛",
+                "default": true,
+                "on": "1",
+                "off": "0"
             },
             {
                 "type": "head",

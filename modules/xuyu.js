@@ -7,7 +7,8 @@
 // 4. 字幕条（q）：两边挨着字时加类名，CSS 里空出一点（挨着标点就不用，标点自带空白）；
 //    条里成段的西文包进 .xy-lat，CSS 里往上挪一点，和中文都在条的正中。
 // 5. 正在写回复：酒馆把停止键 #mes_stop 设成 display:flex 时给 body 加 xy-gen（名字上的声波跳起来）。
-// 6. 楼层导航：电脑上聊天区右边一根竖轨，橘红药丸停在正在看的那一楼，点一下跳过去（Wispr「Speak naturally」那排选项卡）。
+// 6. 楼层导航：电脑上聊天区旁边一根竖轨，橘红药丸停在正在看的那一楼，点一下跳过去（Wispr「Speak naturally」那排选项卡）。
+//    代码在扩展的 widgets/floors.js（和主题伴侣「小部件」共用一份，guest:false），这里只接线；样式映射在 floors.css。
 // 没装扩展时这些都没有：大字里的中文按原大小显示，欢迎页是一张深绿卡片，群聊大家同一种颜色，字幕条两边不留空。
 //
 // 性能：流式输出时酒馆每帧都重写最后一条消息，这里只处理有变动的那几条消息，不再每帧扫整个聊天。
@@ -22,8 +23,14 @@ const PALETTE = [
     ['#F0D7FF', '#1A1A1A', '#6E3FA6', '#F0D7FF'],   // 淡紫
 ];
 
-export default function xuyu() {
+export default function xuyu(api = {}) {
     const root = document.documentElement;
+    // 楼层导航：代码在扩展的 widgets/floors.js（和主题伴侣「小部件」共用一份），这里只是按絮语的方式接起来（不客串，颜色用主题的 --xy-*，选项读主题设置）
+    let floorsOff = () => {}, gone = false;
+    import(new URL(`../widgets/floors.js${new URL(import.meta.url).search}`, import.meta.url).href)
+        .then(m => { if (gone) return; floorsOff = m.default({ ...api, guest: false }); })
+        .catch(e => console.warn('[絮语] 楼层导航载入失败', e));
+
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.id = 'xy-fonts-alias';
@@ -106,124 +113,17 @@ export default function xuyu() {
         }
     };
 
-    // ---------------- 楼层导航 ----------------
-    const chat = document.getElementById('chat');
-    const ROWS = 9;
-    const nav = document.createElement('nav');
-    nav.id = 'xy-floors';
-    nav.setAttribute('aria-label', '楼层');
-    nav.innerHTML = '<div class="xy-fl-view"><ol class="xy-fl-list"></ol></div><i class="xy-fl-pill"></i>';
-    const list = nav.querySelector('ol');
-    document.body.append(nav);
-    let floors = [], cur = -1, start = 0, jumping = 0, jumpTimer = 0;
-
-    function buildFloors() {
-        floors = chat ? [...chat.querySelectorAll(':scope > .mes')] : [];
-        const frag = document.createDocumentFragment();
-        floors.forEach((m, i) => {
-            const li = document.createElement('li');
-            li.dataset.i = i;
-            const b = document.createElement('b');
-            b.textContent = `#${m.getAttribute('mesid')}`;
-            const s = document.createElement('span');
-            s.textContent = m.getAttribute('ch_name') || '';
-            li.append(b, s);
-            frag.append(li);
-        });
-        list.replaceChildren(frag);
-        nav.classList.toggle('xy-fl-empty', floors.length < 2);
-        nav.style.setProperty('--xy-fl-n', Math.min(ROWS, floors.length));
-        cur = -1;
-        updateFloors();
-    }
-
-    function updateFloors() {
-        if (!floors.length || !chat || jumping) return;
-        const box = chat.getBoundingClientRect();
-        let i;
-        if (chat.scrollHeight - chat.scrollTop - chat.clientHeight < 8) i = floors.length - 1;
-        else {
-            // 看哪一条消息盖住聊天区上方三分之一那条线（二分查找）
-            const line = box.top + chat.clientHeight * 0.33;
-            let lo = 0, hi = floors.length - 1;
-            while (lo < hi) {
-                const mid = (lo + hi + 1) >> 1;
-                if (floors[mid].getBoundingClientRect().top <= line) lo = mid; else hi = mid - 1;
-            }
-            i = lo;
-        }
-        selectFloor(i);
-    }
-
-    function selectFloor(i) {
-        if (i === cur) return;
-        list.children[cur]?.classList.remove('on');
-        cur = i;
-        list.children[cur]?.classList.add('on');
-        // 药丸在窗口里滑；滑到离边一格时整排挪一下，让当前这楼回到中间
-        const max = Math.max(0, floors.length - ROWS);
-        if (cur < start + 1 || cur > start + ROWS - 2) start = Math.min(max, Math.max(0, cur - (ROWS >> 1)));
-        nav.style.setProperty('--xy-fl-start', start);
-        nav.style.setProperty('--xy-fl-pos', cur - start);
-    }
-
-    // 聊天区两边放不下（聊天区太宽、窗口太窄）就不显示
-    function placeFloors() {
-        const r = document.getElementById('sheld')?.getBoundingClientRect();
-        const room = r ? Math.min(r.left, window.innerWidth - r.right) : 0;
-        nav.classList.toggle('xy-fl-noroom', room < 170);
-    }
-
-    // 跳楼：药丸先过去；远的先瞬间挪到目标前半屏，只平滑滚最后一小段（长聊天一路平滑滚过去会卡）；
-    // 滚动途中不再逐帧算「正在看哪一楼」，停下来再对一次
-    const endJump = () => {
-        if (!jumping) return;
-        jumping = 0;
-        clearTimeout(jumpTimer);
-        chat.removeEventListener('scrollend', endJump);
-        updateFloors();
-    };
-    nav.addEventListener('click', (e) => {
-        const li = e.target.closest('li');
-        const i = li ? Number(li.dataset.i) : -1;
-        const m = floors[i];
-        if (!m) return;
-        selectFloor(i);
-        const target = Math.max(0, chat.scrollTop + m.getBoundingClientRect().top - chat.getBoundingClientRect().top - 8);
-        const dist = target - chat.scrollTop;
-        const near = chat.clientHeight * 0.6;
-        const calm = document.body.classList.contains('reduced-motion') || matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (calm) { chat.scrollTo({ top: target, behavior: 'instant' }); return; }
-        if (Math.abs(dist) > near * 2) chat.scrollTo({ top: target - Math.sign(dist) * near, behavior: 'instant' });
-        jumping = 1;
-        clearTimeout(jumpTimer);
-        jumpTimer = setTimeout(endJump, 900);
-        chat.addEventListener('scrollend', endJump, { once: true });
-        chat.scrollTo({ top: target, behavior: 'smooth' });
-    });
-
-    let scrollFrame = 0;
-    const onScroll = () => {
-        if (scrollFrame) return;
-        scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; updateFloors(); });
-    };
-    chat?.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', placeFloors);
-
     // ---------------- 聊天的变动：只处理动到的消息 ----------------
     const dirty = new Set();
-    let frame = 0, rebuild = false;
+    let frame = 0;
     const flush = () => {
         frame = 0;
         for (const m of dirty) if (m.isConnected) markQ(m);
         dirty.clear();
-        if (rebuild) { rebuild = false; buildFloors(); placeFloors(); }
-        else updateFloors();
     };
     const watch = new MutationObserver((records) => {
         for (const r of records) {
             if (r.target === chat) {
-                rebuild = true;
                 for (const a of r.addedNodes) if (a.nodeType === 1 && a.classList.contains('mes')) dirty.add(a);
                 continue;
             }
@@ -236,8 +136,6 @@ export default function xuyu() {
     if (chat) {
         markQ(chat);
         watch.observe(chat, { childList: true, subtree: true, characterData: true });
-        buildFloors();
-        placeFloors();
     }
 
     // ---------------- 正在写回复 ----------------
@@ -253,19 +151,15 @@ export default function xuyu() {
     paintGroup();
 
     return () => {
+        gone = true;
         for (const e of events) st.eventSource.removeListener(e, paintGroup);
         watch.disconnect();
         genWatch.disconnect();
         if (frame) cancelAnimationFrame(frame);
-        if (scrollFrame) cancelAnimationFrame(scrollFrame);
-        clearTimeout(jumpTimer);
-        chat?.removeEventListener('scrollend', endJump);
-        chat?.removeEventListener('scroll', onScroll);
-        window.removeEventListener('resize', placeFloors);
         document.body.classList.remove('xy-gen');
         chat?.querySelectorAll('q.xy-q-l, q.xy-q-r').forEach(q => q.classList.remove('xy-q-l', 'xy-q-r'));
         chat?.querySelectorAll('.xy-lat').forEach(s => { const p = s.parentNode; s.replaceWith(s.textContent); p.normalize(); });
-        nav.remove();
+        floorsOff();
         link.remove();
         photo.remove();
         group.remove();

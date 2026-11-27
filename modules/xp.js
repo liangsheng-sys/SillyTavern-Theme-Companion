@@ -8,8 +8,12 @@
  *    顶栏里别的扩展按钮个数写进 --xp-ext-n
  * 2. 扫雷：电脑桌面上多一个「扫雷」图标；开始菜单「所有程序(P)」里也能打开（手机从这里进）
  *    左键翻开，右键插旗（手机长按），点已翻开的数字 = 周围旗子数对上时翻开一圈；笑脸 = 重开
+ *    游戏逻辑和格子上的操作在扩展的 widgets/minesweeper.js（主题伴侣「小部件」扫雷，别的主题客串用的也是同一份），这里只画 XP 风格的窗口、桌面图标和开始菜单入口
  *    逻辑参考 Minesweeper-XP（MIT，Akshay Kalose），画全是重画的
  */
+// 载入 widgets 时带上自己的 ?v=版本，主题更新后不吃旧缓存（widgets/ 在扩展里和 modules/ 平级）
+const { LEVELS, createGame, bindGrid } = await import(new URL(`../widgets/minesweeper.js${new URL(import.meta.url).search}`, import.meta.url).href);
+
 export default function xp() {
     const off = [marks(), clock(), minesweeper()];
     return () => off.forEach(f => f?.());
@@ -72,11 +76,7 @@ function clock() {
 }
 
 /* ---------------- 扫雷 ---------------- */
-const LEVELS = {
-    beginner: { label: '初级(B)', cols: 9, rows: 9, mines: 10 },
-    intermediate: { label: '中级(I)', cols: 16, rows: 16, mines: 40 },
-    expert: { label: '高级(E)', cols: 30, rows: 16, mines: 99 },
-};
+const LABEL = { beginner: '初级(B)', intermediate: '中级(I)', expert: '高级(E)' };
 const LS_KEY = 'xp_mine_level';
 
 function minesweeper() {
@@ -122,7 +122,8 @@ function minesweeper() {
     document.body.append(icon);
 
     // 游戏窗口
-    let win = null, state = null, timer = null;
+    let win = null, game = null, unbind = null;
+    const cells = [];
     let level = 'beginner';
     try { if (LEVELS[localStorage.getItem(LS_KEY)]) level = localStorage.getItem(LS_KEY); } catch { /* 没有存储就用初级 */ }
 
@@ -137,7 +138,7 @@ function minesweeper() {
                 <div class="xp-mine-drop" data-drop="game" hidden>
                     <div class="xp-mine-item" data-act="new">开局(<u>N</u>)<i>F2</i></div>
                     <hr>
-                    ${Object.entries(LEVELS).map(([k, v]) => `<div class="xp-mine-item" data-act="level" data-level="${k}">${v.label}</div>`).join('')}
+                    ${Object.keys(LEVELS).map(k => `<div class="xp-mine-item" data-act="level" data-level="${k}">${LABEL[k]}</div>`).join('')}
                     <hr>
                     <div class="xp-mine-item" data-act="close">退出(<u>X</u>)</div>
                 </div>
@@ -154,21 +155,22 @@ function minesweeper() {
                 <div class="xp-mine-grid"></div>
             </div>`;
         document.body.append(win);
+        game = createGame(view);
         bindWindow();
-        newGame();
+        game.newGame(level);
     }
 
     function close() {
-        clearInterval(timer);
-        timer = null;
+        game?.stop();
+        unbind?.();
         win?.remove();
-        win = null;
+        win = game = unbind = null;
     }
 
     function bindWindow() {
         const $ = (s) => win.querySelector(s);
         $('.xp-mine-close').addEventListener('click', close);
-        $('.xp-mine-face').addEventListener('click', newGame);
+        $('.xp-mine-face').addEventListener('click', () => game.newGame(level));
 
         // 菜单
         const drops = [...win.querySelectorAll('.xp-mine-drop')];
@@ -185,14 +187,14 @@ function minesweeper() {
             const it = e.target.closest('.xp-mine-item');
             if (it) {
                 const act = it.dataset.act;
-                if (act === 'new') newGame();
-                if (act === 'level') { level = it.dataset.level; try { localStorage.setItem(LS_KEY, level); } catch { /* 忽略 */ } newGame(); }
+                if (act === 'new') game.newGame(level);
+                if (act === 'level') { level = it.dataset.level; try { localStorage.setItem(LS_KEY, level); } catch { /* 忽略 */ } game.newGame(level); }
                 if (act === 'close') { close(); return; }
                 if (act === 'about') window.toastr?.info('扫雷 —— XP Messenger 附带的小游戏。左键翻开，右键插旗（手机长按），笑脸重新开局。', '关于扫雷');
             }
             if (!e.target.closest('.xp-mine-menu')) hideDrops();
         });
-        win.addEventListener('keydown', (e) => { if (e.key === 'F2') { e.preventDefault(); newGame(); } });
+        win.addEventListener('keydown', (e) => { if (e.key === 'F2') { e.preventDefault(); game.newGame(level); } });
         win.tabIndex = -1;
 
         // 拖标题栏挪窗口（电脑）。拖的时候只改 transform（不重排整页，主题的 :has() 很多，改 left/top 会卡），每帧最多一次；松手再写回 left/top
@@ -224,138 +226,33 @@ function minesweeper() {
             title.addEventListener('pointercancel', up);
         });
 
-        // 格子：左键翻开、右键插旗、长按插旗、按住时笑脸变「哦」
-        const grid = $('.xp-mine-grid');
-        const face = $('.xp-mine-face');
-        let pressTimer = null, longPressed = false;
-        grid.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const c = e.target.closest('.xp-mine-cell');
-            if (c) flag(+c.dataset.i);
-        });
-        grid.addEventListener('pointerdown', (e) => {
-            const c = e.target.closest('.xp-mine-cell');
-            if (!c || state.over || e.button === 2) return;
-            face.dataset.face = 'ohh';
-            longPressed = false;
-            if (e.pointerType !== 'mouse') {
-                pressTimer = setTimeout(() => { longPressed = true; flag(+c.dataset.i); navigator.vibrate?.(20); }, 400);
-            }
-        });
-        const release = () => { clearTimeout(pressTimer); if (state && !state.over) face.dataset.face = 'smile'; };
-        grid.addEventListener('pointerup', (e) => {
-            release();
-            const c = e.target.closest('.xp-mine-cell');
-            if (!c || longPressed || e.button === 2) return;
-            const i = +c.dataset.i;
-            if (e.button === 1 || state.open[i]) chord(i);
-            else reveal(i);
-        });
-        grid.addEventListener('pointerleave', release);
-        grid.addEventListener('pointercancel', release);
+        // 格子：左键翻开、右键插旗、长按插旗、按住时笑脸变「哦」（操作在 widgets/minesweeper.js）
+        unbind = bindGrid($('.xp-mine-grid'), game, { cellSel: '.xp-mine-cell', face: view.face });
     }
 
-    function newGame() {
-        const L = LEVELS[level];
-        clearInterval(timer);
-        timer = null;
-        state = { ...L, n: L.cols * L.rows, mine: [], open: [], flag: [], started: false, over: false, time: 0, left: L.cols * L.rows - L.mines };
-        win.style.setProperty('--cols', L.cols);
-        win.style.setProperty('--rows', L.rows);
-        win.dataset.level = level;
-        win.querySelectorAll('[data-level]').forEach(it => it.classList.toggle('checked', it.dataset.level === level));
-        const grid = win.querySelector('.xp-mine-grid');
-        grid.innerHTML = Array.from({ length: state.n }, (_, i) => `<div class="xp-mine-cell" data-i="${i}"></div>`).join('');
-        win.querySelector('.xp-mine-face').dataset.face = 'smile';
-        led('mines', L.mines);
-        led('time', 0);
-    }
-
-    function neighbors(i) {
-        const { cols, rows } = state, x = i % cols, y = (i / cols) | 0, out = [];
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-            if (!dx && !dy) continue;
-            const nx = x + dx, ny = y + dy;
-            if (nx >= 0 && ny >= 0 && nx < cols && ny < rows) out.push(ny * cols + nx);
-        }
-        return out;
-    }
-
-    // 第一下点到的格子和它周围一圈不放雷（XP 只保证第一下不是雷，这里再宽一点，开局更顺）
-    function layMines(first) {
-        const safe = new Set([first, ...neighbors(first)]);
-        const pool = [];
-        for (let i = 0; i < state.n; i++) if (!safe.has(i)) pool.push(i);
-        for (let k = 0; k < state.mines; k++) {
-            const j = k + Math.floor(Math.random() * (pool.length - k));
-            [pool[k], pool[j]] = [pool[j], pool[k]];
-            state.mine[pool[k]] = true;
-        }
-        state.started = true;
-        timer = setInterval(() => { if (state.time < 999) led('time', ++state.time); }, 1000);
-        led('time', ++state.time);
-    }
-
-    const count = (i) => neighbors(i).filter(j => state.mine[j]).length;
-    const cell = (i) => win.querySelector(`.xp-mine-cell[data-i="${i}"]`);
-
-    function reveal(i) {
-        if (state.over || state.open[i] || state.flag[i]) return;
-        if (!state.started) layMines(i);
-        if (state.mine[i]) return lose(i);
-        const stack = [i];
-        while (stack.length) {
-            const j = stack.pop();
-            if (state.open[j] || state.flag[j]) continue;
-            state.open[j] = true;
-            state.left--;
-            const n = count(j);
-            const c = cell(j);
-            c.classList.add('open');
-            if (n) c.dataset.n = n;
-            else stack.push(...neighbors(j).filter(k => !state.open[k]));
-        }
-        if (!state.left) win_();
-    }
-
-    function chord(i) {
-        if (state.over || !state.open[i]) return;
-        const nb = neighbors(i);
-        if (nb.filter(j => state.flag[j]).length !== count(i)) return;
-        nb.forEach(j => { if (!state.open[j] && !state.flag[j]) reveal(j); });
-    }
-
-    function flag(i) {
-        if (state.over || state.open[i]) return;
-        state.flag[i] = !state.flag[i];
-        cell(i).classList.toggle('flag', state.flag[i]);
-        led('mines', state.mines - state.flag.filter(Boolean).length);
-    }
-
-    function lose(i) {
-        state.over = true;
-        clearInterval(timer);
-        for (let j = 0; j < state.n; j++) {
-            const c = cell(j);
-            if (state.mine[j] && !state.flag[j]) c.classList.add('open', 'mine');
-            if (!state.mine[j] && state.flag[j]) c.classList.add('open', 'wrong');
-        }
-        cell(i).classList.add('boom');
-        win.querySelector('.xp-mine-face').dataset.face = 'dead';
-    }
-
-    function win_() {
-        state.over = true;
-        clearInterval(timer);
-        for (let j = 0; j < state.n; j++) if (state.mine[j]) { state.flag[j] = true; cell(j).classList.add('flag'); }
-        led('mines', 0);
-        win.querySelector('.xp-mine-face').dataset.face = 'cool';
-    }
-
-    function led(which, v) {
-        const s = v < 0 ? '-' + String(Math.min(99, -v)).padStart(2, '0') : String(Math.min(999, v)).padStart(3, '0');
-        win.querySelectorAll(`[data-led="${which}"] i`).forEach((d, k) => { d.dataset.d = s[k] === '-' ? 'm' : s[k]; });
-    }
+    // 游戏逻辑（widgets/minesweeper.js）算好了，这里把结果画成 XP 的格子
+    const view = {
+        reset(L, lv) {
+            win.style.setProperty('--cols', L.cols);
+            win.style.setProperty('--rows', L.rows);
+            win.dataset.level = lv;
+            win.querySelectorAll('[data-level]').forEach(it => it.classList.toggle('checked', it.dataset.level === lv));
+            const grid = win.querySelector('.xp-mine-grid');
+            grid.innerHTML = Array.from({ length: L.cols * L.rows }, (_, i) => `<div class="xp-mine-cell" data-i="${i}"></div>`).join('');
+            cells.length = 0;
+            cells.push(...grid.children);
+        },
+        open(i, n) { cells[i].classList.add('open'); if (n) cells[i].dataset.n = n; },
+        flag(i, on) { cells[i].classList.toggle('flag', on); },
+        mine(i) { cells[i].classList.add('open', 'mine'); },
+        wrong(i) { cells[i].classList.add('open', 'wrong'); },
+        boom(i) { cells[i].classList.add('boom'); },
+        face(name) { const f = win?.querySelector('.xp-mine-face'); if (f) f.dataset.face = name; },
+        led(which, v) {
+            const s = v < 0 ? '-' + String(Math.min(99, -v)).padStart(2, '0') : String(Math.min(999, v)).padStart(3, '0');
+            win.querySelectorAll(`[data-led="${which}"] i`).forEach((d, k) => { d.dataset.d = s[k] === '-' ? 'm' : s[k]; });
+        },
+    };
 
     return () => {
         close();

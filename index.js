@@ -936,6 +936,14 @@ function widgetSet(def, key, v) {
     renderWidgets();
 }
 const widgetYields = def => !!def.from && currentFamily()?.family === def.from;
+// 当前主题声明了「这个小部件在我这里不生效」（theme.base.json 的 companion.widgetsOff：{ 小部件id: '原因' } 或 ['id', ...]）：
+// 返回原因文字（可为空串），没声明返回 null
+const widgetOff = def => {
+    const o = currentFamily()?.widgetsOff;
+    if (!o) return null;
+    if (Array.isArray(o)) return o.includes(def.id) ? '' : null;
+    return Object.hasOwn(o, def.id) ? String(o[def.id] || '') : null;
+};
 // 传给小部件的接口：小部件只靠这几样和伴侣打交道（以后单独做成扩展时换一份同样的接口就行）
 function widgetApi(def) {
     return {
@@ -951,7 +959,7 @@ function widgetApi(def) {
 }
 function syncWidgets() {
     for (const def of widgetDefs) {
-        const want = !!widgetSaved(def.id).on && !widgetYields(def);
+        const want = !!widgetSaved(def.id).on && !widgetYields(def) && widgetOff(def) === null;
         const cur = widgetsOn[def.id];
         if (!!cur === want) continue;
         if (cur) {
@@ -1343,6 +1351,7 @@ function renderWidgets(box = document.getElementById('dn_widgets')) {
     for (const def of widgetDefs) {
         const s = widgetSaved(def.id);
         const yields = widgetYields(def);
+        const off = widgetOff(def);
         const row = document.createElement('label');
         row.className = 'dn-row dn-check dn-widget';
         const cb = document.createElement('input');
@@ -1352,14 +1361,15 @@ function renderWidgets(box = document.getElementById('dn_widgets')) {
         const name = document.createElement('span');
         name.textContent = def.label;
         row.append(cb, name);
-        if (def.from) {
+        if (def.from || off !== null) {
             const tag = document.createElement('span');
-            tag.className = 'dn-widget-from' + (yields ? ' is-own' : '');
-            tag.textContent = yields ? '当前主题自带' : `来自「${def.from}」`;
+            tag.className = 'dn-widget-from' + (yields || off !== null ? ' is-own' : '');
+            tag.textContent = yields ? '当前主题自带' : off !== null ? '当前主题不支持' : `来自「${def.from}」`;
             row.append(tag);
         }
         const note = document.createElement('small');
-        note.textContent = yields ? `${def.note}　现在用的就是「${def.from}」，它自带这个功能${def.ownNote ? `（${def.ownNote}）` : ''}，这里先让位，换别的主题时才出来。` : def.note;
+        const famName = currentFamily()?.family;
+        note.textContent = off !== null && !yields ? `${def.note}　「${famName}」不支持${off ? `（${off}）` : ''}，这里勾了也不会载入，换别的主题时才出来。` : yields ? `${def.note}　现在用的就是「${def.from}」，它自带这个功能${def.ownNote ? `（${def.ownNote}）` : ''}，这里先让位，换别的主题时才出来。` : def.note;
         row.append(note);
         box.append(row);
         // 自己的选项（hidden 的不列）+ 共用的那套主题里列在 shareKeys 的选项，收进一个默认收起的分组
