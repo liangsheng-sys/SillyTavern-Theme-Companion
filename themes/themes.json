@@ -2823,6 +2823,23 @@
                 ]
             },
             {
+                "key": "hud",
+                "type": "select",
+                "label": "房间右上角的按钮",
+                "note": "开关灯、放大、缩小；藏起来以后滚轮和双指照样能缩放",
+                "default": "show",
+                "choices": [
+                    {
+                        "value": "show",
+                        "label": "显示"
+                    },
+                    {
+                        "value": "hide",
+                        "label": "藏起来"
+                    }
+                ]
+            },
+            {
                 "key": "outline",
                 "type": "select",
                 "label": "鼠标移到东西上",

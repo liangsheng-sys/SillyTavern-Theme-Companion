@@ -226,14 +226,16 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 /* ---- 右上角一排 HUD（照 Unpacking 拍照模式右上角）：开关灯、放大、缩小。浅色线条像素图标，没有底，只有一道深色投影 ---- */
 #dm-room { ${Object.entries(HUD_ICONS).map(([k, v]) => `--dm-i-${k}: ${pixIcon(v)};`).join(' ')} }
 #dm-room .dm-hud { position: absolute; z-index: 6; top: calc(var(--topBarBlockSize, 0px) + 10px + env(safe-area-inset-top, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); display: flex; gap: 4px; }
-#dm-room .dm-hb { --i: none; width: 56px; height: 56px; padding: 0; display: grid; place-items: center; cursor: pointer; border: 0; background: none; color: var(--dm-hud-hi); box-shadow: none;
-  --sh: color-mix(in srgb, var(--dm-void), #000 55%); filter: drop-shadow(0 0 1px var(--sh)) drop-shadow(0 0 1px var(--sh)) drop-shadow(0 3px 0 var(--sh)); }   /* 放大后背后是花的房间：一圈深色描边 + 向下投影 */
-#dm-room .dm-hb::before { content: ""; width: 48px; height: 48px; background: currentColor; -webkit-mask: var(--i) center / 48px 48px no-repeat; mask: var(--i) center / 48px 48px no-repeat; }
+#dm-room .dm-hb { --i: none; width: 46px; height: 50px; padding: 0; display: grid; place-items: center; cursor: pointer; border: 0; background: none; color: var(--dm-hud-hi); box-shadow: none;
+  --sh: color-mix(in srgb, var(--dm-void), #000 55%); filter: drop-shadow(0 0 1px var(--sh)) drop-shadow(0 0 1px var(--sh)) drop-shadow(0 2px 0 var(--sh)); }   /* 放大后背后是花的房间：一圈深色描边 + 向下投影 */
+/* 和左边竖排标签一样大（46×50），图标 16 格 × 2 倍 = 32px（和标签图标同样的像素颗粒） */
+#dm-room .dm-hb::before { content: ""; width: 32px; height: 32px; background: currentColor; -webkit-mask: var(--i) center / 32px 32px no-repeat; mask: var(--i) center / 32px 32px no-repeat; }
 #dm-room .dm-hb[data-z="1"] { --i: var(--dm-i-zin); }
 #dm-room .dm-hb[data-z="-1"] { --i: var(--dm-i-zout); }
 #dm-room .dm-hb.dm-bulb { --i: var(--dm-i-bulb); }
 #dm-room .dm-hb.dm-bulb.off { --i: var(--dm-i-bulb0); }
 #dm-room .dm-hb[hidden] { display: none; }
+#dm-room.dm-no-hud .dm-hud { display: none; }
 @media screen and (min-width: 1001px) {   /* 电脑上角色面板开着（常钉着）：挪到它左边，别被盖住（宽度照酒馆 .fillRight）*/
   #top-settings-holder:has(#right-nav-panel.openDrawer) ~ #dm-room .dm-hud { right: calc((100vw - var(--sheldWidth) - 2px) / 2 + 16px); right: calc((100dvw - var(--sheldWidth) - 2px) / 2 + 16px); }
 }
@@ -242,8 +244,6 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 #dm-room .dm-hb:disabled { cursor: default; opacity: .35; }
 @media screen and (max-width: 1000px) {
   #dm-room .dm-hud { top: calc(84px + env(safe-area-inset-top, 0px)); right: calc(6px + env(safe-area-inset-right, 0px)); gap: 0; }
-  #dm-room .dm-hb { width: 44px; height: 44px; }
-  #dm-room .dm-hb::before { width: 32px; height: 32px; -webkit-mask-size: 32px 32px; mask-size: 32px 32px; }
 }
 @media (prefers-reduced-motion: reduce) { #sheld, html.dm-room #dm-room, html.dm-room #dm-room .dm-box { transition: none; animation: none; } }
 
@@ -783,7 +783,10 @@ export default function mountRoom(api = {}) {
         if (m) { room.style.setProperty('--dm-void', m[1].trim()); room.style.setProperty('--dm-void2', m[2].trim()); }
         else { room.style.removeProperty('--dm-void'); room.style.removeProperty('--dm-void2'); }
     };
-    function applyOutline() { room.classList.toggle('dm-no-outline', api.get?.('outline') === 'name'); }
+    function applyOutline() {
+        room.classList.toggle('dm-no-outline', api.get?.('outline') === 'name');
+        room.classList.toggle('dm-no-hud', api.get?.('hud') === 'hide');   // 右上角开关灯 / 放大 / 缩小那排按钮（滚轮、双指照样能缩放）
+    }
     function enter() {
         started = true;
         applyGround();

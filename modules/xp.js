@@ -12,7 +12,7 @@
  *    逻辑参考 Minesweeper-XP（MIT，Akshay Kalose），画全是重画的
  */
 // 载入 widgets 时带上自己的 ?v=版本，主题更新后不吃旧缓存（widgets/ 在扩展里和 modules/ 平级）
-const { LEVELS, createGame, bindGrid } = await import(new URL(`../widgets/minesweeper.js${new URL(import.meta.url).search}`, import.meta.url).href);
+const { LEVELS, xpMineWindow } = await import(new URL(`../widgets/minesweeper.js${new URL(import.meta.url).search}`, import.meta.url).href);
 
 export default function xp() {
     const off = [marks(), clock(), minesweeper()];
@@ -76,7 +76,6 @@ function clock() {
 }
 
 /* ---------------- 扫雷 ---------------- */
-const LABEL = { beginner: '初级(B)', intermediate: '中级(I)', expert: '高级(E)' };
 const LS_KEY = 'xp_mine_level';
 
 function minesweeper() {
@@ -121,138 +120,21 @@ function minesweeper() {
 
     document.body.append(icon);
 
-    // 游戏窗口
-    let win = null, game = null, unbind = null;
-    const cells = [];
+    // 游戏窗口（窗口本体、菜单、拖动、格子操作都在 widgets/minesweeper.js 的 xpMineWindow，外观 CSS 在 widgets/mine-xp.css，客串的「XP 经典」样子用的是同一份）
+    let win = null;
     let level = 'beginner';
     try { if (LEVELS[localStorage.getItem(LS_KEY)]) level = localStorage.getItem(LS_KEY); } catch { /* 没有存储就用初级 */ }
 
     function open() {
-        if (win) { win.hidden = false; return; }
-        win = el('div', 'xp-mine');
-        win.id = 'xp_mine';
-        win.innerHTML = `
-            <div class="xp-mine-title"><span>扫雷</span><button class="xp-mine-close" title="关闭"></button></div>
-            <div class="xp-mine-menubar">
-                <span class="xp-mine-menu" data-menu="game">游戏(<u>G</u>)</span><span class="xp-mine-menu" data-menu="help">帮助(<u>H</u>)</span>
-                <div class="xp-mine-drop" data-drop="game" hidden>
-                    <div class="xp-mine-item" data-act="new">开局(<u>N</u>)<i>F2</i></div>
-                    <hr>
-                    ${Object.keys(LEVELS).map(k => `<div class="xp-mine-item" data-act="level" data-level="${k}">${LABEL[k]}</div>`).join('')}
-                    <hr>
-                    <div class="xp-mine-item" data-act="close">退出(<u>X</u>)</div>
-                </div>
-                <div class="xp-mine-drop" data-drop="help" hidden>
-                    <div class="xp-mine-item" data-act="about">关于扫雷(<u>A</u>)...</div>
-                </div>
-            </div>
-            <div class="xp-mine-body">
-                <div class="xp-mine-head">
-                    <div class="xp-mine-led" data-led="mines"><i></i><i></i><i></i></div>
-                    <button class="xp-mine-face" data-face="smile" title="开局"></button>
-                    <div class="xp-mine-led" data-led="time"><i></i><i></i><i></i></div>
-                </div>
-                <div class="xp-mine-grid"></div>
-            </div>`;
-        document.body.append(win);
-        game = createGame(view);
-        bindWindow();
-        game.newGame(level);
-    }
-
-    function close() {
-        game?.stop();
-        unbind?.();
-        win?.remove();
-        win = game = unbind = null;
-    }
-
-    function bindWindow() {
-        const $ = (s) => win.querySelector(s);
-        $('.xp-mine-close').addEventListener('click', close);
-        $('.xp-mine-face').addEventListener('click', () => game.newGame(level));
-
-        // 菜单
-        const drops = [...win.querySelectorAll('.xp-mine-drop')];
-        const hideDrops = () => { drops.forEach(d => { d.hidden = true; }); win.querySelectorAll('.xp-mine-menu').forEach(m => m.classList.remove('on')); };
-        win.querySelectorAll('.xp-mine-menu').forEach(m => m.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const d = win.querySelector(`[data-drop="${m.dataset.menu}"]`);
-            const wasOpen = !d.hidden;
-            hideDrops();
-            if (!wasOpen) { d.hidden = false; m.classList.add('on'); }
-        }));
-        win.addEventListener('click', (e) => {
-            if (!win) return;   // 点 × 关掉窗口后，这次点击还会冒泡到这里
-            const it = e.target.closest('.xp-mine-item');
-            if (it) {
-                const act = it.dataset.act;
-                if (act === 'new') game.newGame(level);
-                if (act === 'level') { level = it.dataset.level; try { localStorage.setItem(LS_KEY, level); } catch { /* 忽略 */ } game.newGame(level); }
-                if (act === 'close') { close(); return; }
-                if (act === 'about') window.toastr?.info('扫雷 —— XP Messenger 附带的小游戏。左键翻开，右键插旗（手机长按），笑脸重新开局。', '关于扫雷');
-            }
-            if (!e.target.closest('.xp-mine-menu')) hideDrops();
+        if (win) { win.el.hidden = false; return; }
+        win = xpMineWindow({
+            getLevel: () => level,
+            setLevel: (l) => { level = l; try { localStorage.setItem(LS_KEY, l); } catch { /* 忽略 */ } },
+            onClose: () => { win = null; },
         });
-        win.addEventListener('keydown', (e) => { if (e.key === 'F2') { e.preventDefault(); game.newGame(level); } });
-        win.tabIndex = -1;
-
-        // 拖标题栏挪窗口（电脑）。拖的时候只改 transform（不重排整页，主题的 :has() 很多，改 left/top 会卡），每帧最多一次；松手再写回 left/top
-        const title = $('.xp-mine-title');
-        title.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button') || matchMedia('(max-width: 1000px)').matches) return;
-            const r = win.getBoundingClientRect();
-            const sx = e.clientX, sy = e.clientY;
-            let x = r.left, y = r.top, frame = 0;
-            title.setPointerCapture(e.pointerId);
-            win.classList.add('dragging');
-            const move = (ev) => {
-                x = Math.max(0, Math.min(innerWidth - 60, r.left + ev.clientX - sx));
-                y = Math.max(0, Math.min(innerHeight - 40, r.top + ev.clientY - sy));
-                frame ||= requestAnimationFrame(() => { frame = 0; win.style.transform = `translate(${x - r.left}px, ${y - r.top}px)`; });
-            };
-            const up = () => {
-                cancelAnimationFrame(frame);
-                title.removeEventListener('pointermove', move);
-                title.removeEventListener('pointerup', up);
-                title.removeEventListener('pointercancel', up);
-                win.classList.remove('dragging');
-                win.style.transform = '';
-                win.style.left = x + 'px';
-                win.style.top = y + 'px';
-            };
-            title.addEventListener('pointermove', move);
-            title.addEventListener('pointerup', up);
-            title.addEventListener('pointercancel', up);
-        });
-
-        // 格子：左键翻开、右键插旗、长按插旗、按住时笑脸变「哦」（操作在 widgets/minesweeper.js）
-        unbind = bindGrid($('.xp-mine-grid'), game, { cellSel: '.xp-mine-cell', face: view.face });
     }
 
-    // 游戏逻辑（widgets/minesweeper.js）算好了，这里把结果画成 XP 的格子
-    const view = {
-        reset(L, lv) {
-            win.style.setProperty('--cols', L.cols);
-            win.style.setProperty('--rows', L.rows);
-            win.dataset.level = lv;
-            win.querySelectorAll('[data-level]').forEach(it => it.classList.toggle('checked', it.dataset.level === lv));
-            const grid = win.querySelector('.xp-mine-grid');
-            grid.innerHTML = Array.from({ length: L.cols * L.rows }, (_, i) => `<div class="xp-mine-cell" data-i="${i}"></div>`).join('');
-            cells.length = 0;
-            cells.push(...grid.children);
-        },
-        open(i, n) { cells[i].classList.add('open'); if (n) cells[i].dataset.n = n; },
-        flag(i, on) { cells[i].classList.toggle('flag', on); },
-        mine(i) { cells[i].classList.add('open', 'mine'); },
-        wrong(i) { cells[i].classList.add('open', 'wrong'); },
-        boom(i) { cells[i].classList.add('boom'); },
-        face(name) { const f = win?.querySelector('.xp-mine-face'); if (f) f.dataset.face = name; },
-        led(which, v) {
-            const s = v < 0 ? '-' + String(Math.min(99, -v)).padStart(2, '0') : String(Math.min(999, v)).padStart(3, '0');
-            win.querySelectorAll(`[data-led="${which}"] i`).forEach((d, k) => { d.dataset.d = s[k] === '-' ? 'm' : s[k]; });
-        },
-    };
+    function close() { win?.close(); }
 
     return () => {
         close();

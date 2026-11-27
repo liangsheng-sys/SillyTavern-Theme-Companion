@@ -6,7 +6,7 @@
         "module": "widgets/room.js",
         "note": "顶栏多一个「房间」按钮：点开是一间像素宿舍，房间里的东西就是菜单（衣柜 = 角色列表，插线板 = 预设……），右下角的信笺回到聊天。",
         "share": "Roomlet",
-        "shareKeys": ["room", "style", "zoom", "tap", "outline"],
+        "shareKeys": ["room", "style", "zoom", "hud", "tap", "outline"],
         "shareNote": "房间、画风这些和「Roomlet」主题共用一份，两边改哪边都一样；底色和小物件在房间左边的竖排标签里换。",
         "options": [
             { "key": "autoEnter", "type": "toggle", "label": "没打开聊天时自动进房间", "default": false, "note": "打开酒馆、还没选角色时直接是房间（Roomlet 主题就是这样）" },
@@ -43,8 +43,9 @@
         "from": "XP Messenger",
         "ownNote": "桌面上的「扫雷」图标，或开始菜单的「所有程序」",
         "module": "widgets/minesweeper.js",
-        "note": "魔杖菜单多一项「扫雷」（也能打字 /minesweeper）。点开是一个小窗：电脑上可以拖标题栏，手机上贴在屏幕底部。左键翻开，右键（手机长按）插旗，点数字翻一圈，初级 / 中级 / 高级都有。窗口的颜色跟着当前主题走。",
+        "note": "魔杖菜单多一项「扫雷」（也能打字 /minesweeper）。点开是一个小窗：电脑上可以拖标题栏，手机上贴在屏幕底部。左键翻开，右键（手机长按）插旗，点数字翻一圈，初级 / 中级 / 高级都有。窗口的颜色默认跟着当前主题走，也可以选「XP 经典」样子。",
         "options": [
+            { "key": "skin", "type": "select", "label": "样子", "default": "follow", "choices": [["follow", "跟随主题"], ["xp", "XP 经典"]], "note": "XP 经典 = XP Messenger 主题里那扇蓝色标题栏的扫雷窗口，套什么主题都是这个样子。改了下次打开小窗时生效" },
             { "key": "level", "type": "select", "label": "难度", "default": "beginner", "hidden": true, "choices": [["beginner", "初级"], ["intermediate", "中级"], ["expert", "高级"]], "note": "小窗里点难度按钮就会记住" }
         ]
     }
