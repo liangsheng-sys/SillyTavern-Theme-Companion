@@ -1,0 +1,25 @@
+{
+  "type": "script",
+  "enabled": true,
+  "name": "小部件 · 房间菜单",
+  "id": "065ed0fe-6e90-52a1-a3f3-c29657adb0d0",
+  "content": "// 主题伴侣的小部件，单独当酒馆助手脚本用。代码从 GitHub 载入，作者更新后自动跟上（最多晚半天）。\n// 选项在下面的「脚本变量」里改。和主题伴侣同时装着时不会重复：伴侣里开着同一个小部件就让给伴侣。\nconst SRC = 'https://testingcf.jsdelivr.net/gh/liangsheng-sys/SillyTavern-Theme-Companion@main/widgets/standalone.js';\nconst where = { type: 'script', script_id: getScriptId() };\nconst store = { get: () => getVariables(where), set: d => replaceVariables(d, where) };\nlet stop = null, gone = false;\n$(async () => {\n  try {\n    // 在酒馆主页面里载入（小部件要操作的是主页面，不是脚本自己的小窗口）\n    const load = window.parent.Function('u', 'return import(u)');\n    const s = await (await load(SRC)).default({ id: 'room', store });\n    if (gone) s(); else stop = s;\n  } catch (e) {\n    console.error('[小部件] 载入失败', e);\n    toastr.error(String(e?.message || e), '小部件载入失败');\n  }\n});\n$(window).on('pagehide', () => { gone = true; stop?.(); });\n",
+  "info": "顶栏多一个「房间」按钮：点开是一间像素宿舍，房间里的东西就是菜单（衣柜 = 角色列表，插线板 = 预设……），右下角的信笺回到聊天。\n（来自「Roomlet」主题。套着它又装了主题伴侣时，主题自带的那份优先，这个脚本自动让开。）\n\n选项：改「脚本变量」里对应的值（不填 = 默认）。\n- autoEnter：没打开聊天时自动进房间。填 true（开）或 false（关）。打开酒馆、还没选角色时直接是房间（Roomlet 主题就是这样）\n- room：房间。可填 \"girl\"（女生宿舍） / \"boy\"（男生宿舍）\n- style：房间画风。可填 \"code\"（程序画（默认）） / \"sketch\"（草图（温馨））。草图是最早 PixelLab 一口气画出的整间房：开着台灯的夜里，暖一些、软一些，细节少。草图只有一种光线（昼夜开关不换图），小物件只能换小熊和暖水瓶\n- zoom：房间显示大小。可填 \"1\"（1 倍（整间房）） / \"2\"（2 倍） / \"3\"（3 倍）。房间里右上角的放大镜、电脑上的鼠标滚轮、手机上的双指捏合也能换；放大以后按住拖动（手机直接滑）看别处。只影响房间，聊天时背后的房间不变\n- hud：房间右上角的按钮。可填 \"show\"（显示） / \"hide\"（藏起来）。开关灯、放大、缩小；藏起来以后滚轮和双指照样能缩放\n- tap：手机上点房间里的东西。可填 \"open\"（直接打开） / \"twice\"（先亮再开）。直接打开：一点就打开对应的面板；先亮再开：第一下只亮出名字，再点一下才打开，不容易误点\n- outline：鼠标移到东西上。可填 \"both\"（冒一圈描边，出名字） / \"name\"（只出名字）\n\n来源：SillyTavern-Theme-Companion（主题伴侣）https://github.com/liangsheng-sys/SillyTavern-Theme-Companion",
+  "button": {
+    "enabled": false,
+    "buttons": []
+  },
+  "data": {
+    "autoEnter": false,
+    "room": "girl",
+    "style": "code",
+    "zoom": "1",
+    "hud": "show",
+    "tap": "open",
+    "outline": "both"
+  },
+  "export_with": {
+    "data": true,
+    "button": true
+  }
+}
