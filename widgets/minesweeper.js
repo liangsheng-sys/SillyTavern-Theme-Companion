@@ -2,7 +2,8 @@
 // 一份代码两种用法：
 // 1. 命名导出 LEVELS / createGame / bindGrid：游戏逻辑和格子上的操作（左键翻、右键插旗、长按插旗、点数字翻一圈），和长什么样无关。
 //    XP Messenger 主题脚本（themes/xp/companion.js）import 这几样，自己画 XP 风格的窗口（桌面图标、开始菜单里进）。
-// 2. 默认导出 mount(api)：客串。魔杖菜单多一项「扫雷」+ 斜杠命令 /minesweeper，打开一个浮动小窗；
+// 2. 默认导出 mount(api)：客串。选项「样子」：跟随主题（默认，下面自带的小窗）/ XP 经典（xpMineWindow，和 XP 主题里是同一扇窗，外观 CSS 也是同一份 mine-xp.css；打开时读选项，改了下次打开生效）。
+//    魔杖菜单多一项「扫雷」+ 斜杠命令 /minesweeper，打开一个浮动小窗；
 //    样式自带，底、字、边框跟当前主题走（--SmartThemeBlurTintColor / BodyColor / BorderColor，没有就用默认色），数字颜色按底色亮暗选两套。
 //    电脑上可拖标题栏、记住位置；手机上是贴底的整宽卡片。
 // 逻辑参考 Minesweeper-XP（MIT，Akshay Kalose），画全是重画的。
@@ -155,10 +156,159 @@ export function bindGrid(grid, game, { cellSel, face }) {
     };
 }
 
+/* ---------------- XP 窗口（XP 主题和客串「XP 经典」样子共用） ---------------- */
+const XP_LABEL = { beginner: '初级(B)', intermediate: '中级(I)', expert: '高级(E)' };
+
+/**
+ * 画一扇 XP 扫雷窗口并接好全部操作（菜单、拖标题栏、格子、F2）。外观全在 widgets/mine-xp.css（XP 主题和客串共用）。
+ * opts：getLevel() / setLevel(l) 读写难度；onClose() 窗口关掉时；onMoved(x, y) 电脑上拖完松手（客串用来记位置）。
+ * 返回 { el, close }。
+ */
+export function xpMineWindow({ getLevel, setLevel, onClose, onMoved } = {}) {
+    const win = document.createElement('div');
+    win.className = 'xp-mine';
+    win.id = 'xp_mine';
+    win.tabIndex = -1;
+    win.innerHTML = `
+        <div class="xp-mine-title"><span>扫雷</span><button class="xp-mine-close" title="关闭"></button></div>
+        <div class="xp-mine-menubar">
+            <span class="xp-mine-menu" data-menu="game">游戏(<u>G</u>)</span><span class="xp-mine-menu" data-menu="help">帮助(<u>H</u>)</span>
+            <div class="xp-mine-drop" data-drop="game" hidden>
+                <div class="xp-mine-item" data-act="new">开局(<u>N</u>)<i>F2</i></div>
+                <hr>
+                ${Object.keys(LEVELS).map(k => `<div class="xp-mine-item" data-act="level" data-level="${k}">${XP_LABEL[k]}</div>`).join('')}
+                <hr>
+                <div class="xp-mine-item" data-act="close">退出(<u>X</u>)</div>
+            </div>
+            <div class="xp-mine-drop" data-drop="help" hidden>
+                <div class="xp-mine-item" data-act="about">关于扫雷(<u>A</u>)...</div>
+            </div>
+        </div>
+        <div class="xp-mine-body">
+            <div class="xp-mine-head">
+                <div class="xp-mine-led" data-led="mines"><i></i><i></i><i></i></div>
+                <button class="xp-mine-face" data-face="smile" title="开局"></button>
+                <div class="xp-mine-led" data-led="time"><i></i><i></i><i></i></div>
+            </div>
+            <div class="xp-mine-grid"></div>
+        </div>`;
+    document.body.append(win);
+
+    const $ = s => win.querySelector(s);
+    const cells = [];
+    let closed = false, level = getLevel?.() || 'beginner';
+    const view = {
+        reset(L, lv) {
+            win.style.setProperty('--cols', L.cols);
+            win.style.setProperty('--rows', L.rows);
+            win.dataset.level = lv;
+            win.querySelectorAll('[data-level]').forEach(it => it.classList.toggle('checked', it.dataset.level === lv));
+            const grid = $('.xp-mine-grid');
+            grid.innerHTML = Array.from({ length: L.cols * L.rows }, (_, i) => `<div class="xp-mine-cell" data-i="${i}"></div>`).join('');
+            cells.length = 0;
+            cells.push(...grid.children);
+        },
+        open(i, n) { cells[i].classList.add('open'); if (n) cells[i].dataset.n = n; },
+        flag(i, on) { cells[i].classList.toggle('flag', on); },
+        mine(i) { cells[i].classList.add('open', 'mine'); },
+        wrong(i) { cells[i].classList.add('open', 'wrong'); },
+        boom(i) { cells[i].classList.add('boom'); },
+        face(name) { const f = $('.xp-mine-face'); if (f) f.dataset.face = name; },
+        led(which, v) {
+            const s = v < 0 ? '-' + String(Math.min(99, -v)).padStart(2, '0') : String(Math.min(999, v)).padStart(3, '0');
+            win.querySelectorAll(`[data-led="${which}"] i`).forEach((d, k) => { d.dataset.d = s[k] === '-' ? 'm' : s[k]; });
+        },
+    };
+    const game = createGame(view);
+    const unbind = bindGrid($('.xp-mine-grid'), game, { cellSel: '.xp-mine-cell', face: view.face });
+    const close = () => {
+        if (closed) return;
+        closed = true;
+        game.stop();
+        unbind();
+        win.remove();
+        onClose?.();
+    };
+
+    $('.xp-mine-close').addEventListener('click', close);
+    $('.xp-mine-face').addEventListener('click', () => game.newGame(level));
+
+    // 菜单
+    const drops = [...win.querySelectorAll('.xp-mine-drop')];
+    const hideDrops = () => { drops.forEach(d => { d.hidden = true; }); win.querySelectorAll('.xp-mine-menu').forEach(m => m.classList.remove('on')); };
+    win.querySelectorAll('.xp-mine-menu').forEach(m => m.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const d = win.querySelector(`[data-drop="${m.dataset.menu}"]`);
+        const wasOpen = !d.hidden;
+        hideDrops();
+        if (!wasOpen) { d.hidden = false; m.classList.add('on'); }
+    }));
+    win.addEventListener('click', (e) => {
+        if (closed) return;   // 点 × 关掉窗口后，这次点击还会冒泡到这里
+        const it = e.target.closest('.xp-mine-item');
+        if (it) {
+            const act = it.dataset.act;
+            if (act === 'new') game.newGame(level);
+            if (act === 'level') { level = it.dataset.level; setLevel?.(level); game.newGame(level); }
+            if (act === 'close') { close(); return; }
+            if (act === 'about') window.toastr?.info('扫雷 —— XP Messenger 附带的小游戏。左键翻开，右键插旗（手机长按），笑脸重新开局。', '关于扫雷');
+        }
+        if (!e.target.closest('.xp-mine-menu')) hideDrops();
+    });
+    win.addEventListener('keydown', (e) => {
+        if (e.key === 'F2') { e.preventDefault(); game.newGame(level); }
+        else if (e.key === 'Escape' && win.classList.contains('xp-guest')) { e.stopPropagation(); close(); }
+    });
+
+    // 拖标题栏挪窗口（电脑）。拖的时候只改 transform（不重排整页，主题的 :has() 很多，改 left/top 会卡），每帧最多一次；松手再写回 left/top
+    const title = $('.xp-mine-title');
+    title.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button') || matchMedia('(max-width: 1000px)').matches) return;
+        const r = win.getBoundingClientRect();
+        const sx = e.clientX, sy = e.clientY;
+        let x = r.left, y = r.top, frame = 0;
+        title.setPointerCapture(e.pointerId);
+        win.classList.add('dragging');
+        const move = (ev) => {
+            x = Math.max(0, Math.min(innerWidth - 60, r.left + ev.clientX - sx));
+            y = Math.max(0, Math.min(innerHeight - 40, r.top + ev.clientY - sy));
+            frame ||= requestAnimationFrame(() => { frame = 0; win.style.transform = `translate(${x - r.left}px, ${y - r.top}px)`; });
+        };
+        const up = () => {
+            cancelAnimationFrame(frame);
+            title.removeEventListener('pointermove', move);
+            title.removeEventListener('pointerup', up);
+            title.removeEventListener('pointercancel', up);
+            win.classList.remove('dragging');
+            win.style.transform = '';
+            win.style.left = x + 'px';
+            win.style.top = y + 'px';
+            onMoved?.(x, y);
+        };
+        title.addEventListener('pointermove', move);
+        title.addEventListener('pointerup', up);
+        title.addEventListener('pointercancel', up);
+    });
+
+    game.newGame(level);
+    return { el: win, close };
+}
+
 /* ---------------- 客串：浮动小窗 ---------------- */
 const POS_KEY = 'dnw_mine_pos';
 const FLAG_SVG = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 2.5v15M3.5 17.5h9' stroke='%23000' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3Cpath d='M6.5 3l9 3.8-9 3.8z' fill='%23000'/%3E%3C/svg%3E\")";
 const MINE_SVG = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cg stroke='%23000' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M10 2v16M2 10h16M4.3 4.3l11.4 11.4M15.7 4.3L4.3 15.7'/%3E%3C/g%3E%3Ccircle cx='10' cy='10' r='5.2' fill='%23000'/%3E%3C/svg%3E\")";
+
+// XP 经典（客串）：窗口自己的位置规则。外观本体在 mine-xp.css、默认变量在 mine-xp-vars.css
+const XP_GUEST_CSS = `
+#xp_mine.xp-guest { z-index: 4000; max-width: calc(100vw - 16px); box-sizing: border-box; }
+#xp_mine.xp-guest button { margin: 0; box-shadow: none; min-width: 0; text-shadow: none; }
+#xp_mine.xp-guest .xp-mine-face { padding: 0; border-radius: 0; }
+@media screen and (max-width: 1000px) {
+    /* 手机贴底（理由见上面 #msw 的手机规则） */
+    #xp_mine.xp-guest { left: 50% !important; top: 100vh !important; top: 100dvh !important; translate: -50% -100%; max-height: 90vh; overflow-y: auto; padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px)); border-radius: 8px 8px 0 0; }
+}
+`;
 
 const CSS = `
 #msw { --msw-bg: #26262b; --msw-fg: #e8e8ee; --msw-bd: #55555e; --msw-closed: #44444c; --msw-open: #2d2d33; --msw-flag: #ff7b7b; --msw-mine: #e8e8ee; --msw-boom: #7a2a2a; --msw-dim: #b4b4c0; --msw-hover: #54545d;
@@ -264,7 +414,7 @@ export default function mount(api = {}) {
     style.textContent = CSS;
     document.head.append(style);
 
-    let win = null, game = null, unbind = null, obs = null, pending = 0;
+    let win = null, game = null, unbind = null, obs = null, pending = 0, xp = null, xpStyles = null;
     const cells = [];
     const $ = s => win.querySelector(s);
     const isMobile = () => matchMedia('(max-width: 1000px)').matches;
@@ -325,6 +475,7 @@ export default function mount(api = {}) {
     };
 
     function close() {
+        if (xp) { const x = xp; xp = null; x.close?.(); return; }
         game?.stop();
         unbind?.();
         obs?.disconnect();
@@ -333,7 +484,43 @@ export default function mount(api = {}) {
         win = game = unbind = obs = null;
     }
 
+    // 「XP 经典」：样式表第一次用到时才载入（扩展目录里的 mine-xp.css + mine-xp-vars.css）
+    function loadXpStyles() {
+        xpStyles ||= Promise.all(['mine-xp.css', 'mine-xp-vars.css'].map(f => fetch(new URL(f, import.meta.url)).then(r => r.text()))).then(t => {
+            const s = document.createElement('style');
+            s.id = 'msw-xp-style';
+            s.textContent = t.join('\n') + XP_GUEST_CSS;
+            document.head.append(s);
+            return s;
+        });
+        return xpStyles;
+    }
+    async function openXp() {
+        if (xp) { xp.el?.focus({ preventScroll: true }); return; }
+        const holder = {};
+        xp = holder;   // 先占位，样式载入期间再点不会开两扇
+        try { await loadXpStyles(); } catch (e) { xp = null; console.warn('[主题伴侣] 扫雷：XP 样式载入失败', e); return; }
+        if (xp !== holder) return;   // 载入期间已被卸载
+        const saved = reads();
+        const w = xpMineWindow({
+            getLevel, setLevel: l => api.set?.('level', l),
+            onClose: () => { if (xp === w) xp = null; },
+            onMoved: (x, y) => { try { localStorage.setItem(POS_KEY, JSON.stringify({ x, y })); } catch { /* 记不住就算了 */ } },
+        });
+        w.el.classList.add('xp-guest');
+        xp = w;
+        if (!isMobile()) {
+            const r = w.el.getBoundingClientRect();
+            const x = Math.max(0, Math.min(innerWidth - Math.min(r.width, innerWidth), saved ? saved.x : innerWidth - r.width - 72));
+            const y = Math.max(0, Math.min(innerHeight - 60, saved ? saved.y : 96));
+            w.el.style.left = x + 'px';
+            w.el.style.top = y + 'px';
+        }
+        w.el.focus({ preventScroll: true });
+    }
+
     function open() {
+        if (xp || api.get?.('skin') === 'xp') { openXp(); return; }
         if (win) { win.focus({ preventScroll: true }); return; }
         win = document.createElement('div');
         win.id = 'msw';
@@ -428,6 +615,7 @@ export default function mount(api = {}) {
     return () => {
         close();
         item.remove();
+        document.getElementById('msw-xp-style')?.remove();
         if (parser) { delete parser.commands.minesweeper; delete parser.commands.mine; }
         style.remove();
     };

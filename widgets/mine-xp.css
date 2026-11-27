@@ -1,0 +1,244 @@
+/* 扫雷窗口的 XP 外观（唯一一份）：XP 主题（themes/xp/mine.css 里 include）和主题伴侣「扫雷」小部件的「XP 经典」样子共用
+ * 窗口结构由 widgets/minesweeper.js 的 xpMineWindow() 生成；用到的 --xp-* 变量，主题里由主题定义，
+ * 小部件客串时由 widgets/mine-xp-vars.css（tools/xp/mine-skin.mjs 从 art.css / schemes/blue.css 生成）带默认值 */
+
+/* ---------------- 窗口 ---------------- */
+#xp_mine {
+    --cell: 16px;
+    position: fixed;
+    left: calc(50vw - (var(--cols) * var(--cell) + 30px) / 2);
+    top: 80px;
+    z-index: 3010;
+    padding: 0 3px 3px;
+    border-radius: 8px 8px 0 0;
+    background: var(--xp-face);
+    box-shadow: var(--xp-frame-shadow), 2px 2px 8px rgba(0, 0, 0, 0.45);
+    font: 12px var(--xp-ui-font);
+    color: #000;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    outline: none;
+}
+
+.xp-mine-title {
+    display: flex;
+    align-items: center;
+    height: var(--xp-title-h);
+    margin: 0 -3px;
+    padding: 0 5px 0 28px;
+    border-radius: 8px 8px 0 0;
+    background: var(--xp-art-icoMine) no-repeat 7px center / 16px 16px, var(--xp-title-grad);
+    box-shadow: var(--xp-title-edge);
+    font: 700 13px/1 var(--xp-title-font);
+    color: var(--xp-title-ink);
+    text-shadow: 1px 1px var(--xp-title-shadow);
+    cursor: default;
+}
+
+.xp-mine-title > span { flex: 1; }
+
+.xp-mine-close {
+    width: 21px;
+    height: 21px;
+    padding: 0;
+    border: 0;
+    background: var(--xp-css-close) no-repeat center / 21px 21px;
+}
+
+.xp-mine-close:hover { background-image: var(--xp-css-close-hover); }
+.xp-mine-close:active { background-image: var(--xp-css-close-active); }
+
+/* 拖动中：单独一层，挪动时不重画窗口里面 */
+#xp_mine.dragging { will-change: transform; }
+
+/* 菜单栏 + 下拉 */
+.xp-mine-menubar {
+    position: relative;
+    display: flex;
+    height: 20px;
+    padding-left: 2px;
+}
+
+.xp-mine-menu {
+    padding: 0 7px;
+    line-height: 20px;
+}
+
+.xp-mine-menu:hover,
+.xp-mine-menu.on {
+    background: var(--xp-sel);
+    color: var(--xp-sel-ink);
+}
+
+.xp-mine-drop {
+    position: absolute;
+    top: 20px;
+    left: 2px;
+    min-width: 150px;
+    padding: 2px;
+    background: #FFFFFF;
+    border: 1px solid #ACA899;
+    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+.xp-mine-drop[data-drop="help"] { left: 60px; }
+
+.xp-mine-item {
+    display: flex;
+    padding: 0 12px 0 20px;
+    line-height: 20px;
+    white-space: nowrap;
+}
+
+.xp-mine-item i {
+    margin-left: auto;
+    padding-left: 24px;
+    font-style: normal;
+}
+
+.xp-mine-item.checked::before {
+    content: '\2714';
+    margin-left: -14px;
+    width: 14px;
+    font-size: 10px;
+}
+
+.xp-mine-item:hover {
+    background: var(--xp-sel);
+    color: var(--xp-sel-ink);
+}
+
+.xp-mine-drop hr {
+    margin: 2px 1px;
+    border: 0;
+    border-top: 1px solid #ACA899;
+}
+
+/* 游戏区：外面一圈凸起，计数条和雷区各自凹进去 */
+.xp-mine-body {
+    padding: 6px;
+    background: #C0C0C0;
+    border: 3px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+}
+
+.xp-mine-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 34px;
+    margin-bottom: 6px;
+    padding: 0 5px;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+}
+
+.xp-mine-led {
+    display: flex;
+    border: 1px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+}
+
+.xp-mine-led i {
+    width: 13px;
+    height: 23px;
+    background: var(--xp-art-led0) no-repeat center / 13px 23px;
+}
+
+.xp-mine-led i[data-d="1"] { background-image: var(--xp-art-led1); }
+.xp-mine-led i[data-d="2"] { background-image: var(--xp-art-led2); }
+.xp-mine-led i[data-d="3"] { background-image: var(--xp-art-led3); }
+.xp-mine-led i[data-d="4"] { background-image: var(--xp-art-led4); }
+.xp-mine-led i[data-d="5"] { background-image: var(--xp-art-led5); }
+.xp-mine-led i[data-d="6"] { background-image: var(--xp-art-led6); }
+.xp-mine-led i[data-d="7"] { background-image: var(--xp-art-led7); }
+.xp-mine-led i[data-d="8"] { background-image: var(--xp-art-led8); }
+.xp-mine-led i[data-d="9"] { background-image: var(--xp-art-led9); }
+.xp-mine-led i[data-d="m"] { background-image: var(--xp-art-ledMinus); }
+
+.xp-mine-face {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: var(--xp-art-faceSmile) no-repeat center / 17px 17px, #C0C0C0;
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    outline: 1px solid #808080;
+    outline-offset: -1px;
+    border-radius: 0;
+}
+
+.xp-mine-face:active {
+    border-color: #808080 #C0C0C0 #C0C0C0 #808080;
+    background-position: calc(50% + 1px) calc(50% + 1px);
+}
+
+.xp-mine-face[data-face="ohh"] { background-image: var(--xp-art-faceOhh); }
+.xp-mine-face[data-face="dead"] { background-image: var(--xp-art-faceDead); }
+.xp-mine-face[data-face="cool"] { background-image: var(--xp-art-faceCool); }
+
+.xp-mine-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--cell));
+    grid-auto-rows: var(--cell);
+    border: 3px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+}
+
+.xp-mine-cell {
+    box-sizing: border-box;
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    background: #C0C0C0 no-repeat center / calc(var(--cell) - 4px);
+    font: 700 calc(var(--cell) * 0.8)/1 Tahoma, Verdana, sans-serif;
+    text-align: center;
+}
+
+.xp-mine-cell:not(.open):not(.flag):active {
+    border: 0;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+}
+
+.xp-mine-cell.flag { background-image: var(--xp-art-mineFlag); }
+
+.xp-mine-cell.open {
+    border: 0;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    background-size: calc(var(--cell) - 2px);
+    line-height: calc(var(--cell) - 1px);
+}
+
+.xp-mine-cell.mine { background-image: var(--xp-art-mineBomb); }
+.xp-mine-cell.boom { background-color: #FF0000; }
+.xp-mine-cell.wrong {
+    background-image: linear-gradient(45deg, transparent 44%, #FF0000 44% 56%, transparent 56%), linear-gradient(-45deg, transparent 44%, #FF0000 44% 56%, transparent 56%), var(--xp-art-mineBomb);
+}
+
+.xp-mine-cell[data-n]::before { content: attr(data-n); }
+.xp-mine-cell[data-n="1"] { color: #0000FF; }
+.xp-mine-cell[data-n="2"] { color: #008000; }
+.xp-mine-cell[data-n="3"] { color: #FF0000; }
+.xp-mine-cell[data-n="4"] { color: #000080; }
+.xp-mine-cell[data-n="5"] { color: #800000; }
+.xp-mine-cell[data-n="6"] { color: #008080; }
+.xp-mine-cell[data-n="7"] { color: #000000; }
+.xp-mine-cell[data-n="8"] { color: #808080; }
+
+/* 手机：格子放大到手指点得准；高级太宽就横着滚 */
+@media screen and (max-width: 1000px) {
+    #xp_mine {
+        --cell: max(16px, min(30px, (100vw - 44px) / var(--cols)));
+        left: 50% !important;
+        top: calc(var(--xp-top, 0px) + 12px) !important;
+        translate: -50% 0;
+        max-width: calc(100vw - 8px);
+        box-sizing: border-box;
+    }
+
+    .xp-mine-body { overflow-x: auto; }
+    .xp-mine-grid { width: max-content; }
+}
