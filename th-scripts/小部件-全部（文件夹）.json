@@ -1,0 +1,95 @@
+{
+  "type": "folder",
+  "enabled": false,
+  "name": "小部件（主题伴侣）",
+  "id": "d371c5d1-24d4-5e93-afcf-c06d63a63cac",
+  "icon": "fa-solid fa-puzzle-piece",
+  "color": "#C08A4A",
+  "scripts": [
+    {
+      "type": "script",
+      "enabled": false,
+      "name": "小部件 · 房间菜单",
+      "id": "065ed0fe-6e90-52a1-a3f3-c29657adb0d0",
+      "content": "// 主题伴侣的小部件，单独当酒馆助手脚本用。代码从 GitHub 载入，作者更新后自动跟上（最多晚半天）。\n// 选项：点输入框左边的魔杖 →「小部件设置」（也可以直接改下面的「脚本变量」）。和主题伴侣同时装着时不会重复：伴侣里开着同一个小部件就让给伴侣。\nconst SRC = 'https://testingcf.jsdelivr.net/gh/liangsheng-sys/SillyTavern-Theme-Companion@main/widgets/standalone.js';\nconst where = { type: 'script', script_id: getScriptId() };\nconst store = { get: () => getVariables(where), set: d => replaceVariables(d, where) };\nlet stop = null, gone = false;\n$(async () => {\n  try {\n    // 在酒馆主页面里载入（小部件要操作的是主页面，不是脚本自己的小窗口）\n    const load = window.parent.Function('u', 'return import(u)');\n    const s = await (await load(SRC)).default({ id: 'room', store });\n    if (gone) s(); else stop = s;\n  } catch (e) {\n    console.error('[小部件] 载入失败', e);\n    toastr.error(String(e?.message || e), '小部件载入失败');\n  }\n});\n$(window).on('pagehide', () => { gone = true; stop?.(); });\n",
+      "info": "顶栏多一个「房间」按钮：点开是一间像素宿舍，房间里的东西就是菜单（衣柜 = 角色列表，插线板 = 预设……），右下角的信笺回到聊天。\n（来自「Roomlet」主题。套着它又装了主题伴侣时，主题自带的那份优先，这个脚本自动让开。）\n\n调选项：点输入框左边的魔杖 →「小部件设置」，在弹窗里点选，改了马上生效。\n\n（也可以直接改「脚本变量」，各项的意思：）\n- autoEnter：没打开聊天时自动进房间。填 true（开）或 false（关）。打开酒馆、还没选角色时直接是房间（Roomlet 主题就是这样）\n- room：房间。可填 \"girl\"（女生宿舍） / \"boy\"（男生宿舍）\n- style：房间画风。可填 \"code\"（程序画（默认）） / \"sketch\"（草图（温馨））。草图是最早 PixelLab 一口气画出的整间房：开着台灯的夜里，暖一些、软一些，细节少。草图只有一种光线（昼夜开关不换图），小物件只能换小熊和暖水瓶\n- zoom：房间显示大小。可填 \"1\"（1 倍（整间房）） / \"2\"（2 倍） / \"3\"（3 倍）。房间里右上角的放大镜、电脑上的鼠标滚轮、手机上的双指捏合也能换；放大以后按住拖动（手机直接滑）看别处。只影响房间，聊天时背后的房间不变\n- hud：房间右上角的按钮。可填 \"show\"（显示） / \"hide\"（藏起来）。开关灯、放大、缩小；藏起来以后滚轮和双指照样能缩放\n- tap：手机上点房间里的东西。可填 \"open\"（直接打开） / \"twice\"（先亮再开）。直接打开：一点就打开对应的面板；先亮再开：第一下只亮出名字，再点一下才打开，不容易误点\n- outline：鼠标移到东西上。可填 \"both\"（冒一圈描边，出名字） / \"name\"（只出名字）\n\n来源：SillyTavern-Theme-Companion（主题伴侣）https://github.com/liangsheng-sys/SillyTavern-Theme-Companion",
+      "button": {
+        "enabled": false,
+        "buttons": []
+      },
+      "data": {
+        "autoEnter": false,
+        "room": "girl",
+        "style": "code",
+        "zoom": "1",
+        "hud": "show",
+        "tap": "open",
+        "outline": "both"
+      },
+      "export_with": {
+        "data": true,
+        "button": true
+      }
+    },
+    {
+      "type": "script",
+      "enabled": false,
+      "name": "小部件 · 顶栏收成小本子",
+      "id": "2febf5a5-4273-5ce4-ab9e-439178ad2f92",
+      "content": "// 主题伴侣的小部件，单独当酒馆助手脚本用。代码从 GitHub 载入，作者更新后自动跟上（最多晚半天）。\n// 选项：点输入框左边的魔杖 →「小部件设置」（也可以直接改下面的「脚本变量」）。和主题伴侣同时装着时不会重复：伴侣里开着同一个小部件就让给伴侣。\nconst SRC = 'https://testingcf.jsdelivr.net/gh/liangsheng-sys/SillyTavern-Theme-Companion@main/widgets/standalone.js';\nconst where = { type: 'script', script_id: getScriptId() };\nconst store = { get: () => getVariables(where), set: d => replaceVariables(d, where) };\nlet stop = null, gone = false;\n$(async () => {\n  try {\n    // 在酒馆主页面里载入（小部件要操作的是主页面，不是脚本自己的小窗口）\n    const load = window.parent.Function('u', 'return import(u)');\n    const s = await (await load(SRC)).default({ id: 'notebook', store });\n    if (gone) s(); else stop = s;\n  } catch (e) {\n    console.error('[小部件] 载入失败', e);\n    toastr.error(String(e?.message || e), '小部件载入失败');\n  }\n});\n$(window).on('pagehide', () => { gone = true; stop?.(); });\n",
+      "info": "顶上那一排图标藏起来，换成左上角一本小本子，点开是目录，每一项就是原来的一个按钮（别的扩展加的也在）。按 Esc 或点旁边关上。\n（来自「Roomlet」主题。套着它又装了主题伴侣时，主题自带的那份优先，这个脚本自动让开。）\n\n来源：SillyTavern-Theme-Companion（主题伴侣）https://github.com/liangsheng-sys/SillyTavern-Theme-Companion",
+      "button": {
+        "enabled": false,
+        "buttons": []
+      },
+      "data": {},
+      "export_with": {
+        "data": true,
+        "button": true
+      }
+    },
+    {
+      "type": "script",
+      "enabled": false,
+      "name": "小部件 · 楼层导航",
+      "id": "517eeb98-f16a-5038-a60d-4562ed57e426",
+      "content": "// 主题伴侣的小部件，单独当酒馆助手脚本用。代码从 GitHub 载入，作者更新后自动跟上（最多晚半天）。\n// 选项：点输入框左边的魔杖 →「小部件设置」（也可以直接改下面的「脚本变量」）。和主题伴侣同时装着时不会重复：伴侣里开着同一个小部件就让给伴侣。\nconst SRC = 'https://testingcf.jsdelivr.net/gh/liangsheng-sys/SillyTavern-Theme-Companion@main/widgets/standalone.js';\nconst where = { type: 'script', script_id: getScriptId() };\nconst store = { get: () => getVariables(where), set: d => replaceVariables(d, where) };\nlet stop = null, gone = false;\n$(async () => {\n  try {\n    // 在酒馆主页面里载入（小部件要操作的是主页面，不是脚本自己的小窗口）\n    const load = window.parent.Function('u', 'return import(u)');\n    const s = await (await load(SRC)).default({ id: 'floors', store });\n    if (gone) s(); else stop = s;\n  } catch (e) {\n    console.error('[小部件] 载入失败', e);\n    toastr.error(String(e?.message || e), '小部件载入失败');\n  }\n});\n$(window).on('pagehide', () => { gone = true; stop?.(); });\n",
+      "info": "电脑上聊天区旁边一根细竖轨，药丸停在正在看的那一楼，点一下跳到那一楼；被隐藏的楼层带一个划掉的小眼睛。手机上没有。\n（来自「絮语」主题。套着它又装了主题伴侣时，主题自带的那份优先，这个脚本自动让开。）\n\n调选项：点输入框左边的魔杖 →「小部件设置」，在弹窗里点选，改了马上生效。\n\n（也可以直接改「脚本变量」，各项的意思：）\n- side：整个导航放在聊天区的。可填 \"left\"（左边） / \"right\"（右边）\n- rail：竖条在文字的。可填 \"auto\"（靠着聊天区那边） / \"left\"（左边） / \"right\"（右边）\n- accent：药丸的颜色。可填 \"orange\"（橙色） / \"theme\"（跟随主题（主题的「底线文字」色）） / \"custom\"（自选颜色）\n- accentColor：自选的药丸颜色。填颜色，如 \"#FF6C4C\"。上面选「自选颜色」才用得上\n- eye：隐藏的楼层显示小眼睛。填 true（开）或 false（关）\n- tone：文字配色。可填 \"auto\"（自动（用主题的字色和底色）） / \"light\"（浅色字） / \"dark\"（深色字）。文字下面垫了一层很淡的底，压在你自己的背景图上也读得出。自动不合适时手动选一档\n\n来源：SillyTavern-Theme-Companion（主题伴侣）https://github.com/liangsheng-sys/SillyTavern-Theme-Companion",
+      "button": {
+        "enabled": false,
+        "buttons": []
+      },
+      "data": {
+        "side": "left",
+        "rail": "auto",
+        "accent": "orange",
+        "accentColor": "#FF6C4C",
+        "eye": true,
+        "tone": "auto"
+      },
+      "export_with": {
+        "data": true,
+        "button": true
+      }
+    },
+    {
+      "type": "script",
+      "enabled": false,
+      "name": "小部件 · 扫雷",
+      "id": "73630aad-6772-54c5-a474-63c7d85b9a17",
+      "content": "// 主题伴侣的小部件，单独当酒馆助手脚本用。代码从 GitHub 载入，作者更新后自动跟上（最多晚半天）。\n// 选项：点输入框左边的魔杖 →「小部件设置」（也可以直接改下面的「脚本变量」）。和主题伴侣同时装着时不会重复：伴侣里开着同一个小部件就让给伴侣。\nconst SRC = 'https://testingcf.jsdelivr.net/gh/liangsheng-sys/SillyTavern-Theme-Companion@main/widgets/standalone.js';\nconst where = { type: 'script', script_id: getScriptId() };\nconst store = { get: () => getVariables(where), set: d => replaceVariables(d, where) };\nlet stop = null, gone = false;\n$(async () => {\n  try {\n    // 在酒馆主页面里载入（小部件要操作的是主页面，不是脚本自己的小窗口）\n    const load = window.parent.Function('u', 'return import(u)');\n    const s = await (await load(SRC)).default({ id: 'minesweeper', store });\n    if (gone) s(); else stop = s;\n  } catch (e) {\n    console.error('[小部件] 载入失败', e);\n    toastr.error(String(e?.message || e), '小部件载入失败');\n  }\n});\n$(window).on('pagehide', () => { gone = true; stop?.(); });\n",
+      "info": "魔杖菜单多一项「扫雷」（也能打字 /minesweeper）。点开是一个小窗：电脑上可以拖标题栏，手机上贴在屏幕底部。左键翻开，右键（手机长按）插旗，点数字翻一圈，初级 / 中级 / 高级都有。窗口的颜色默认跟着当前主题走，也可以选「XP 经典」样子。\n（来自「XP Messenger」主题。套着它又装了主题伴侣时，主题自带的那份优先，这个脚本自动让开。）\n\n调选项：点输入框左边的魔杖 →「小部件设置」，在弹窗里点选，改了马上生效。\n\n（也可以直接改「脚本变量」，各项的意思：）\n- skin：样子。可填 \"follow\"（跟随主题） / \"xp\"（XP 经典）。XP 经典 = XP Messenger 主题里那扇蓝色标题栏的扫雷窗口，套什么主题都是这个样子。改了下次打开小窗时生效\n\n来源：SillyTavern-Theme-Companion（主题伴侣）https://github.com/liangsheng-sys/SillyTavern-Theme-Companion",
+      "button": {
+        "enabled": false,
+        "buttons": []
+      },
+      "data": {
+        "skin": "follow"
+      },
+      "export_with": {
+        "data": true,
+        "button": true
+      }
+    }
+  ]
+}
