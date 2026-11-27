@@ -86,6 +86,86 @@ const SKETCH = {
 };
 const sketchCell = (t, v) => t.alias?.[v] ?? v;   // 选项值 → 草图图集里的样子（'0' = 房间图里原来那只）
 
+// 房间视图的显示倍数：1 / 2 / 3 档（主题设置 zoom）。程序画的房间 1 档 = 原图 1 倍，草图 1 档 = SKETCH.k 倍，往上按比例
+const ZOOMS = [1, 2, 3];
+// 右上角 HUD 的像素图标：16×16，'#' = 实，'+' = 浅（遮罩透明度 .45），做成遮罩，颜色由 currentColor（--dm-hud）给，只按整数倍显示
+const HUD_ICONS = {
+    zin: `
+...######.......
+.##########.....
+.###....###.....
+##...##...##....
+##...##...##....
+##.######.##....
+##.######.##....
+##...##...##....
+##...##...##....
+.###....###.....
+.###########....
+...######.###...
+...........###..
+............###.
+.............###
+..............##`,
+    zout: `
+...######.......
+.##########.....
+.###....###.....
+##........##....
+##........##....
+##.######.##....
+##.######.##....
+##........##....
+##........##....
+.###....###.....
+.###########....
+...######.###...
+...........###..
+............###.
+.............###
+..............##`,
+    bulb: `
+.......##.......
+.#............#.
+..#..######..#..
+....########....
+...####+#####...
+...###+######...
+##.##########.##
+...##########...
+....########....
+.....######.....
+......####......
+......####......
+......++++......
+......####......
+.......##.......
+................`,
+    bulb0: `
+................
+................
+.....######.....
+....##....##....
+...##......##...
+...##......##...
+...##......##...
+...##......##...
+....##....##....
+.....##..##.....
+......####......
+......####......
+......++++......
+......####......
+.......##.......
+................`,
+};
+function pixIcon(art) {
+    const g = art.trim().split('\n');
+    const path = ch => g.map((r, y) => [...r].map((c, x) => c === ch ? `M${x} ${y}h1v1h-1z` : '').join('')).join('');
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path d='${path('#')}'/><path fill-opacity='.45' d='${path('+')}'/></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
 const CSS = `
 html.dm-room #sheld { transform: translateY(calc(100% + 60px)); }
 #sheld { transition: transform .45s cubic-bezier(.3,.7,.3,1); }
@@ -94,9 +174,11 @@ html.dm-room body::before, html.dm-room body::after { display: none; }
 html.dm-room #dm-room { display: block; animation: dm-in .35s ease both; }
 html.dm-clear #dm-room { background: none; }
 @keyframes dm-in { from { opacity: 0; } to { opacity: 1; } }
-#dm-room .dm-scroll { position: absolute; inset: 0; overflow: auto hidden; scrollbar-width: none; display: grid; place-items: center; }
+#dm-room .dm-scroll { position: absolute; inset: 0; overflow: auto; scrollbar-width: none; display: grid; box-sizing: border-box; padding: 48px 24px 44px; touch-action: pan-x pan-y; user-select: none; -webkit-user-select: none; }
 #dm-room .dm-scroll::-webkit-scrollbar { display: none; }
-#dm-room .dm-box { position: relative; width: calc(var(--dm-w) * var(--dm-k)); height: calc(var(--dm-h) * var(--dm-k)); background: var(--dm-room) 0 0 / 100% 100% no-repeat; image-rendering: pixelated; flex: none; margin-top: 24px; }
+#dm-room .dm-scroll.dm-drag, #dm-room .dm-scroll.dm-drag * { cursor: grabbing !important; }
+/* margin: auto 居中：房间比屏幕大（放大了）时自动退成靠左上，左边、上边都滑得到（place-items: center 会把多出来的一半推到够不着的地方）*/
+#dm-room .dm-box { position: relative; width: calc(var(--dm-w) * var(--dm-k)); height: calc(var(--dm-h) * var(--dm-k)); background: var(--dm-room) 0 0 / 100% 100% no-repeat; image-rendering: pixelated; flex: none; margin: auto; }
 html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1) both; }
 @keyframes dm-zoom { from { transform: scale(1.5); } to { transform: none; } }
 #dm-room svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -125,13 +207,37 @@ html.dm-room #dm-room .dm-box { animation: dm-zoom .45s cubic-bezier(.3,.7,.3,1)
 #dm-room-btn .drawer-icon.openIcon { color: var(--dm-hud-hi); filter: drop-shadow(0 3px 0 var(--dm-red)); }
 #dm-room { --dm-k: 1; --dm-w: ${W0}px; --dm-h: ${H0}px; }   /* 草图版 dorm.js 在元素上改成 448 × 336、2 倍 */
 @media screen and (max-width: 1000px) {
-  #dm-room .dm-scroll { display: block; padding-top: 70px; place-items: normal; }   /* 别让 place-items: center 在块布局里也居中（新版 Chrome 会）：房间比屏幕宽时左边会滑不到 */
-  #dm-room .dm-box { margin: 0; }
+  #dm-room .dm-scroll { padding: 70px 0 40px; }
   #dm-room .dm-peek { left: auto; right: -20px; bottom: 18px; width: 230px; }
   #dm-room .dm-cap { bottom: -30px; left: 20px; font-size: 15px; }
-  #dm-room .dm-hint { position: absolute; top: 58px; left: 0; right: 0; text-align: center; color: var(--dm-hud); font-size: 14px; pointer-events: none; }
+  #dm-room .dm-hint { position: absolute; top: 58px; left: 0; right: 0; text-align: center; color: var(--dm-hud-hi); font-size: 14px; pointer-events: none; text-shadow: 0 0 2px var(--dm-void), 0 2px 0 var(--dm-void); }
 }
 @media screen and (min-width: 1001px) { #dm-room .dm-hint { display: none; } }
+
+/* ---- 右上角一排 HUD（照 Unpacking 拍照模式右上角）：开关灯、放大、缩小。浅色线条像素图标，没有底，只有一道深色投影 ---- */
+#dm-room, #dm-menu { ${Object.entries(HUD_ICONS).map(([k, v]) => `--dm-i-${k}: ${pixIcon(v)};`).join(' ')} }
+#dm-room .dm-hud { position: absolute; z-index: 6; top: calc(var(--topBarBlockSize, 0px) + 10px + env(safe-area-inset-top, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); display: flex; gap: 4px; }
+#dm-room .dm-hb { --i: none; width: 56px; height: 56px; padding: 0; display: grid; place-items: center; cursor: pointer; border: 0; background: none; color: var(--dm-hud-hi);
+  --sh: color-mix(in srgb, var(--dm-void), #000 55%); filter: drop-shadow(0 0 1px var(--sh)) drop-shadow(0 0 1px var(--sh)) drop-shadow(0 3px 0 var(--sh)); }   /* 放大后背后是花的房间：一圈深色描边 + 向下投影 */
+#dm-room .dm-hb::before { content: ""; width: 48px; height: 48px; background: currentColor; -webkit-mask: var(--i) center / 48px 48px no-repeat; mask: var(--i) center / 48px 48px no-repeat; }
+#dm-room .dm-hb[data-z="1"] { --i: var(--dm-i-zin); }
+#dm-room .dm-hb[data-z="-1"] { --i: var(--dm-i-zout); }
+#dm-room .dm-hb.dm-bulb { --i: var(--dm-i-bulb); }
+#dm-room .dm-hb.dm-bulb.off { --i: var(--dm-i-bulb0); }
+#dm-room .dm-hb[hidden] { display: none; }
+@media screen and (min-width: 1001px) {   /* 电脑上角色面板开着（常钉着）：挪到它左边，别被盖住（宽度照酒馆 .fillRight）*/
+  #top-settings-holder:has(#right-nav-panel.openDrawer) ~ #dm-room .dm-hud { right: calc((100vw - var(--sheldWidth) - 2px) / 2 + 16px); right: calc((100dvw - var(--sheldWidth) - 2px) / 2 + 16px); }
+}
+#dm-room .dm-hb:not(:disabled):hover::before { transform: translateY(-2px); }
+#dm-room .dm-hb:focus-visible { outline: 2px dashed var(--dm-hud-hi); outline-offset: -2px; }
+#dm-room .dm-hb:disabled { cursor: default; opacity: .35; }
+#dm-menu .dm-mi .dm-mi-bulb::before { content: ""; display: block; background: currentColor; -webkit-mask: var(--dm-i-bulb) center / 28px 28px no-repeat; mask: var(--dm-i-bulb) center / 28px 28px no-repeat; }
+#dm-menu .dm-mi .dm-mi-bulb.off::before { -webkit-mask-image: var(--dm-i-bulb0); mask-image: var(--dm-i-bulb0); }
+@media screen and (max-width: 1000px) {
+  #dm-room .dm-hud { top: calc(84px + env(safe-area-inset-top, 0px)); right: calc(6px + env(safe-area-inset-right, 0px)); gap: 0; }
+  #dm-room .dm-hb { width: 44px; height: 44px; }
+  #dm-room .dm-hb::before { width: 32px; height: 32px; -webkit-mask-size: 32px 32px; mask-size: 32px 32px; }
+}
 @media (prefers-reduced-motion: reduce) { #sheld, html.dm-room #dm-room, html.dm-room #dm-room .dm-box { transition: none; animation: none; } }
 
 /* ---- 收起酒馆顶栏：左上角一本小本子，点开是目录（装了主题伴侣、设置里选「收起」才有）---- */
@@ -216,6 +322,7 @@ export default function dorm(api = {}) {
     const svgNS = 'http://www.w3.org/2000/svg';
     room.innerHTML = `<div class="dm-scroll"><div class="dm-box"><svg viewBox="0 0 ${W} ${H}" aria-label="宿舍"></svg><div class="dm-tag" hidden><span></span><small></small></div><div class="dm-cap"></div></div></div>
 <div class="dm-hint">← 左右滑动看看 · 点房间里的东西 →</div>
+<div class="dm-hud" role="toolbar" aria-label="房间视图"><button class="dm-hb dm-bulb" type="button" hidden></button><button class="dm-hb" type="button" data-z="1" title="放大（滚轮 / 双指张开）" aria-label="放大"></button><button class="dm-hb" type="button" data-z="-1" title="缩小（滚轮 / 双指捏合）" aria-label="缩小"></button></div>
 <button class="dm-peek" type="button" hidden><b></b><small></small><span></span></button>
 <div class="dm-pal"><div class="dm-pal-panel"><div class="dm-pal-body"></div><div class="dm-pal-name"></div></div><div class="dm-pal-tabs"><button class="dm-tab" type="button" data-tab="ground" title="房间底色" aria-label="房间底色"></button><button class="dm-tab" type="button" data-tab="things" title="换小物件" aria-label="换小物件"></button></div></div>`;
     document.body.append(room);
@@ -364,15 +471,108 @@ export default function dorm(api = {}) {
 
     // 画风的大小：房间视图的格子（--dm-w/--dm-h/--dm-k）、svg 坐标、外框。和新房间图在同一刻换上，不会有一帧旧图套新尺寸
     let geomSk = false;
-    const aimDesk = () => { if (scroller.scrollWidth > scroller.clientWidth) scroller.scrollLeft = box.offsetWidth * ((geomSk ? SKETCH.deskX : 40) / W); };   // 手机：房间比屏幕宽，对准书桌（1 倍像素的横坐标）
+    // 房间比屏幕大时先对准哪儿（1 倍像素坐标）：手机对准书桌（原来的 scrollLeft = 书桌左边 40 / 草图 50，换成「书桌在屏幕中间」），电脑对准房间中间
+    const aimDesk = () => {
+        const narrow = matchMedia('(max-width: 1000px)').matches;
+        const fx = narrow ? (geomSk ? SKETCH.deskX + 100 : 250) : W / 2, fy = narrow && !geomSk ? 380 : H / 2;
+        const k = box.offsetWidth / W;
+        scroller.scrollLeft = box.offsetLeft + fx * k - scroller.clientWidth / 2;
+        scroller.scrollTop = box.offsetTop + fy * k - scroller.clientHeight / 2;
+    };
     function setGeom(sk, which) {
         geomSk = sk;
         W = sk ? SKETCH.W : W0; H = sk ? SKETCH.H : H0;
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-        for (const [p, v] of [['--dm-w', `${W}px`], ['--dm-h', `${H}px`], ['--dm-k', SKETCH.k]]) sk ? room.style.setProperty(p, v) : room.style.removeProperty(p);
+        for (const [p, v] of [['--dm-w', `${W}px`], ['--dm-h', `${H}px`]]) sk ? room.style.setProperty(p, v) : room.style.removeProperty(p);
+        applyK();
         buildSpots(which, sk);
         if (root.classList.contains('dm-room')) aimDesk();   // 在房间里换了画风：重新对准书桌
     }
+
+    // ---- 放大 / 缩小：1 / 2 / 3 档，存进主题设置（zoom）。只改房间视图的 --dm-k，聊天时背后的房间背景不变
+    const hud = room.querySelector('.dm-hud'), zin = hud.querySelector('[data-z="1"]'), zout = hud.querySelector('[data-z="-1"]'), bulb = hud.querySelector('.dm-bulb');
+    const readZoom = () => { const z = Math.round(+api.get?.('zoom')); return ZOOMS.includes(z) ? z : ZOOMS[0]; };
+    let zoom = readZoom();
+    function applyK() {
+        room.style.setProperty('--dm-k', (geomSk ? SKETCH.k : 1) * zoom);
+        zin.disabled = zoom >= ZOOMS.at(-1); zout.disabled = zoom <= ZOOMS[0];
+    }
+    // 换档：屏幕上 (ax, ay) 这一点（滚轮 = 鼠标、双指 = 两指中间、按钮 = 屏幕中间）指着的房间位置不动
+    function setZoom(z, ax, ay, save = true) {
+        z = Math.max(ZOOMS[0], Math.min(ZOOMS.at(-1), z));
+        if (z === zoom) return;
+        const s = scroller.getBoundingClientRect();
+        ax ??= s.left + s.width / 2; ay ??= s.top + s.height / 2;
+        const r = box.getBoundingClientRect();
+        const fx = Math.max(0, Math.min(1, (ax - r.left) / r.width)), fy = Math.max(0, Math.min(1, (ay - r.top) / r.height));
+        zoom = z; applyK();
+        const r2 = box.getBoundingClientRect();
+        scroller.scrollLeft += r2.left + fx * r2.width - ax;
+        scroller.scrollTop += r2.top + fy * r2.height - ay;
+        light(0);
+        if (save) api.set?.('zoom', String(z));
+    }
+    applyK();
+    zin.addEventListener('click', () => setZoom(zoom + 1));
+    zout.addEventListener('click', () => setZoom(zoom - 1));
+    // 滚轮：一格跳一档（触控板一下子来一串小滚动，隔 250 ms 才认下一次）
+    let wheelT = 0;
+    scroller.addEventListener('wheel', e => {
+        e.preventDefault();
+        const now = performance.now();
+        if (!e.deltaY || now - wheelT < 250) return;
+        wheelT = now;
+        setZoom(zoom + (e.deltaY < 0 ? 1 : -1), e.clientX, e.clientY);
+    }, { passive: false });
+    // 鼠标拖着看（手机单指拖是浏览器自己的滚动，松手不会算点击）：挪过 6 px 才算拖，拖完松手的那一下点击吃掉，不会误开面板
+    let drag = null, eatClick = false;
+    scroller.addEventListener('pointerdown', e => {
+        if (e.pointerType !== 'mouse' || e.button !== 0) return;
+        drag = { x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop, id: e.pointerId, moved: false };
+    });
+    scroller.addEventListener('pointermove', e => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if (!drag.moved) {
+            if (Math.hypot(dx, dy) < 6) return;
+            drag.moved = true;
+            scroller.setPointerCapture?.(e.pointerId);
+            scroller.classList.add('dm-drag');
+            light(0);
+        }
+        scroller.scrollLeft = drag.sl - dx; scroller.scrollTop = drag.st - dy;
+    });
+    const endDrag = e => {
+        if (!drag || e.pointerId !== drag.id) return;
+        if (drag.moved) { eatClick = true; setTimeout(() => { eatClick = false; }, 50); }
+        scroller.classList.remove('dm-drag');
+        drag = null;
+    };
+    scroller.addEventListener('pointerup', endDrag);
+    scroller.addEventListener('pointercancel', endDrag);
+    scroller.addEventListener('click', e => { if (eatClick) { eatClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+    // 手机双指：张开 / 捏合超过三成就跳一档（接着捏还能再跳）
+    let pinch = null;
+    const two = t => ({ d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY), x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+    scroller.addEventListener('touchstart', e => { pinch = e.touches.length === 2 ? two(e.touches) : null; }, { passive: true });
+    scroller.addEventListener('touchmove', e => {
+        if (!pinch || e.touches.length !== 2) return;
+        const p = two(e.touches), r = p.d / pinch.d;
+        if (r > 1.3 || r < 0.77) { setZoom(zoom + (r > 1 ? 1 : -1), p.x, p.y); pinch = p; }
+    }, { passive: true });
+    scroller.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; }, { passive: true });
+
+    // ---- 开关灯：主题伴侣的昼夜开关（夜 = 熄灯）。图标：开着灯 = 亮的灯泡，熄了灯 = 空心灯泡
+    const night = () => root.classList.contains('dn-night');
+    function syncBulb() {
+        const n = night();
+        bulb.hidden = !api.dayNight;
+        bulb.classList.toggle('off', n);
+        bulb.title = n ? '开灯（切到白天）' : '关灯（切到夜里）';
+        bulb.setAttribute('aria-label', n ? '开灯' : '关灯');
+    }
+    syncBulb();
+    bulb.addEventListener('click', () => api.dayNight?.('toggle'));
 
     async function refresh() {
         const which = api.get?.('room') === 'boy' ? 'boy' : 'girl';
@@ -584,6 +784,7 @@ export default function dorm(api = {}) {
             return { name, classes: [...ic.classList].filter(c => !/^(closedIcon|openIcon|interactable|drawer-icon)$/.test(c)), open: ic.classList.contains('openIcon'), go: () => (ic.closest('.drawer-toggle') || ic).click() };
         });
         items.push({ name: '房间', classes: ['fa-solid', 'fa-cube', 'fa-fw'], open: root.classList.contains('dm-room'), go: () => (root.classList.contains('dm-room') ? leave() : enter()) });
+        if (api.dayNight) items.push({ name: night() ? '开灯' : '关灯', classes: ['dm-mi-bulb', ...(night() ? ['off'] : [])], open: false, go: () => api.dayNight('toggle') });   // 文字说「点了会怎样」，图标画「现在的样子」（和房间右上角那个一样）
         for (const it of items) {
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'dm-mi' + (it.open ? ' here' : ''); b.setAttribute('role', 'menuitem');
@@ -666,12 +867,17 @@ export default function dorm(api = {}) {
         if (!on && menuOpen()) closeMenu();
     };
     applyBar();
-    const poll = setInterval(() => { if (!document.hidden) { refresh(); applyBar(); syncPal(); } }, 1000);   // 页面在后台（切走标签页）就不看
+    const poll = setInterval(() => { if (!document.hidden) { refresh(); applyBar(); syncPal(); if (readZoom() !== zoom) setZoom(readZoom(), undefined, undefined, false); } }, 1000);   // 页面在后台（切走标签页）就不看
     let wasNight = root.classList.contains('dn-night');
-    const dn = new MutationObserver(() => { const n = root.classList.contains('dn-night'); if (n !== wasNight) { wasNight = n; refresh(); } });   // 切昼夜（html 上的 dn-day / dn-night）马上换房间图；html 上别的 class（dm-room 等）变了不用管
+    const dn = new MutationObserver(() => { const n = root.classList.contains('dn-night'); if (n !== wasNight) { wasNight = n; refresh(); syncBulb(); } });   // 切昼夜（html 上的 dn-day / dn-night）马上换房间图；html 上别的 class（dm-room 等）变了不用管
     dn.observe(root, { attributes: true, attributeFilter: ['class'] });
 
     const onKey = e => {
+        // 房间里按 + / - 放大缩小（焦点在输入框里不管）
+        if ((e.key === '+' || e.key === '=' || e.key === '-') && root.classList.contains('dm-room') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest?.('input, textarea, select, [contenteditable]')) {
+            setZoom(zoom + (e.key === '-' ? -1 : 1));
+            return;
+        }
         if (e.key !== 'Escape') return;
         if (menuOpen()) { closeMenu(); mbtn.focus(); return; }
         if (root.classList.contains('dm-nobar') && openDrawers().length) { closeDrawers(); return; }   // 顶栏收起时没有别的办法关面板

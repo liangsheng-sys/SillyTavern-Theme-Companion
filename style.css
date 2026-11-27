@@ -55,6 +55,34 @@
     display: block;
 }
 
+/* 这套主题固定成白天 / 夜里时的提示条 */
+.daynight-settings .dn-pinned {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin: 6px 0 10px;
+    padding: 6px 10px;
+    border-left: 3px solid var(--SmartThemeUnderlineColor);
+    background-color: color-mix(in srgb, var(--SmartThemeUnderlineColor) 10%, transparent);
+}
+
+.daynight-settings .dn-pinned span {
+    flex: 1 1 12em;
+}
+
+.daynight-settings .dn-pinned .menu_button {
+    margin: 0;
+    padding: 3px 12px;
+    white-space: nowrap;
+}
+
+/* 不支持昼夜的主题：这一行和提示条都不显示（syncUi 也会藏，这里兜底） */
+.daynight-settings.is-unsupported #dn_pin_row,
+.daynight-settings.is-unsupported .dn-pinned {
+    display: none !important;
+}
+
 .daynight-settings .dn-head {
     margin: 12px 0 4px;
     padding-bottom: 4px;
@@ -183,6 +211,45 @@
     font-size: 0.85em;
     letter-spacing: 0.08em;
     color: var(--SmartThemeEmColor);
+}
+
+/* 主题设置里可折叠的分组（head 带 fold） */
+.daynight-settings .dn-fold > summary.dn-subhead {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.daynight-settings .dn-fold > summary.dn-subhead::-webkit-details-marker {
+    display: none;
+}
+
+.daynight-settings .dn-fold > summary.dn-subhead::before {
+    content: "▸";
+    display: inline-block;
+    width: 1em;
+    transition: transform 0.15s ease;
+}
+
+.daynight-settings .dn-fold[open] > summary.dn-subhead::before {
+    transform: rotate(90deg);
+}
+
+.daynight-settings .dn-fold > summary.dn-subhead::after {
+    content: "展开";
+    margin-left: auto;
+    letter-spacing: 0;
+    opacity: 0.7;
+}
+
+.daynight-settings .dn-fold[open] > summary.dn-subhead::after {
+    content: "收起";
+}
+
+.daynight-settings .dn-fold > summary.dn-subhead:hover {
+    color: var(--SmartThemeBodyColor);
 }
 
 .daynight-settings .dn-opt .dn-label {

@@ -16,6 +16,36 @@
                 "note": "夜版的橙色在 UI 主题「底线文字」里改"
             },
             {
+                "key": "paper",
+                "attr": "paper",
+                "type": "select",
+                "label": "昼版纸张",
+                "note": "只在白天（昼版）生效；「原纸」的颜色在可改区 --mz-day-paper 里改",
+                "default": "default",
+                "choices": [
+                    [
+                        "default",
+                        "原纸（默认）"
+                    ],
+                    [
+                        "attractive-white",
+                        "Attractive White"
+                    ],
+                    [
+                        "newspaper",
+                        "Newspaper"
+                    ],
+                    [
+                        "deep-white",
+                        "Deep White"
+                    ],
+                    [
+                        "cosmic-latte",
+                        "Cosmic Latte"
+                    ]
+                ]
+            },
+            {
                 "type": "select",
                 "var": "--mz-char-font",
                 "label": "角色的话",
@@ -2319,6 +2349,11 @@
                 ]
             },
             {
+                "type": "head",
+                "label": "小物件",
+                "fold": true
+            },
+            {
                 "key": "bear",
                 "type": "select",
                 "label": "床上的小熊",
@@ -2690,6 +2725,27 @@
             {
                 "type": "head",
                 "label": "房间"
+            },
+            {
+                "key": "zoom",
+                "type": "select",
+                "label": "房间显示大小",
+                "default": "1",
+                "note": "房间里右上角的放大镜、电脑上的鼠标滚轮、手机上的双指捏合也能换；放大以后按住拖动（手机直接滑）看别处。只影响房间，聊天时背后的房间不变",
+                "choices": [
+                    {
+                        "value": "1",
+                        "label": "1 倍（整间房）"
+                    },
+                    {
+                        "value": "2",
+                        "label": "2 倍"
+                    },
+                    {
+                        "value": "3",
+                        "label": "3 倍"
+                    }
+                ]
             },
             {
                 "key": "tap",

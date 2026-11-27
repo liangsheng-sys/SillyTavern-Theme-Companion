@@ -11,7 +11,7 @@
  * 3. 昼夜开关：给 <html> 加上 dn-day 或 dn-night 类，支持昼夜的主题据此换配色。
  *    不装本扩展时，这类主题跟随系统深浅色；装了以后由这里决定。
  *    - 手动切换、跟随系统，或按时间自动切换；切换时用浏览器的视图过渡，主题可以自定动画
- *    - 昼版纸张：选项由主题在 CSS 变量 --dn-papers 里提供
+ *    - 每套主题可以单独固定成白天 / 夜里（pins，按系列存），不跟全局；在固定的主题上切昼夜，改的是这套主题的固定值
  *    - 魔杖菜单里有「切换昼 / 夜」「主题设置」；斜杠命令 /daynight day|night|auto|system|toggle
  * 4. 扩展自己的更新：面板里显示版本、检查更新、一键更新，可以打开自动更新（默认关）。
  * 5. 声音：系列可以带一段「回复写完」的音效（如苔庭的惊鹿），默认开；可调音量、换成自己电脑上的文件（存在浏览器里）。
@@ -21,7 +21,8 @@
 const KEY = 'daynight';
 const CACHE = 'daynight:last';
 const DEFAULTS = {
-    mode: 'system', manual: null, dayStart: '07:00', dayEnd: '19:00', paper: 'default',
+    mode: 'system', manual: null, dayStart: '07:00', dayEnd: '19:00',
+    pins: {},                // 系列名 → 'day' / 'night'：这套主题固定成白天 / 夜里（没有 = 跟随全局）
     themes: {},              // 主题名 → 装的版本（'manual' = 用户自己导入的，版本未知）
     opts: {},                // 系列名 → { 选项 → 值 }
     autoUpdateThemes: false,
@@ -34,10 +35,14 @@ const root = document.documentElement;
 // 先套用上次的结果，避免加载时先闪一下夜版
 try {
     const last = JSON.parse(localStorage.getItem(CACHE) || 'null');
-    if (last) paint(last.day, last.paper, false);
     // 只在上次记下的主题还是当前主题时才先套（换了主题、删了主题、在别的设备上换过，缓存都可能还是旧的）
     const now = (() => { try { return SillyTavern.getContext().powerUserSettings?.theme; } catch { return undefined; } })();
-    if (last?.css && last.theme && (now === undefined || now === last.theme)) setOptionCss(last.css);
+    const same = t => t && (now === undefined || now === t);
+    // 昼夜：上次的结果已经算上了那套主题的固定值（pins）；那套是固定的、现在又换了主题，就先用全局的结果
+    if (last) paint(same(last.dnTheme) || !last.pin ? last.day : (last.globalDay ?? last.day), false);
+    if (last?.css && same(last.theme)) setOptionCss(last.css);
+    // 主题设置写在 <html> 上的属性（如纸上访谈的 data-paper）；旧版的缓存只有 paper
+    if (same(last?.theme)) setAttrs(last.attrs ?? (last.paper && last.paper !== 'default' ? { paper: last.paper } : {}));
 } catch { /* 无痕模式等读不到也没关系 */ }
 
 function ctx() {
@@ -46,8 +51,10 @@ function ctx() {
 
 function settings() {
     const all = ctx().extensionSettings;
-    all[KEY] = Object.assign({}, DEFAULTS, all[KEY]);
-    return all[KEY];
+    // 就地补默认值（不换成新对象）：别处先拿到的 s = settings()，中途再调 settings() 也还是同一个对象，改动不会丢
+    const s = (all[KEY] ||= {});
+    for (const k in DEFAULTS) if (!(k in s)) s[k] = structuredClone(DEFAULTS[k]);
+    return s;
 }
 
 function save() {
@@ -111,13 +118,11 @@ function switchCss(on) {
     }
 }
 
-function paint(day, paper, animate = true) {
+function paint(day, animate = true) {
     const changed = root.classList.contains('dn-day') !== day;
     const swap = () => {
         root.classList.toggle('dn-day', day);
         root.classList.toggle('dn-night', !day);
-        if (paper && paper !== 'default') root.dataset.paper = paper;
-        else delete root.dataset.paper;
         // 手机浏览器地址栏的颜色跟着变
         requestAnimationFrame(() => {
             const meta = document.querySelector('meta[name=theme-color]');
@@ -140,19 +145,57 @@ function paint(day, paper, animate = true) {
     } else swap();
 }
 
+// 当前主题固定成了什么：'day' / 'night'，跟随全局是 null。
+// 附带的主题列表还没读到时（刚加载），用缓存里记的（同一套主题才算），免得先按全局画一下再跳回来
+function currentPin() {
+    if (!families.length) {
+        try {
+            const last = JSON.parse(localStorage.getItem(CACHE) || 'null');
+            return last?.pin && last.dnTheme === currentTheme() ? last.pin : null;
+        } catch { return null; }
+    }
+    const fam = currentFamily();
+    const pin = fam && settings().pins?.[fam.family];
+    return pin === 'day' || pin === 'night' ? pin : null;
+}
+
 function apply(animate = true) {
     const s = settings();
     // 第一次装上时，「手动」从当前看到的样子（跟随系统的结果）开始，不突然跳变
     if (s.manual !== 'day' && s.manual !== 'night') { s.manual = systemLight.matches ? 'day' : 'night'; save(); }
-    const day = wantDay(s);
-    paint(day, s.paper, animate);
-    remember({ day, paper: s.paper });
+    const globalDay = wantDay(s);
+    const pin = currentPin();
+    const day = pin ? pin === 'day' : globalDay;
+    paint(day, animate);
+    remember({ day, globalDay, pin, dnTheme: currentTheme() });
     syncUi();
 }
 
-function setMode(cmd) {
+function setPin(fam, pin) {
+    const pins = (settings().pins ||= {});
+    if (pin === 'day' || pin === 'night') pins[fam.family] = pin;
+    else delete pins[fam.family];
+    save();
+    apply();
+}
+
+const PIN_TEXT = { day: '白天', night: '夜里' };
+
+// 昼 / 夜 / 切换：当前主题固定着的话，改的是这套主题的固定值（不动全局，别的主题照旧）；
+// auto / system 改的是全局方式，固定着的这套不受影响（提示一下）。
+// global = true：面板里「切换方式 / 现在是」那几个全局的控件，固定着也只改全局（面板上已经写着固定了）
+function setMode(cmd, global = false) {
     const s = settings();
     const isDay = root.classList.contains('dn-day');
+    const fam = currentFamily();
+    const pinned = !global && fam && currentPin();
+    if (pinned && cmd !== 'auto' && cmd !== 'system') {
+        const to = cmd === 'toggle' ? (isDay ? 'night' : 'day') : cmd;
+        if (to !== 'day' && to !== 'night') return;
+        setPin(fam, to);
+        toastr.info(`「${fam.family}」固定为${PIN_TEXT[to]}（这套主题不跟全局走）。在「扩展 → 主题伴侣 → 昼夜开关」里可以改回跟随全局。`, '昼夜开关');
+        return;
+    }
     if (cmd === 'auto' || cmd === 'system') s.mode = cmd;
     else {
         s.mode = 'manual';
@@ -160,6 +203,7 @@ function setMode(cmd) {
     }
     save();
     apply();
+    if (pinned) toastr.info(`全局已改为「${cmd === 'auto' ? '按时间自动' : '跟随系统'}」；「${fam.family}」固定为${PIN_TEXT[pinned]}，不受影响。`, '昼夜开关');
 }
 
 // ================================================================
@@ -173,6 +217,25 @@ async function loadBundled() {
         const r = await fetch(new URL('themes/themes.json', HERE), { cache: 'no-cache' });
         families = r.ok ? (await r.json()).filter(f => f.family && Array.isArray(f.themes)) : [];
     } catch { families = []; }
+}
+
+// 旧版「昼版纸张」是昼夜开关里的全局设置（settings.paper），其实只有纸上访谈用：
+// 搬进带 attr: 'paper' 选项的系列自己的主题设置里
+function migratePaper() {
+    const s = settings();
+    if (!('paper' in s) || !families.length) return;
+    if (s.paper && s.paper !== 'default') {
+        for (const fam of families) {
+            const o = (fam.options || []).find(x => x.attr === 'paper');
+            if (!o) continue;
+            // 改过名的系列：设置还在旧名字下的先搬过来（和 retireThemes 一样），不然新建的这份会挡住搬家
+            for (const r of fam.retired || []) if (r.formerFamily && s.opts[r.formerFamily] && !s.opts[fam.family]) s.opts[fam.family] = s.opts[r.formerFamily];
+            const saved = famOpts(fam);
+            if (saved[optKey(o)] === undefined && choicesOf(o).some(c => c.value === s.paper)) saved[optKey(o)] = s.paper;
+        }
+    }
+    delete settings().paper;   // 不用上面的 s：famOpts 里的 settings() 会换一个新对象
+    save();
 }
 
 async function themeText(t) {
@@ -328,7 +391,8 @@ async function useTheme(name) {
 let lastTheme;
 function onThemeChange() {
     lastTheme = currentTheme();
-    syncUi(); syncThemes(); renderAllOptions(); applyOptions();
+    apply(false);   // 新主题可能固定了白天 / 夜里（apply 里会 syncUi）
+    syncThemes(); renderAllOptions(); applyOptions();
     clearLeftoverCss().catch(e => console.warn('[主题伴侣] 清理残留 CSS 失败', e));
 }
 
@@ -633,6 +697,8 @@ async function updateAll() {
 // ================================================================
 // 主题设置：系列在 themes.json 里声明 options，这里画界面、把选择写成 CSS
 //   { type: 'head', label }                         小标题
+//   { type: 'head', label, fold: true }             可折叠的小标题：到下一个小标题为止的选项收进去，默认收起
+//   任一选项加 attr: 名字 —— 值写成 <html data-名字="值">（默认值不写），如纸上访谈的 data-paper
 //   { type: 'select', var, label, default, choices: [[值, 名称]…] }   choices 也可以是 { value, label, css }
 //     choice 的 css 里写 {EXT} 会换成扩展地址，如 url("{EXT}assets/daoshi/hammer.jpg")
 //     加 onBackgroundPick: 值 —— 用户在酒馆背景面板里挑图时自动切到这个值
@@ -759,11 +825,33 @@ function setOptionCss(css) {
     if (el.textContent !== css) el.textContent = css;
 }
 
+// 带 attr 的选项：值写成 <html data-<attr>="值">（如纸上访谈的昼版纸张 data-paper），默认值不写。
+// 用函数自己的属性记着写过哪些：模块开头读缓存时就会调用，那时下面的 let/const 还不能用
+function setAttrs(map) {
+    const prev = setAttrs.keys || [];
+    for (const k of prev) if (!(k in map)) delete root.dataset[k];
+    for (const [k, v] of Object.entries(map)) if (root.dataset[k] !== v) root.dataset[k] = v;
+    setAttrs.keys = Object.keys(map);
+}
+
+function optionAttrs(fam) {
+    const out = {};
+    const saved = famOpts(fam);
+    for (const o of fam?.options || []) {
+        if (!o.attr) continue;
+        const v = optionValue(o, saved);
+        if (v !== undefined && v !== null && v !== '' && v !== optionValue(o, {})) out[o.attr] = String(v);
+    }
+    return out;
+}
+
 function applyOptions() {
     const fam = currentFamily();
     const css = fam ? optionCss(fam) : '';
+    const attrs = fam ? optionAttrs(fam) : {};
     setOptionCss(css);
-    remember({ css, theme: currentTheme() });
+    setAttrs(attrs);
+    remember({ css, attrs, theme: currentTheme() });
     formatDates();
     syncModule(fam);
 }
@@ -1033,6 +1121,8 @@ function field(label, note) {
     return row;
 }
 
+const openFolds = new Set();   // 展开着的折叠分组（系列名 + 标题）：面板常常整个重画，记住别一画就收回去
+
 function renderOptions(box) {
     if (!box) return;
     box.innerHTML = '';
@@ -1060,12 +1150,29 @@ function renderOptions(box) {
         box.append(row);
     }
 
+    let target = box;   // 折叠分组（head 带 fold）里的选项放进 <details>
     for (const o of fam.options || []) {
         if (o.type === 'head') {
-            const h = document.createElement('div');
-            h.className = 'dn-subhead';
-            h.textContent = o.label;
-            box.append(h);
+            if (o.fold) {
+                const d = document.createElement('details');
+                d.className = 'dn-fold';
+                const id = `${fam.family}
+${o.label}`;
+                d.open = openFolds.has(id);
+                d.ontoggle = () => { d.open ? openFolds.add(id) : openFolds.delete(id); };
+                const sum = document.createElement('summary');
+                sum.className = 'dn-subhead';
+                sum.textContent = o.label;
+                d.append(sum);
+                box.append(d);
+                target = d;
+            } else {
+                const h = document.createElement('div');
+                h.className = 'dn-subhead';
+                h.textContent = o.label;
+                box.append(h);
+                target = box;
+            }
             continue;
         }
         const row = field(o.label, o.note);
@@ -1112,7 +1219,7 @@ function renderOptions(box) {
             n.textContent = o.note;
             row.append(n);
         }
-        box.append(row);
+        target.append(row);
     }
 
     if (fam.sound) renderSound(box, fam);
@@ -1250,8 +1357,20 @@ const PANEL = `
             <div class="dn-head" id="dn_options_title">主题设置</div>
             <div id="dn_options"></div>
 
-            <div class="dn-head">昼夜开关</div>
+            <div class="dn-head" id="dn_daynight_head">昼夜开关</div>
             <div class="dn-unsupported">当前主题不支持昼夜切换。换成「纸上访谈」「银盐显影」等支持的主题后，这里的设置才会生效。</div>
+            <div class="dn-row" id="dn_pin_row">
+                <span class="dn-label">这套主题</span>
+                <select id="dn_pin" class="text_pole">
+                    <option value="">跟随全局</option>
+                    <option value="day">总是白天</option>
+                    <option value="night">总是夜里</option>
+                </select>
+            </div>
+            <div class="dn-pinned" id="dn_pinned">
+                <span id="dn_pinned_text"></span>
+                <div class="menu_button" id="dn_unpin">改回跟随全局</div>
+            </div>
             <div class="dn-row">
                 <span class="dn-label">切换方式</span>
                 <select id="dn_mode" class="text_pole">
@@ -1272,10 +1391,6 @@ const PANEL = `
                 <input id="dn_start" type="time" class="text_pole">
                 <span>到</span>
                 <input id="dn_end" type="time" class="text_pole">
-            </div>
-            <div class="dn-row" id="dn_paper_row">
-                <span class="dn-label">昼版纸张</span>
-                <select id="dn_paper" class="text_pole"></select>
             </div>
             <small class="dn-note">夜版颜色在「UI 主题」的颜色选择器里改；更细的地方在「自订 CSS」最上方的「可改区」里改。</small>
 
@@ -1310,10 +1425,6 @@ const MENU = `
     <span>主题设置</span>
 </div>`;
 
-function papers() {
-    return themeVar('--dn-papers').split('|').map(x => x.split(':')).filter(x => x.length === 2);
-}
-
 function syncUi() {
     const panel = document.getElementById('daynight_settings');
     if (!panel) return;
@@ -1325,16 +1436,20 @@ function syncUi() {
     $('#dn_auto_row').toggle(s.mode === 'auto');
     $('#dn_start').val(s.dayStart);
     $('#dn_end').val(s.dayEnd);
-    const isDay = root.classList.contains('dn-day');
+    // 「现在是」那两个按钮是全局的手动值：当前主题固定着时，它和眼前看到的不一定一样
+    const fam = currentFamily();
+    const pin = supported && fam ? currentPin() : null;
+    const segDay = pin ? s.manual === 'day' : root.classList.contains('dn-day');
     $('#daynight_settings [data-dn]').each(function () {
-        this.classList.toggle('dn-on', (this.dataset.dn === 'day') === isDay);
+        this.classList.toggle('dn-on', (this.dataset.dn === 'day') === segDay);
     });
-    const list = papers();
-    const sel = $('#dn_paper');
-    sel.empty();
-    for (const [v, label] of list) sel.append(new Option(label, v));
-    sel.val(list.some(([v]) => v === s.paper) ? s.paper : 'default');
-    $('#dn_paper_row').toggle(list.length > 0);
+    // 这套主题：跟随全局 / 总是白天 / 总是夜里（只有支持昼夜的附带主题才有）
+    $('#dn_pin_row').toggle(!!(supported && fam));
+    $('#dn_pin_row').attr('title', fam ? `只管「${fam.family}」这一套，别的主题照旧按下面的切换方式` : '');
+    $('#dn_pin').val(pin || '');
+    $('#dn_pinned').toggle(!!pin);
+    $('#dn_pinned_text').text(pin ? `当前主题「${fam.family}」已固定为${PIN_TEXT[pin]}，下面的切换方式只管其他主题。` : '');
+    panel.classList.toggle('is-pinned', !!pin);
 }
 
 function mountUi() {
@@ -1342,10 +1457,11 @@ function mountUi() {
     $('#extensionsMenu').append(MENU);
 
     $('#dn_mode').on('change', function () { settings().mode = this.value; save(); apply(); });
-    $('#daynight_settings').on('click', '[data-dn]', function () { setMode(this.dataset.dn); });
+    $('#daynight_settings').on('click', '[data-dn]', function () { setMode(this.dataset.dn, true); });
     $('#dn_start').on('change', function () { settings().dayStart = this.value; save(); apply(); });
     $('#dn_end').on('change', function () { settings().dayEnd = this.value; save(); apply(); });
-    $('#dn_paper').on('change', function () { settings().paper = this.value; save(); apply(false); });
+    $('#dn_pin').on('change', function () { const fam = currentFamily(); if (fam) setPin(fam, this.value); });
+    $('#dn_unpin').on('click', () => { const fam = currentFamily(); if (fam) setPin(fam, null); });
     $('#dn_theme_auto').on('change', function () { settings().autoUpdateThemes = this.checked; save(); });
     $('#dn_theme_new').on('change', async function () {
         settings().autoInstallNew = this.checked;
@@ -1365,7 +1481,7 @@ function mountUi() {
     $('#dn_menu_toggle').on('click', () => {
         const was = settings().mode;
         setMode('toggle');
-        if (was !== 'manual') toastr.info(`已从「${was === 'auto' ? '按时间自动' : '跟随系统'}」改为手动，可在扩展设置里改回。`, '昼夜开关');
+        if (was !== 'manual' && settings().mode === 'manual') toastr.info(`已从「${was === 'auto' ? '按时间自动' : '跟随系统'}」改为手动，可在扩展设置里改回。`, '昼夜开关');
     });
     $('#dn_menu_options').on('click', () => openOptionsPopup());
     syncExt();
@@ -1389,6 +1505,8 @@ jQuery(() => {
     mountUi();
     registerCommand();
     apply(false);
+    // 先读附带主题的列表：主题设置、这套主题的昼夜固定值都要靠它认出当前主题是哪个系列
+    const bundled = loadBundled().then(() => { migratePaper(); apply(false); renderAllOptions(); });
     watchDates();
     loadExtInfo();
     // 换主题时刷新面板（新主题可能不支持昼夜、选项不同）
@@ -1414,7 +1532,7 @@ jQuery(() => {
     });
     if (eventTypes?.FORCE_SET_BACKGROUND) eventSource.on(eventTypes.FORCE_SET_BACKGROUND, followBackgroundPick);
     // 等酒馆把主题列表填好再检查附带的主题（APP_READY 已经发生过的话会立刻触发）
-    eventSource.on(eventTypes.APP_READY, () => {
+    eventSource.on(eventTypes.APP_READY, () => bundled.then(() => {
         watchBackground();
         lastTheme = currentTheme();
         // 每次都按当前主题重算一遍：开头先套的缓存如果是别的主题的（如 XP 的配色选项，整整一套 CSS），在这里清掉
@@ -1422,7 +1540,7 @@ jQuery(() => {
         checkThemes().catch(e => console.warn('[主题伴侣] 检查主题失败', e))
             .then(() => clearLeftoverCss()).catch(e => console.warn('[主题伴侣] 清理残留 CSS 失败', e));
         dailyExtCheck();
-    });
+    }));
     // 按时间自动：每分钟看一次
     setInterval(() => { if (settings().mode === 'auto') apply(); }, 60 * 1000);
     // 跟随系统：系统深浅色一变就跟着变
