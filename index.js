@@ -16,6 +16,8 @@
  * 4. 扩展自己的更新：面板里显示版本、检查更新、一键更新，可以打开自动更新（默认关）。
  * 5. 声音：系列可以带一段「回复写完」的音效（如苔庭的惊鹿），默认开；可调音量、换成自己电脑上的文件（存在浏览器里）。
  * 6. 主题脚本：系列可以带一小段自己的脚本（themes.json 里的 module，如 WPS文档 的可拖标尺），用这套主题时才载入。
+ * 7. 小部件：从某套主题里拆出来的功能（widgets/widgets.json 登记，如 Roomlet 的房间菜单），每个单独勾选，套任何主题都能用；
+ *    来源主题正在用时让位给主题自带的那份。
  */
 
 const KEY = 'daynight';
@@ -29,6 +31,7 @@ const DEFAULTS = {
     autoInstallNew: false,   // 自动安装新主题（1.11 起默认不装，由用户在列表里挑）
     autoUpdateExt: false,
     tryDrafts: false,        // 试用施工中的主题（默认不装、不列出）
+    widgets: {},             // 小部件 id → { on: 启用没有, opts: { 选项 → 值 } }
 };
 const root = document.documentElement;
 
@@ -853,6 +856,7 @@ function applyOptions() {
     setAttrs(attrs);
     remember({ css, attrs, theme: currentTheme() });
     formatDates();
+    syncWidgets();   // 先卸下让位的小部件，再载主题脚本（两边会用同样的元素 id）
     syncModule(fam);
 }
 
@@ -884,6 +888,86 @@ async function syncModule(fam) {
         }) || null;
     } catch (e) {
         console.warn('[主题伴侣] 主题脚本载入失败', e);
+    }
+}
+
+// ================================================================
+// 小部件：widgets/widgets.json 登记，每个单独勾选启用，套任何主题都能用（接口见 docs/主题伴侣.md「小部件」）
+//   { id, label, note, module: 'widgets/x.js', from: 来源系列名, share: 共用谁的主题设置, shareKeys: [在面板里列出的共用选项], options: [自己的选项] }
+//   来源主题（from）正在用时让位：不载入（主题脚本自带一份）；面板上注明「当前主题自带」
+// ================================================================
+let widgetDefs = [], widgetVer = '';
+const widgetsOn = {};   // id → { cleanup }（载入中 cleanup 还是 null）
+async function loadWidgets() {
+    try {
+        const [list, m] = await Promise.all([
+            fetch(new URL('widgets/widgets.json', HERE), { cache: 'no-cache' }).then(r => r.json()),
+            fetch(new URL('manifest.json', HERE), { cache: 'no-cache' }).then(r => r.json()).catch(() => ({})),
+        ]);
+        widgetDefs = Array.isArray(list) ? list : [];
+        widgetVer = m.version || '';
+    } catch (e) {
+        console.warn('[主题伴侣] 读不到小部件列表', e);
+    }
+}
+const widgetSaved = id => ((settings().widgets ||= {})[id] ||= {});
+const widgetOpts = id => (widgetSaved(id).opts ||= {});
+const widgetFamily = def => def.share ? families.find(f => f.family === def.share) : null;
+// 选项先找小部件自己的，再找共用的那套主题的（如房间菜单和 Roomlet 共用房间、画风……，两边看到同一间房）
+function widgetOption(def, key) {
+    const own = (def.options || []).find(o => optKey(o) === key);
+    if (own) return { o: own };
+    const fam = widgetFamily(def);
+    const o = fam?.options?.find(o => optKey(o) === key);
+    return o ? { o, fam } : null;
+}
+function widgetGet(def, key) {
+    const r = widgetOption(def, key);
+    if (!r) return undefined;
+    return optionValue(r.o, r.fam ? famOpts(r.fam) : widgetOpts(def.id));
+}
+function widgetSet(def, key, v) {
+    const r = widgetOption(def, key);
+    if (!r) return;
+    if (r.fam) { setOption(r.fam, r.o, v); renderAllOptions(); return; }
+    const saved = widgetOpts(def.id);
+    if (v === undefined) delete saved[key]; else saved[key] = v;
+    save();
+    renderWidgets();
+}
+const widgetYields = def => !!def.from && currentFamily()?.family === def.from;
+// 传给小部件的接口：小部件只靠这几样和伴侣打交道（以后单独做成扩展时换一份同样的接口就行）
+function widgetApi(def) {
+    return {
+        guest: true,
+        get: key => widgetGet(def, key),
+        set: (key, v) => widgetSet(def, key, v),
+        option: key => widgetOption(def, key)?.o,
+        dayNight: cmd => setMode(cmd || 'toggle'),
+        dnSupported: () => themeVar('--dn-support') === '1',
+        assets: new URL('modules/', HERE).href,
+        autoEnter: () => !!widgetGet(def, 'autoEnter'),
+    };
+}
+function syncWidgets() {
+    for (const def of widgetDefs) {
+        const want = !!widgetSaved(def.id).on && !widgetYields(def);
+        const cur = widgetsOn[def.id];
+        if (!!cur === want) continue;
+        if (cur) {
+            delete widgetsOn[def.id];
+            try { cur.cleanup?.(); } catch (e) { console.warn(`[主题伴侣] 小部件 ${def.id} 卸载失败`, e); }
+            continue;
+        }
+        const slot = widgetsOn[def.id] = { cleanup: null };
+        import(new URL(`${def.module}?v=${encodeURIComponent(widgetVer)}`, HERE).href).then(mod => {
+            if (widgetsOn[def.id] !== slot) return;   // 载入期间又关掉了 / 让位了
+            const r = mod.default(widgetApi(def));
+            slot.cleanup = typeof r === 'function' ? r : r?.cleanup || null;
+        }).catch(e => {
+            console.warn(`[主题伴侣] 小部件 ${def.id} 载入失败`, e);
+            if (widgetsOn[def.id] === slot) delete widgetsOn[def.id];
+        });
     }
 }
 
@@ -1175,51 +1259,8 @@ ${o.label}`;
             }
             continue;
         }
-        const row = field(o.label, o.note);
-        const v = optionValue(o, saved);
-        let input;
-        if (o.type === 'select' || o.type === 'dateformat') {
-            input = document.createElement('select');
-            input.className = 'text_pole';
-            const list = o.type === 'dateformat'
-                ? DATE_FORMATS.map(([value, label, p]) => ({ value, label: window.moment ? `${label}（${window.moment().format(p || 'LL LT')}）` : label }))
-                : choicesOf(o);
-            for (const c of list) input.append(new Option(c.label, c.value));
-            input.value = v;
-            input.onchange = () => setOption(fam, o, input.value);
-        } else if (o.type === 'toggle') {
-            input = document.createElement('input');
-            input.type = 'checkbox';
-            input.checked = !!v;
-            input.onchange = () => setOption(fam, o, input.checked);
-            row.classList.add('dn-check');
-        } else if (o.type === 'number') {
-            input = document.createElement('input');
-            input.type = 'number';
-            input.className = 'text_pole';
-            Object.assign(input, { min: o.min ?? '', max: o.max ?? '', step: o.step ?? 'any', value: v });
-            input.onchange = () => setOption(fam, o, input.value === '' ? undefined : Number(input.value));
-        } else if (o.type === 'color') {
-            input = document.createElement('input');
-            input.type = 'color';
-            input.value = v;
-            input.oninput = () => setOption(fam, o, input.value);
-        } else if (o.type === 'text') {
-            input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'text_pole';
-            input.placeholder = '（留空 = 不显示）';
-            input.value = v ?? '';
-            let timer;
-            input.oninput = () => { clearTimeout(timer); timer = setTimeout(() => setOption(fam, o, input.value), 250); };
-        } else continue;
-        row.append(input);
-        if (o.note && o.type === 'toggle') {
-            const n = document.createElement('small');
-            n.textContent = o.note;
-            row.append(n);
-        }
-        target.append(row);
+        const row = optionRow(o, optionValue(o, saved), x => setOption(fam, o, x));
+        if (row) target.append(row);
     }
 
     if (fam.sound) renderSound(box, fam);
@@ -1240,7 +1281,119 @@ ${o.label}`;
     box.append(reset);
 }
 
+// 一个选项的一行（标签 + 输入框）：主题设置和小部件的选项共用。set(新值) 存起来并套用；不认识的类型返回 null
+function optionRow(o, v, set) {
+    const row = field(o.label, o.note);
+    let input;
+    if (o.type === 'select' || o.type === 'dateformat') {
+        input = document.createElement('select');
+        input.className = 'text_pole';
+        const list = o.type === 'dateformat'
+            ? DATE_FORMATS.map(([value, label, p]) => ({ value, label: window.moment ? `${label}（${window.moment().format(p || 'LL LT')}）` : label }))
+            : choicesOf(o);
+        for (const c of list) input.append(new Option(c.label, c.value));
+        input.value = v;
+        input.onchange = () => set(input.value);
+    } else if (o.type === 'toggle') {
+        input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = !!v;
+        input.onchange = () => set(input.checked);
+        row.classList.add('dn-check');
+    } else if (o.type === 'number') {
+        input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'text_pole';
+        Object.assign(input, { min: o.min ?? '', max: o.max ?? '', step: o.step ?? 'any', value: v });
+        input.onchange = () => set(input.value === '' ? undefined : Number(input.value));
+    } else if (o.type === 'color') {
+        input = document.createElement('input');
+        input.type = 'color';
+        input.value = v;
+        input.oninput = () => set(input.value);
+    } else if (o.type === 'text') {
+        input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'text_pole';
+        input.placeholder = '（留空 = 不显示）';
+        input.value = v ?? '';
+        let timer;
+        input.oninput = () => { clearTimeout(timer); timer = setTimeout(() => set(input.value), 250); };
+    } else return null;
+    row.append(input);
+    if (o.note && o.type === 'toggle') {
+        const n = document.createElement('small');
+        n.textContent = o.note;
+        row.append(n);
+    }
+    return row;
+}
+
+function renderWidgets(box = document.getElementById('dn_widgets')) {
+    if (!box) return;
+    box.replaceChildren();
+    if (!widgetDefs.length) {
+        box.innerHTML = '<small class="dn-note">（没有读到小部件列表）</small>';
+        return;
+    }
+    const intro = document.createElement('small');
+    intro.className = 'dn-note dn-widgets-intro';
+    intro.textContent = '从某套主题里拆出来的小功能，勾上就能用，套任何主题（包括不是本扩展附带的）都行。';
+    box.append(intro);
+    for (const def of widgetDefs) {
+        const s = widgetSaved(def.id);
+        const yields = widgetYields(def);
+        const row = document.createElement('label');
+        row.className = 'dn-row dn-check dn-widget';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!s.on;
+        cb.onchange = () => { widgetSaved(def.id).on = cb.checked; save(); syncWidgets(); renderWidgets(); };
+        const name = document.createElement('span');
+        name.textContent = def.label;
+        row.append(cb, name);
+        if (def.from) {
+            const tag = document.createElement('span');
+            tag.className = 'dn-widget-from' + (yields ? ' is-own' : '');
+            tag.textContent = yields ? '当前主题自带' : `来自「${def.from}」`;
+            row.append(tag);
+        }
+        const note = document.createElement('small');
+        note.textContent = yields ? `${def.note}　现在用的就是「${def.from}」，它自带这个功能${def.ownNote ? `（${def.ownNote}）` : ''}，这里先让位，换别的主题时才出来。` : def.note;
+        row.append(note);
+        box.append(row);
+        // 自己的选项（hidden 的不列）+ 共用的那套主题里列在 shareKeys 的选项，收进一个默认收起的分组
+        const fam = widgetFamily(def);
+        const opts = [
+            ...(def.options || []).filter(o => !o.hidden).map(o => [o, null]),
+            ...(def.shareKeys || []).map(k => [fam?.options?.find(o => optKey(o) === k), fam]).filter(([o]) => o),
+        ];
+        if (!opts.length) continue;
+        const d = document.createElement('details');
+        d.className = 'dn-fold dn-widget-opts';
+        const id = `widget:${def.id}`;
+        d.open = openFolds.has(id);
+        d.ontoggle = () => { d.open ? openFolds.add(id) : openFolds.delete(id); };
+        const sum = document.createElement('summary');
+        sum.className = 'dn-subhead';
+        sum.textContent = `${def.label}的选项`;
+        d.append(sum);
+        if (opts.some(([, f]) => f)) {
+            const n = document.createElement('small');
+            n.className = 'dn-note';
+            n.textContent = def.shareNote || `和「${def.share}」主题共用一份，两边改哪边都一样。`;
+            d.append(n);
+        }
+        for (const [o] of opts) {
+            const r = optionRow(o, widgetGet(def, optKey(o)), v => widgetSet(def, optKey(o), v));
+            if (r) d.append(r);
+        }
+        box.append(d);
+    }
+}
+
 function renderAllOptions() {
+    renderWidgets();
     renderOptions(document.getElementById('dn_options'));
     const title = document.getElementById('dn_options_title');
     if (title) title.textContent = currentFamily() ? `主题设置 · ${currentFamily().family}` : '主题设置';
@@ -1401,6 +1554,9 @@ const PANEL = `
             <label class="dn-row dn-check"><input id="dn_theme_auto" type="checkbox"><span>自动更新主题</span><small>会覆盖你在「UI 主题」里对这些主题做的修改；关掉时只提醒</small></label>
             <label id="dn_drafts_row" class="dn-row dn-check"><input id="dn_drafts" type="checkbox"><span>试用施工中的主题</span><small>还没正式发布的主题，勾上后列在上面，可能随时大改</small></label>
 
+            <div class="dn-head" id="dn_widgets_head">小部件</div>
+            <div id="dn_widgets"></div>
+
             <div class="dn-head">扩展</div>
             <div class="dn-row dn-ext">
                 <span id="dn_ext_version"></span>
@@ -1506,7 +1662,7 @@ jQuery(() => {
     registerCommand();
     apply(false);
     // 先读附带主题的列表：主题设置、这套主题的昼夜固定值都要靠它认出当前主题是哪个系列
-    const bundled = loadBundled().then(() => { migratePaper(); apply(false); renderAllOptions(); });
+    const bundled = Promise.all([loadBundled(), loadWidgets()]).then(() => { migratePaper(); apply(false); renderAllOptions(); });
     watchDates();
     loadExtInfo();
     // 换主题时刷新面板（新主题可能不支持昼夜、选项不同）

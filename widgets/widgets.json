@@ -1,0 +1,24 @@
+[
+    {
+        "id": "room",
+        "label": "房间菜单",
+        "from": "Roomlet",
+        "module": "widgets/room.js",
+        "note": "顶栏多一个「房间」按钮：点开是一间像素宿舍，房间里的东西就是菜单（衣柜 = 角色列表，插线板 = 预设……），右下角的信笺回到聊天。",
+        "share": "Roomlet",
+        "shareKeys": ["room", "style", "zoom", "tap", "outline"],
+        "shareNote": "房间、画风这些和「Roomlet」主题共用一份，两边改哪边都一样；底色和小物件在房间左边的竖排标签里换。",
+        "options": [
+            { "key": "autoEnter", "type": "toggle", "label": "没打开聊天时自动进房间", "default": false, "note": "打开酒馆、还没选角色时直接是房间（Roomlet 主题就是这样）" },
+            { "key": "lamp", "type": "select", "label": "房间的灯", "default": "on", "hidden": true, "choices": [["on", "开着"], ["off", "熄了"]], "note": "当前主题不支持昼夜时，房间右上角的灯泡只管这个" }
+        ]
+    },
+    {
+        "id": "notebook",
+        "label": "顶栏收成小本子",
+        "from": "Roomlet",
+        "ownNote": "在上面「主题设置 → 酒馆顶栏」里开关",
+        "module": "widgets/notebook.js",
+        "note": "顶上那一排图标藏起来，换成左上角一本小本子，点开是目录，每一项就是原来的一个按钮（别的扩展加的也在）。按 Esc 或点旁边关上。"
+    }
+]

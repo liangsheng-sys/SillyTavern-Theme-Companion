@@ -364,3 +364,33 @@
     opacity: 0.5;
     pointer-events: none;
 }
+
+/* 小部件：勾选行 + 来源小字 + 默认收起的选项分组 */
+.daynight-settings .dn-widgets-intro {
+    margin: 0 0 4px;
+}
+
+.daynight-settings .dn-widget {
+    margin-top: 10px;
+}
+
+.daynight-settings .dn-widget > span:nth-of-type(1) {
+    font-weight: 600;
+}
+
+.daynight-settings .dn-widget-from {
+    margin-left: auto;
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.daynight-settings .dn-widget-from.is-own {
+    opacity: 1;
+    padding: 0 6px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+}
+
+.daynight-settings .dn-widget-opts {
+    margin-left: 1.8em;
+}
