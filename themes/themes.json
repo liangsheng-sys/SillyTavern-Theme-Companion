@@ -2284,7 +2284,7 @@
     },
     {
         "family": "Roomlet",
-        "version": "1.2.1",
+        "version": "1.2.2",
         "variantLabel": "变体",
         "options": [
             {
@@ -2311,6 +2311,23 @@
                         "value": "plain",
                         "label": "白页",
                         "css": "html:root:root { --dm-rule: transparent; --dm-head-display: none; --dm-glue: 0px; --dm-foot-display: none; }"
+                    }
+                ]
+            },
+            {
+                "key": "mlayout",
+                "type": "select",
+                "label": "手机上的头像",
+                "note": "只影响手机。放进名字那一行，正文更宽",
+                "choices": [
+                    {
+                        "value": "inline",
+                        "label": "放进名字那一行（默认）"
+                    },
+                    {
+                        "value": "column",
+                        "label": "单独占一栏",
+                        "css": "@media screen and (max-width: 1000px) { html:root:root { --dm-m-novel: 0; } }"
                     }
                 ]
             },

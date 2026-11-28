@@ -19,7 +19,7 @@
 //   api.dayNight(cmd)        切伴侣的昼夜（没有就不显示灯泡，除非客串时用自己的灯）
 //   api.dnSupported()        客串时：当前主题支持昼夜吗
 //   api.assets               dorm-*.png 所在的目录地址（以 / 结尾），默认扩展的 modules/
-//   api.autoEnter()          欢迎页自动进房间；也决定没有聊天时「回到聊天」改成打开角色列表
+//   api.autoEnter()          欢迎页自动进房间（没有聊天时床帘叫「最近聊天」，点了露出欢迎页）
 //   api.peekTitle()          右下角信笺的抬头
 
 import { skinCss, useFont, GUEST_VOID } from './dorm-skin.js';
@@ -675,7 +675,7 @@ export default function mountRoom(api = {}) {
         box.classList.toggle('dm-over', !!id);
         if (!id || !spots[id]) { tag.hidden = true; return; }
         lines[id]?.classList.add('on');
-        showTag(bbOf(id), spots[id].name, spots[id].what);
+        showTag(bbOf(id), spots[id].name, whatOf(spots[id]));
     }
     function activate(id) {
         const s = spots[id]; if (!s) return;
@@ -736,7 +736,7 @@ export default function mountRoom(api = {}) {
             p.setAttribute('aria-label', `${name}：${what}`);
             spots[id] = { el: p, name, what, act, poly };
             // 热区图没载入时：多边形自己管鼠标
-            p.addEventListener('pointerenter', () => { if (!map) showTag(bbOf(id), name, what); });
+            p.addEventListener('pointerenter', () => { if (!map) showTag(bbOf(id), name, whatOf(spots[id])); });
             p.addEventListener('pointerleave', () => { if (!map && !p.classList.contains('on')) tag.hidden = true; });
             p.addEventListener('click', () => { if (!map) activate(id); });
             p.addEventListener('focus', () => { cur = 0; light(id); });
@@ -755,7 +755,7 @@ export default function mountRoom(api = {}) {
     const holder = document.getElementById('top-settings-holder');
     holder?.prepend(btn);
     const icon = btn.querySelector('.drawer-icon');
-    const toggle = () => (isOpen() ? leave(true) : enter());
+    const toggle = () => (isOpen() ? leave() : enter());
     btn.dmGo = toggle;
     const onBtn = e => { e.stopPropagation(); toggle(); };
     icon.addEventListener('click', onBtn);
@@ -764,6 +764,8 @@ export default function mountRoom(api = {}) {
         const c = ctx();
         return !!(c && (c.groupId || (c.characterId !== undefined && c.characterId !== null)));
     };
+    // 床帘：有聊天 = 回到聊天；没有 = 最近聊天（欢迎页）
+    const whatOf = s => (s.act === 'back' && !hasChat() ? '最近聊天' : s.what);
     function fillPeek() {
         const c = ctx();
         const last = hasChat() ? [...(c.chat || [])].reverse().find(m => !m.is_system && m.mes) : null;
@@ -804,13 +806,8 @@ export default function mountRoom(api = {}) {
         // 手机：房间比屏幕宽，先对准书桌
         setTimeout(aimDesk, 500);
     }
-    // 没有聊天可回、又是「欢迎页就是房间」（Roomlet 主题）：打开角色列表。fromBtn = 顶栏按钮 / 小本子点的（客串时总能出去）
-    function leave(fromBtn = false) {
-        if (!hasChat() && api.autoEnter?.() && !(guest && fromBtn)) {
-            const el = document.getElementById('rightNavDrawerIcon');
-            el?.closest('.drawer-toggle')?.click();
-            return;
-        }
+    // 没有聊天时离开房间 = 露出酒馆欢迎页（最近聊天在那上面），所以床帘这时叫「最近聊天」
+    function leave() {
         root.classList.remove('dm-room');
         icon.classList.replace('openIcon', 'closedIcon');
         light(0);
@@ -845,7 +842,7 @@ export default function mountRoom(api = {}) {
         }
         if (e.key !== 'Escape' || e.dmHandled) return;   // 小本子先处理过这次 Esc（关目录 / 关面板）就不管
         if (pal.classList.contains('open')) { pal.classList.remove('open'); syncPal(); return; }
-        if (isOpen() && (hasChat() || !api.autoEnter?.()) && !document.querySelector('.openDrawer')) leave(true);
+        if (isOpen() && !document.querySelector('.openDrawer')) leave();
     };
     document.addEventListener('keydown', onKey);
 
